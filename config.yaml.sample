@@ -1,0 +1,18 @@
+# OpenMun eCH Configuration Sample
+# Copy this file to config.yaml and adjust paths for your environment
+# config.yaml is gitignored to prevent data path leakage
+
+# Production data paths for testing with real Swiss government eCH data
+# You can specify one or more paths to sedex production data directories
+production_data_paths:
+  # Primary production data location
+  - /path/to/your/sedex/data/processed
+
+  # Additional data locations (optional)
+  # - /path/to/another/sedex/data/directory
+  # - /mnt/backup/sedex/archive
+
+# Alternative: Use environment variable instead of config file
+# Set OPENMUN_PRODUCTION_DATA to a single path or a comma-separated list
+# Example: export OPENMUN_PRODUCTION_DATA="/path/to/sedex/data"
+# Example: export OPENMUN_PRODUCTION_DATA="/path/one,/path/two,/path/three"

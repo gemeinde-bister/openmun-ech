@@ -1,0 +1,33 @@
+[project]
+name = "openmun-ech"
+version = "0.1.0"
+description = "Swiss eCH e-government standards implementation for municipal administration"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+    "lxml>=4.9.0",
+    "pyyaml>=6.0.0",
+    "openmun-opendata>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["openmun_ech*"]
+exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
