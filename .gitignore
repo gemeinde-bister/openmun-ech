@@ -163,3 +163,7 @@ cython_debug/
 
 # Configuration with sensitive paths
 config.yaml
+
+# SCM
+.hg/
+.jj/

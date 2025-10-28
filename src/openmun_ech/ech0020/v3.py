@@ -226,13 +226,14 @@ class ECH0020BirthInfo(BaseModel):
         for child in birth_content:
             birth_wrapper.append(child)
 
-        # birthAddonData (optional) - uses eCH-0021/7 namespace
+        # birthAddonData (optional) - wrapper in eCH-0020, content from eCH-0021
         if self.birth_addon_data:
-            self.birth_addon_data.to_xml(
-                parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0021/7',
-                element_name='birthAddonData'
-            )
+            # Create wrapper element in eCH-0020 namespace
+            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}birthAddonData')
+            # Generate eCH-0021 content and move children to wrapper
+            addon_content = self.birth_addon_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            for child in addon_content:
+                addon_wrapper.append(child)
 
         return elem
 
@@ -303,13 +304,14 @@ class ECH0020MaritalInfo(BaseModel):
         for child in marital_content:
             marital_wrapper.append(child)
 
-        # maritalDataAddon (optional) - uses eCH-0021/7 namespace
+        # maritalDataAddon (optional) - wrapper in eCH-0020, content from eCH-0021
         if self.marital_data_addon:
-            self.marital_data_addon.to_xml(
-                parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0021/7',
-                element_name='maritalDataAddon'
-            )
+            # Create wrapper element in eCH-0020 namespace
+            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalDataAddon')
+            # Generate eCH-0021 content and move children to wrapper
+            addon_content = self.marital_data_addon.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            for child in addon_content:
+                addon_wrapper.append(child)
 
         return elem
 
@@ -394,13 +396,14 @@ class ECH0020MaritalInfoRestrictedMarriage(BaseModel):
             date_elem = ET.SubElement(marital_data_elem, f'{{{namespace}}}dateOfMaritalStatus')
             date_elem.text = self.date_of_marital_status.isoformat()
 
-        # maritalDataAddon (optional) - uses eCH-0021/7 namespace
+        # maritalDataAddon (optional) - wrapper in eCH-0020, content from eCH-0021
         if self.marital_data_addon:
-            self.marital_data_addon.to_xml(
-                parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0021/7',
-                element_name='maritalDataAddon'
-            )
+            # Create wrapper element in eCH-0020 namespace
+            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalDataAddon')
+            # Generate eCH-0021 content and move children to wrapper
+            addon_content = self.marital_data_addon.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            for child in addon_content:
+                addon_wrapper.append(child)
 
         return elem
 
@@ -484,13 +487,14 @@ class ECH0020PlaceOfOriginInfo(BaseModel):
         for child in origin_content:
             origin_wrapper.append(child)
 
-        # placeOfOriginAddonData (optional) - uses eCH-0021/7 namespace
+        # placeOfOriginAddonData (optional) - wrapper in eCH-0020, content from eCH-0021
         if self.place_of_origin_addon_data:
-            self.place_of_origin_addon_data.to_xml(
-                parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0021/7',
-                element_name='placeOfOriginAddonData'
-            )
+            # Create wrapper element in eCH-0020 namespace
+            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}placeOfOriginAddonData')
+            # Generate eCH-0021 content and move children to wrapper
+            addon_content = self.place_of_origin_addon_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            for child in addon_content:
+                addon_wrapper.append(child)
 
         return elem
 
@@ -1107,11 +1111,12 @@ class ECH0020BaseDeliveryPerson(BaseModel):
             for child in healthInsuranceData_content:
                 healthInsuranceData_wrapper.append(child)
 
-        # 21. matrimonialInheritanceArrangementData (optional, eCH-0021/7)
+        # 21. matrimonialInheritanceArrangementData (optional) - wrapper in eCH-0020, content from eCH-0021
         if self.matrimonial_inheritance_arrangement_data:
-            self.matrimonial_inheritance_arrangement_data.to_xml(
-                parent=elem, namespace=ns_021
-            )
+            wrapper = ET.SubElement(elem, f'{{{namespace}}}matrimonialInheritanceArrangementData')
+            content = self.matrimonial_inheritance_arrangement_data.to_xml(namespace=ns_021)
+            for child in content:
+                wrapper.append(child)
 
         return elem
 
@@ -1607,11 +1612,12 @@ class ECH0020BaseDeliveryRestrictedMoveInPerson(BaseModel):
             for child in healthInsuranceData_content:
                 healthInsuranceData_wrapper.append(child)
 
-        # 20. matrimonialInheritanceArrangementData (optional, eCH-0021/7)
+        # 20. matrimonialInheritanceArrangementData (optional) - wrapper in eCH-0020, content from eCH-0021
         if self.matrimonial_inheritance_arrangement_data:
-            self.matrimonial_inheritance_arrangement_data.to_xml(
-                parent=elem, namespace=ns_021
-            )
+            wrapper = ET.SubElement(elem, f'{{{namespace}}}matrimonialInheritanceArrangementData')
+            content = self.matrimonial_inheritance_arrangement_data.to_xml(namespace=ns_021)
+            for child in content:
+                wrapper.append(child)
 
         return elem
 
