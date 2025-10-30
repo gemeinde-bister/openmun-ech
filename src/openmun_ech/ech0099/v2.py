@@ -19,7 +19,8 @@ ARCHITECTURE: Pure Pydantic Model (Layer 1)
 """
 
 import xml.etree.ElementTree as ET
-from typing import Optional, List
+from pathlib import Path
+from typing import Optional, List, Union
 from datetime import date
 from pydantic import BaseModel, Field, field_validator
 
@@ -399,6 +400,96 @@ class ECH0099Delivery(BaseModel):
             general_data=general_data,
             version=version
         )
+
+    @classmethod
+    def from_file(cls, file_path: Union[str, Path]) -> 'ECH0099Delivery':
+        """Parse eCH-0099 delivery from XML file.
+
+        Convenience method that handles file I/O and delegates to from_xml().
+
+        Args:
+            file_path: Path to XML file (str or Path object)
+
+        Returns:
+            Parsed ECH0099Delivery model
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ET.ParseError: If XML is malformed
+            ValueError: If delivery structure is invalid
+
+        Example:
+            >>> delivery = ECH0099Delivery.from_file("statpop.xml")
+            >>> delivery = ECH0099Delivery.from_file(Path("/path/to/file.xml"))
+        """
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        return cls.from_xml(root)
+
+    def to_file(
+        self,
+        file_path: Union[str, Path],
+        encoding: str = 'utf-8',
+        xml_declaration: bool = True,
+        pretty_print: bool = True
+    ) -> None:
+        """Write eCH-0099 delivery to XML file.
+
+        Convenience method that handles XML serialization and file I/O.
+
+        Args:
+            file_path: Path to output XML file (str or Path object)
+            encoding: XML encoding (default 'utf-8')
+            xml_declaration: Include <?xml version="1.0"?> declaration (default True)
+            pretty_print: Format with indentation for readability (default True)
+
+        Example:
+            >>> delivery = ECH0099Delivery(...)
+            >>> delivery.to_file("statpop.xml")
+            >>> delivery.to_file(Path("/path/to/file.xml"))
+        """
+        # Convert to Path object for consistency
+        path = Path(file_path) if isinstance(file_path, str) else file_path
+
+        # Serialize to XML element
+        root = self.to_xml()
+
+        # Pretty print if requested
+        if pretty_print:
+            self._indent_xml(root)
+
+        # Create ElementTree and write to file
+        tree = ET.ElementTree(root)
+        tree.write(
+            path,
+            encoding=encoding,
+            xml_declaration=xml_declaration,
+            method='xml'
+        )
+
+    @staticmethod
+    def _indent_xml(elem: ET.Element, level: int = 0) -> None:
+        """Add whitespace for pretty-printing XML.
+
+        Modifies element tree in-place to add newlines and indentation.
+
+        Args:
+            elem: Element to indent
+            level: Current indentation level
+        """
+        indent = "\n" + "  " * level
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = indent + "  "
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = indent
+            for child in elem:
+                ECH0099Delivery._indent_xml(child, level + 1)
+            if not child.tail or not child.tail.strip():
+                child.tail = indent
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = indent
 
 
 # ============================================================================
