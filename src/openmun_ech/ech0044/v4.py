@@ -413,7 +413,7 @@ class ECH0044PersonIdentification(BaseModel):
 
         # Sex (required)
         sex_elem = ET.SubElement(elem, f'{{{namespace}}}sex')
-        sex_elem.text = self.sex
+        sex_elem.text = self.sex.value if hasattr(self.sex, 'value') else str(self.sex)
 
         # Date of birth (required)
         self.date_of_birth.to_xml(elem, namespace, 'dateOfBirth')
@@ -750,7 +750,7 @@ class ECH0044PersonIdentificationLight(BaseModel):
         # Sex (optional)
         if self.sex:
             sex_elem = ET.SubElement(elem, f'{{{namespace}}}sex')
-            sex_elem.text = self.sex
+            sex_elem.text = self.sex.value if hasattr(self.sex, 'value') else str(self.sex)
 
         # Date of birth (optional)
         if self.date_of_birth:

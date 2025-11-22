@@ -20,47 +20,54 @@ class MrMrs(str, Enum):
     Note: This type is defined in eCH-0010 but commonly used in eCH-0021
     personAdditionalData for salutation.
     """
-    MR = "1"           # Herr (Mr)
-    MRS = "2"          # Frau (Mrs)
+    MRS = "1"          # Frau (Mrs)
+    MR = "2"           # Herr (Mr)
 
 
 class TypeOfRelationship(str, Enum):
     """Type of relationship codes per eCH-0021.
 
     Used in marital relationships (codes 1-2) and parental relationships
-    (codes 3-10) to specify the nature of the relationship.
+    (codes 3-6) and guardian relationships (codes 7-10) to specify the nature of the relationship.
 
+    Source: eCH-0021 v8.1.0, Kapitel 3.1.9.4 (page 20)
     XSD: typeOfRelationshipType (restriction of xs:string)
+
+    Note: Code 8 (Beirat) is deprecated after 2013-01-01.
     """
     # Marital relationships (used in maritalRelationship)
-    MARRIED = "1"                          # Verheiratet
-    REGISTERED_PARTNERSHIP = "2"           # Eingetragene Partnerschaft
+    SPOUSE = "1"                           # ist Ehepartner (is spouse)
+    REGISTERED_PARTNER = "2"               # ist Partner in Eingetragener Partnerschaft (is registered partner)
 
     # Parental relationships (used in parentalRelationship)
-    FATHER = "3"                           # Vater
-    MOTHER = "4"                           # Mutter
-    ADOPTIVE_FATHER = "5"                  # Adoptivvater
-    ADOPTIVE_MOTHER = "6"                  # Adoptivmutter
+    MOTHER = "3"                           # ist Mutter (is mother)
+    FATHER = "4"                           # ist Vater (is father)
+    FOSTER_FATHER = "5"                    # ist Pflegevater (is foster father)
+    FOSTER_MOTHER = "6"                    # ist Pflegemutter (is foster mother)
 
     # Guardian relationships (used in guardianRelationship)
-    GUARDIAN_PERSON = "7"                  # Vormund (Person)
-    GUARDIAN_ORGANIZATION = "8"            # Vormund (Organisation)
-    LEGAL_REPRESENTATIVE = "9"             # Beistand
-    CURATOR = "10"                         # Kurator
+    LEGAL_ASSISTANT = "7"                  # ist Beistand (is legal assistant/guardian)
+    ADVISOR = "8"                          # ist Beirat (is advisor - deprecated after 2013)
+    GUARDIAN = "9"                         # ist Vormund (is guardian of minor)
+    HEALTHCARE_PROXY = "10"                # ist Vorsorgebeauftragter (is healthcare proxy)
 
 
 class CareType(str, Enum):
-    """Custody/care arrangement codes per eCH-0021.
+    """Parental authority codes per eCH-0021.
 
-    Used in parental relationships to specify custody arrangements.
+    Used in parental relationships to specify parental authority arrangements.
 
+    Source: eCH-0021 v8.1.0, Kapitel 3.1.9.7 (page 24)
     XSD: careType (restriction of xs:string)
+
+    Note: Code 1 is a legacy code for cases under old law where the distinction
+    between joint and sole custody had not yet been made.
     """
-    UNKNOWN = "0"                          # Unbekannt
-    JOINT_CUSTODY = "1"                    # Gemeinsame elterliche Sorge
-    SOLE_CUSTODY_MOTHER = "2"              # Obhut Mutter
-    SOLE_CUSTODY_FATHER = "3"              # Obhut Vater
-    OTHER = "4"                            # Andere
+    UNKNOWN = "0"                          # Nicht abgeklärt / unbekannt
+    LEGACY_PARENTAL_AUTHORITY = "1"        # Elterliche Sorge (legacy code for old law)
+    JOINT_PARENTAL_AUTHORITY = "2"         # Gemeinsame elterliche Sorge
+    SOLE_PARENTAL_AUTHORITY = "3"          # Alleinige elterliche Sorge
+    NO_PARENTAL_AUTHORITY = "4"            # Keine elterliche Sorge
 
 
 class KindOfEmployment(str, Enum):
@@ -68,13 +75,14 @@ class KindOfEmployment(str, Enum):
 
     Used in jobData to specify the kind of employment.
 
+    Source: eCH-0021 v8.1.0, Kapitel 3.1.8.1 (page 14)
     XSD: kindOfEmploymentType (restriction of xs:string)
     """
-    UNKNOWN = "0"                          # Unbekannt
-    EMPLOYED = "1"                         # Unselbständig erwerbstätig
-    SELF_EMPLOYED = "2"                    # Selbständig erwerbstätig
-    UNEMPLOYED = "3"                       # Arbeitslos
-    NOT_IN_LABOR_FORCE = "4"               # Nichterwerbspersonen
+    UNEMPLOYED = "0"                       # Erwerbslos
+    SELF_EMPLOYED = "1"                    # Selbstständig
+    EMPLOYED = "2"                         # Unselbstständig
+    PENSION_RECIPIENT = "3"                # AHV/IV-Bezüger (pension/disability recipient)
+    NOT_IN_LABOR_FORCE = "4"               # Nichterwerbsperson (housewife/-husband, students, etc.)
 
 
 class YesNo(str, Enum):
@@ -120,7 +128,7 @@ class DataLockType(str, Enum):
 
 
 # Backward compatibility constants
-RELATIONSHIP_MARRIED = TypeOfRelationship.MARRIED.value
-RELATIONSHIP_PARTNERSHIP = TypeOfRelationship.REGISTERED_PARTNERSHIP.value
+RELATIONSHIP_MARRIED = TypeOfRelationship.SPOUSE.value
+RELATIONSHIP_PARTNERSHIP = TypeOfRelationship.REGISTERED_PARTNER.value
 RELATIONSHIP_FATHER = TypeOfRelationship.FATHER.value
 RELATIONSHIP_MOTHER = TypeOfRelationship.MOTHER.value

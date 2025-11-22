@@ -66,7 +66,7 @@ class ECH0021PersonAdditionalData(BaseModel):
 
     mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Salutation: 1=Mr/Herr, 2=Mrs/Frau (eCH-0010 mrMrsType)"
+        description="Salutation: 1=Mrs/Frau, 2=Mr/Herr (eCH-0010 mrMrsType)"
     )
     title: Optional[str] = Field(
         None,
@@ -339,7 +339,7 @@ class ECH0021NameOfParent(BaseModel):
 
     type_of_relationship: Optional[TypeOfRelationship] = Field(
         None,
-        description="Type of relationship (3=father, 4=mother)"
+        description="Type of relationship (3=mother, 4=father)"
     )
     official_proof_of_name_of_parents_yes_no: Optional[bool] = Field(
         None,
@@ -350,8 +350,8 @@ class ECH0021NameOfParent(BaseModel):
     @classmethod
     def validate_parent_relationship(cls, v):
         """Validate that relationship type is father or mother."""
-        if v is not None and v not in [TypeOfRelationship.FATHER, TypeOfRelationship.MOTHER]:
-            raise ValueError(f"Parent relationship must be father (3) or mother (4), got {v}")
+        if v is not None and v not in [TypeOfRelationship.MOTHER, TypeOfRelationship.FATHER]:
+            raise ValueError(f"Parent relationship must be mother (3) or father (4), got {v}")
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
@@ -719,16 +719,16 @@ class ECH0021MaritalRelationship(BaseModel):
     partner: ECH0021Partner = Field(..., description="Partner information")
     type_of_relationship: TypeOfRelationship = Field(
         ...,
-        description="Type of marital relationship (1=married, 2=registered partnership)"
+        description="Type of marital relationship (1=spouse, 2=registered partner)"
     )
 
     @field_validator('type_of_relationship')
     @classmethod
     def validate_marital_relationship_type(cls, v: TypeOfRelationship) -> TypeOfRelationship:
-        """Validate that relationship type is married or registered partnership."""
-        if v not in (TypeOfRelationship.MARRIED, TypeOfRelationship.REGISTERED_PARTNERSHIP):
+        """Validate that relationship type is spouse or registered partner."""
+        if v not in (TypeOfRelationship.SPOUSE, TypeOfRelationship.REGISTERED_PARTNER):
             raise ValueError(
-                f"Marital relationship must be MARRIED (1) or REGISTERED_PARTNERSHIP (2), got: {v}"
+                f"Marital relationship must be SPOUSE (1) or REGISTERED_PARTNER (2), got: {v}"
             )
         return v
 
@@ -773,7 +773,7 @@ class ECH0021ParentalRelationship(BaseModel):
     partner: ECH0021Partner = Field(..., description="Parent information")
     type_of_relationship: TypeOfRelationship = Field(
         ...,
-        description="Type of parental relationship (3=father, 4=mother, 5=adoptive father, 6=adoptive mother)"
+        description="Type of parental relationship (3=mother, 4=father, 5=foster father, 6=foster mother)"
     )
     care: CareType = Field(
         ...,
@@ -785,14 +785,14 @@ class ECH0021ParentalRelationship(BaseModel):
     def validate_parental_relationship_type(cls, v: TypeOfRelationship) -> TypeOfRelationship:
         """Validate that relationship type is a parental one."""
         parental_types = (
-            TypeOfRelationship.FATHER,
             TypeOfRelationship.MOTHER,
-            TypeOfRelationship.ADOPTIVE_FATHER,
-            TypeOfRelationship.ADOPTIVE_MOTHER
+            TypeOfRelationship.FATHER,
+            TypeOfRelationship.FOSTER_FATHER,
+            TypeOfRelationship.FOSTER_MOTHER
         )
         if v not in parental_types:
             raise ValueError(
-                f"Parental relationship must be FATHER, MOTHER, ADOPTIVE_FATHER, or ADOPTIVE_MOTHER, got: {v}"
+                f"Parental relationship must be MOTHER (3), FATHER (4), FOSTER_FATHER (5), or FOSTER_MOTHER (6), got: {v}"
             )
         return v
 
@@ -966,7 +966,7 @@ class ECH0021GuardianRelationship(BaseModel):
 
     type_of_relationship: TypeOfRelationship = Field(
         ...,
-        description="Type of guardian relationship (7=person, 8=organization, 9=representative, 10=curator)"
+        description="Type of guardian relationship (7=legal assistant, 8=advisor, 9=guardian, 10=healthcare proxy)"
     )
 
     guardian_measure_info: ECH0021GuardianMeasureInfo = Field(
@@ -987,15 +987,15 @@ class ECH0021GuardianRelationship(BaseModel):
         XSD restriction (lines 158-163): Only values 7, 8, 9, 10 allowed.
         """
         guardian_types = (
-            TypeOfRelationship.GUARDIAN_PERSON,           # 7
-            TypeOfRelationship.GUARDIAN_ORGANIZATION,     # 8
-            TypeOfRelationship.LEGAL_REPRESENTATIVE,      # 9
-            TypeOfRelationship.CURATOR                    # 10
+            TypeOfRelationship.LEGAL_ASSISTANT,           # 7
+            TypeOfRelationship.ADVISOR,                   # 8
+            TypeOfRelationship.GUARDIAN,                  # 9
+            TypeOfRelationship.HEALTHCARE_PROXY           # 10
         )
         if v not in guardian_types:
             raise ValueError(
-                f"Guardian relationship must be GUARDIAN_PERSON (7), GUARDIAN_ORGANIZATION (8), "
-                f"LEGAL_REPRESENTATIVE (9), or CURATOR (10), got: {v}"
+                f"Guardian relationship must be LEGAL_ASSISTANT (7), ADVISOR (8), "
+                f"GUARDIAN (9), or HEALTHCARE_PROXY (10), got: {v}"
             )
         return v
 

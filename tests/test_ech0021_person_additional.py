@@ -247,7 +247,7 @@ def test_name_of_parent_invalid_relationship():
         ECH0021NameOfParent(
             first_name="Test",
             official_name="Test",
-            type_of_relationship=TypeOfRelationship.MARRIED  # Invalid for parent
+            type_of_relationship=TypeOfRelationship.SPOUSE  # Invalid for parent
         )
 
 
@@ -403,14 +403,14 @@ def test_marital_relationship():
 
     relationship = ECH0021MaritalRelationship(
         partner=partner,
-        type_of_relationship=TypeOfRelationship.MARRIED
+        type_of_relationship=TypeOfRelationship.SPOUSE
     )
 
     xml = relationship.to_xml()
     roundtrip = ECH0021MaritalRelationship.from_xml(xml)
 
     assert roundtrip.partner.person_identification.official_name == "Schmidt"
-    assert roundtrip.type_of_relationship == TypeOfRelationship.MARRIED
+    assert roundtrip.type_of_relationship == TypeOfRelationship.SPOUSE
 
 
 def test_parental_relationship():
@@ -436,7 +436,7 @@ def test_parental_relationship():
     relationship = ECH0021ParentalRelationship(
         partner=partner,
         type_of_relationship=TypeOfRelationship.FATHER,
-        care=CareType.JOINT_CUSTODY
+        care=CareType.JOINT_PARENTAL_AUTHORITY
     )
 
     xml = relationship.to_xml()
@@ -444,7 +444,7 @@ def test_parental_relationship():
 
     assert roundtrip.partner.person_identification.official_name == "Müller"
     assert roundtrip.type_of_relationship == TypeOfRelationship.FATHER
-    assert roundtrip.care == CareType.JOINT_CUSTODY
+    assert roundtrip.care == CareType.JOINT_PARENTAL_AUTHORITY
 
 
 # ============================================================================
@@ -514,7 +514,7 @@ def test_guardian_measure_info_invalid_article():
 
 
 def test_guardian_relationship_person_guardian():
-    """Test guardian relationship with person as guardian."""
+    """Test guardian relationship with legal assistant (Beistand)."""
     local_id = ECH0044NamedPersonId(
         person_id_category="MU.6172",
         person_id="200"
@@ -537,9 +537,9 @@ def test_guardian_relationship_person_guardian():
     relationship = ECH0021GuardianRelationship(
         guardian_relationship_id="GUARD-001",
         person_identification=person_id,
-        type_of_relationship=TypeOfRelationship.GUARDIAN_PERSON,
+        type_of_relationship=TypeOfRelationship.LEGAL_ASSISTANT,
         guardian_measure_info=measure_info,
-        care=CareType.SOLE_CUSTODY_MOTHER
+        care=CareType.SOLE_PARENTAL_AUTHORITY
     )
 
     xml = relationship.to_xml()
@@ -548,13 +548,13 @@ def test_guardian_relationship_person_guardian():
     assert roundtrip.guardian_relationship_id == "GUARD-001"
     assert roundtrip.person_identification is not None
     assert roundtrip.person_identification.official_name == "Weber"
-    assert roundtrip.type_of_relationship == TypeOfRelationship.GUARDIAN_PERSON
+    assert roundtrip.type_of_relationship == TypeOfRelationship.LEGAL_ASSISTANT
     assert roundtrip.guardian_measure_info.based_on_law == ["398"]
-    assert roundtrip.care == CareType.SOLE_CUSTODY_MOTHER
+    assert roundtrip.care == CareType.SOLE_PARENTAL_AUTHORITY
 
 
 def test_guardian_relationship_organization_guardian():
-    """Test guardian relationship with organization as guardian (KESB)."""
+    """Test guardian relationship with advisor organization (deprecated)."""
     from openmun_ech.ech0011 import ECH0011PartnerIdOrganisation
 
     org_local_id = ECH0044NamedPersonId(
@@ -575,7 +575,7 @@ def test_guardian_relationship_organization_guardian():
     relationship = ECH0021GuardianRelationship(
         guardian_relationship_id="KESB-2024-001",
         partner_id_organisation=org,
-        type_of_relationship=TypeOfRelationship.GUARDIAN_ORGANIZATION,
+        type_of_relationship=TypeOfRelationship.ADVISOR,
         guardian_measure_info=measure_info
     )
 
@@ -585,7 +585,7 @@ def test_guardian_relationship_organization_guardian():
     assert roundtrip.guardian_relationship_id == "KESB-2024-001"
     assert roundtrip.partner_id_organisation is not None
     assert roundtrip.partner_id_organisation.local_person_id.person_id == "CHE123456789"
-    assert roundtrip.type_of_relationship == TypeOfRelationship.GUARDIAN_ORGANIZATION
+    assert roundtrip.type_of_relationship == TypeOfRelationship.ADVISOR
     assert "310" in roundtrip.guardian_measure_info.based_on_law
     assert "311" in roundtrip.guardian_measure_info.based_on_law
 
@@ -614,7 +614,7 @@ def test_guardian_relationship_invalid_type():
         ECH0021GuardianRelationship(
             guardian_relationship_id="GUARD-001",
             person_identification=person_id,
-            type_of_relationship=TypeOfRelationship.MARRIED,  # Invalid - not guardian type
+            type_of_relationship=TypeOfRelationship.SPOUSE,  # Invalid - not guardian type
             guardian_measure_info=measure_info
         )
 
@@ -652,7 +652,7 @@ def test_guardian_relationship_multiple_partner_types():
             guardian_relationship_id="GUARD-001",
             person_identification=person_id,
             partner_id_organisation=org,  # Both set - should fail
-            type_of_relationship=TypeOfRelationship.GUARDIAN_PERSON,
+            type_of_relationship=TypeOfRelationship.LEGAL_ASSISTANT,
             guardian_measure_info=measure_info
         )
 
@@ -681,14 +681,14 @@ def test_guardian_relationship_legal_representative():
     relationship = ECH0021GuardianRelationship(
         guardian_relationship_id="REP-2024-005",
         person_identification=person_id,
-        type_of_relationship=TypeOfRelationship.LEGAL_REPRESENTATIVE,
+        type_of_relationship=TypeOfRelationship.GUARDIAN,
         guardian_measure_info=measure_info
     )
 
     xml = relationship.to_xml()
     roundtrip = ECH0021GuardianRelationship.from_xml(xml)
 
-    assert roundtrip.type_of_relationship == TypeOfRelationship.LEGAL_REPRESENTATIVE
+    assert roundtrip.type_of_relationship == TypeOfRelationship.GUARDIAN
     assert roundtrip.person_identification.first_name == "Thomas"
 
 
@@ -716,14 +716,14 @@ def test_guardian_relationship_curator():
     relationship = ECH0021GuardianRelationship(
         guardian_relationship_id="CUR-2024-012",
         person_identification=person_id,
-        type_of_relationship=TypeOfRelationship.CURATOR,
+        type_of_relationship=TypeOfRelationship.HEALTHCARE_PROXY,
         guardian_measure_info=measure_info
     )
 
     xml = relationship.to_xml()
     roundtrip = ECH0021GuardianRelationship.from_xml(xml)
 
-    assert roundtrip.type_of_relationship == TypeOfRelationship.CURATOR
+    assert roundtrip.type_of_relationship == TypeOfRelationship.HEALTHCARE_PROXY
     assert roundtrip.guardian_relationship_id == "CUR-2024-012"
 
 

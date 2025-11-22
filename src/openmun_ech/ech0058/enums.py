@@ -16,34 +16,34 @@ from enum import Enum
 class ActionType(str, Enum):
     """Message action type codes per eCH-0058.
 
-    Specifies the action to be performed with the message.
+    Specifies the action/purpose of the message exchange.
     This enum is identical in both v4 and v5 of eCH-0058.
 
+    Source: eCH-0058 v5.1.0, Kapitel 2.4.1 (pages 11-12)
     XSD: actionType (restriction of xs:string with enumeration)
 
     Values:
-    - 1: Create/Insert (Erstellen/Einfügen)
-    - 3: Modify/Update (Ändern/Aktualisieren)
-    - 4: Cancel (Annulieren)
-    - 5: Close (Schliessen)
-    - 6: Reactivate (Reaktivieren)
-    - 8: Send (Senden)
-    - 9: Change (Wechseln)
-    - 10: Confirm (Bestätigen)
-    - 12: Request (Anfragen)
+    - 1: New (neu) - First time delivery of data
+    - 3: Recall (Widerruf) - Revoke incorrectly delivered message
+    - 4: Correction (Korrektur) - Correct already sent but incorrect data
+    - 5: Request (Anfrage) - Explicitly request data from sender
+    - 6: Response (Antwort) - Send data requested via "5"
+    - 8: Negative Report (negative Quittung) - Error response message
+    - 9: Positive Report (positive Quittung) - Success/acknowledgment response
+    - 10: Forward (Weiterleitung) - Forward data to another recipient
+    - 12: Reminder (Mahnung) - Reminder for outstanding deliveries
     """
-    CREATE = "1"              # Erstellen/Einfügen
-    MODIFY = "3"              # Ändern/Aktualisieren
-    CANCEL = "4"              # Annulieren
-    CLOSE = "5"               # Schliessen
-    REACTIVATE = "6"          # Reaktivieren
-    SEND = "8"                # Senden
-    CHANGE = "9"              # Wechseln
-    CONFIRM = "10"            # Bestätigen
-    REQUEST = "12"            # Anfragen
+    NEW = "1"                 # neu (new) - First delivery
+    RECALL = "3"              # Widerruf (recall) - Revoke incorrect message
+    CORRECTION = "4"          # Korrektur (correction) - Correct sent data
+    REQUEST = "5"             # Anfrage (request) - Request data
+    RESPONSE = "6"            # Antwort (response) - Response to request
+    NEGATIVE_REPORT = "8"     # negative Quittung (negative report) - Error
+    POSITIVE_REPORT = "9"     # positive Quittung (positive report) - Success
+    FORWARD = "10"            # Weiterleitung (forward) - Forward data
+    REMINDER = "12"           # Mahnung (reminder) - Reminder
 
 
 # Backward compatibility constants
-ACTION_CREATE = ActionType.CREATE.value
-ACTION_MODIFY = ActionType.MODIFY.value
-ACTION_SEND = ActionType.SEND.value
+ACTION_CREATE = ActionType.NEW.value  # Old name was CREATE, now NEW
+ACTION_NEW = ActionType.NEW.value

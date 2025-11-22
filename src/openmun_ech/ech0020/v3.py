@@ -38,6 +38,9 @@ from typing import Optional, List, Union, Literal
 from datetime import date
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
+# XSD validation (Zero-Tolerance Policy #5: No Schema Violations)
+from openmun_ech.utils.schema_cache import validate_xml_cached
+
 # eCH-0020 v3.0 namespace constant
 NAMESPACE_ECH0020_V3 = 'http://www.ech.ch/xmlns/eCH-0020/3'
 NAMESPACE_ECH0011_V8 = 'http://www.ech.ch/xmlns/eCH-0011/8'
@@ -11234,6 +11237,10 @@ class ECH0020Delivery(BaseModel):
                 event_name = event_type[12:]
                 event_name = event_name[0].lower() + event_name[1:]
                 self.event.to_xml(parent=elem, namespace=namespace, element_name=event_name)
+
+        # Zero-Tolerance Policy #5: No Schema Violations
+        # Always validate exported XML against official eCH XSD schemas
+        validate_xml_cached(elem, schema_name='eCH-0020-3-0.xsd', raise_on_error=True)
 
         return elem
 

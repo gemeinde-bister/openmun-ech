@@ -20,15 +20,15 @@ class TestActionType:
 
     def test_valid_actions(self):
         """Test all valid action values."""
-        assert ActionType.CREATE.value == "1"
-        assert ActionType.MODIFY.value == "3"
-        assert ActionType.CANCEL.value == "4"
-        assert ActionType.CLOSE.value == "5"
-        assert ActionType.REACTIVATE.value == "6"
-        assert ActionType.SEND.value == "8"
-        assert ActionType.CHANGE.value == "9"
-        assert ActionType.CONFIRM.value == "10"
-        assert ActionType.REQUEST.value == "12"
+        assert ActionType.NEW.value == "1"
+        assert ActionType.RECALL.value == "3"
+        assert ActionType.CORRECTION.value == "4"
+        assert ActionType.REQUEST.value == "5"
+        assert ActionType.RESPONSE.value == "6"
+        assert ActionType.NEGATIVE_REPORT.value == "8"
+        assert ActionType.POSITIVE_REPORT.value == "9"
+        assert ActionType.FORWARD.value == "10"
+        assert ActionType.REMINDER.value == "12"
 
     def test_total_count(self):
         """Test we have all 9 action types."""
@@ -380,7 +380,7 @@ class TestECH0058Header:
                 product_version="1.0.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True
         )
         assert header.sender_id == "sedex://T1-CH01-1"
@@ -418,7 +418,7 @@ class TestECH0058Header:
             initial_message_date=datetime(2025, 10, 20, 10, 0, 0),
             event_date=date(2025, 10, 25),
             modification_date=date(2025, 10, 24),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             response_expected=True,
             business_case_closed=False,
@@ -446,7 +446,7 @@ class TestECH0058Header:
                     product_version="1.0"
                 ),
                 message_date=datetime.now(),
-                action=ActionType.SEND,
+                action=ActionType.NEW,
                 test_delivery_flag=True
             )
 
@@ -462,7 +462,7 @@ class TestECH0058Header:
                 product_version="1.0.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True
         )
 
@@ -474,7 +474,7 @@ class TestECH0058Header:
         assert elem.find(f'{ns}senderId').text == "sedex://T1-CH01-1"
         assert elem.find(f'{ns}messageId').text == "msg-123"
         assert elem.find(f'{ns}messageType').text == "http://www.ech.ch/xmlns/eCH-0020/3"
-        assert elem.find(f'{ns}action').text == "8"
+        assert elem.find(f'{ns}action').text == "1"
         assert elem.find(f'{ns}testDeliveryFlag').text == "true"
 
     def test_to_xml_with_metadata(self):
@@ -489,7 +489,7 @@ class TestECH0058Header:
                 product_version="1.0.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             named_meta_data=[
                 ECH0058NamedMetaData(meta_data_name="key1", meta_data_value="value1"),
@@ -516,7 +516,7 @@ class TestECH0058Header:
                 product_version="1.0.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True
         )
 
@@ -542,7 +542,7 @@ class TestECH0058Header:
                 product_version="1.0.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             subject="Test",
             comment="Test comment",
@@ -581,7 +581,7 @@ class TestECH0058Header:
                 product_version="1.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[attachment]
         )
@@ -608,7 +608,7 @@ class TestECH0058Header:
                 product_version="1.0"
             ),
             message_date=datetime.now(),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[
                 AnyXMLContent.from_element(attach1),
@@ -636,7 +636,7 @@ class TestECH0058Header:
                 product_version="1.0"
             ),
             message_date=datetime.now(),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             extension=extension
         )
@@ -662,7 +662,7 @@ class TestECH0058Header:
                 product_version="1.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[AnyXMLContent.from_element(attach_elem)]
         )
@@ -695,7 +695,7 @@ class TestECH0058Header:
                 product_version="1.0"
             ),
             message_date=datetime(2025, 10, 25, 14, 30, 0),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             extension=AnyXMLContent.from_element(ext_elem)
         )
@@ -726,7 +726,7 @@ class TestECH0058Header:
                 product_version="1.0"
             ),
             message_date=datetime.now(),
-            action=ActionType.SEND,
+            action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[AnyXMLContent.from_element(attach)],
             extension=AnyXMLContent.from_element(ext)

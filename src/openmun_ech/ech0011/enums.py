@@ -1,11 +1,9 @@
-"""eCH-0011 v8 Standard Code Enumerations.
+"""eCH-0011 Standard Code Enumerations (aligned with v9.0.0 PDF).
 
-Official codes defined in eCH-0011-8-1.xsd and used throughout
-the Swiss e-government person data standard.
+Official codes used throughout the Swiss e-government person data standard.
 
-Standard: eCH-0011 v8.1
-XSD: eCH-0011-8-1.xsd
-Namespace: http://www.ech.ch/xmlns/eCH-0011/8
+Primary reference: eCH-0011 v9.0.0 PDF for code lists (e.g., religion).
+Namespace (models in v8 module): http://www.ech.ch/xmlns/eCH-0011/8
 Source: https://www.ech.ch/de/standards/60021
 """
 
@@ -23,35 +21,21 @@ class Sex(str, Enum):
 
 
 class ReligionCode(str, Enum):
-    """Religion codes per eCH-0011 religionType.
+    """Religion codes per eCH-0011 religionType (v9.0.0 PDF list).
 
-    Based on BFS religion code catalog. The XSD allows 3-6 digit codes.
+    Source: eCH-0011 v9.0.0, 3.3.4.1 "religion – Konfessionszugehörigkeit" (Seite 21)
+    For deliveries to BFS, only these codes are permitted. Other contexts
+    may exchange additional BFS codes, but they are not listed here.
 
-    XSD: religionType (pattern: \\d{3,6})
-    Source: BFS religion codes
+    XSD: religionType (restriction of xs:string)
     """
-    UNKNOWN = "000"
-
-    # Christian denominations (1xx)
-    PROTESTANT_REFORMED = "111"           # Evangelisch-reformiert
-    ROMAN_CATHOLIC = "121"                # Römisch-katholisch
-    CHRIST_CATHOLIC = "122"               # Christkatholisch / Old Catholic
-    OLD_CATHOLIC = "123"                  # Altkatholisch
-
-    # Other world religions (2xx)
-    JEWISH = "211"                        # Jüdische Glaubensgemeinschaft
-    ISLAMIC = "212"                       # Islamische Glaubensgemeinschaft
-    BUDDHIST = "213"                      # Buddhistische Gemeinschaft
-    HINDU = "214"                         # Hinduistische Gemeinschaft
-
-    # Evangelical and free churches (3xx)
-    EVANGELICAL_METHODIST = "301"         # Evangelisch-methodistische Kirche
-
-    # No religious affiliation (7xx)
-    NO_AFFILIATION = "711"                # Konfessionslos
-
-    # Note: XSD allows up to 6-digit codes for detailed denominations
-    # Add additional codes as needed from BFS catalog
+    PROTESTANT_REFORMED = "111"                   # evangelisch-reformierte (protestantische) Kirche
+    ROMAN_CATHOLIC = "121"                        # römisch-katholische Kirche
+    CHRIST_CATHOLIC = "1221"                      # christkatholische / altkatholische Kirche
+    JEWISH_COMMUNITY = "2112"                     # israelitische Gemeinschaft / jüdische Glaubensgemeinschaft
+    ISRAELITISCHE_CULTUSGEMEINDE = "2112013"     # Israelitische Cultusgemeinde
+    JEWISH_LIBERAL_COMMUNITY = "2113014"         # Jüdisch Liberale Gemeinde
+    UNKNOWN = "000"                               # Unbekannt
 
 
 class MaritalStatus(str, Enum):
@@ -106,15 +90,17 @@ CancelationReason = PartnershipAbolition
 
 
 class NationalityStatus(str, Enum):
-    """Nationality status codes per eCH-0011.
+    """Nationality status codes per eCH-0011 v9.0.0.
 
-    Indicates whether a person is Swiss or holds a foreign residence permit.
+    Indicates whether nationality is known, NOT whether person is Swiss or foreign.
+    Actual citizenship is determined by presence of placeOfOriginInfo (Swiss) vs residencePermitData (foreign).
 
+    Source: eCH-0011 v9.0.0, Kapitel 3.3.6.1
     XSD: nationalityStatusType (restriction of xs:string)
     """
-    SWISS = "0"                           # Schweizer/in
-    FOREIGN_C_PERMIT = "1"                # Ausländer/in mit Niederlassungsbewilligung C
-    FOREIGN_RESIDENCE_PERMIT = "2"        # Ausländer/in mit anderer Bewilligung (B, L, etc.)
+    UNKNOWN = "0"                         # Staatsangehörigkeit unbekannt (Nationality unknown)
+    STATELESS = "1"                       # Staatenlos (Stateless)
+    KNOWN = "2"                           # Staatsangehörigkeit bekannt (Nationality known)
 
 
 class LanguageCode(str, Enum):
@@ -151,12 +137,13 @@ class TypeOfHousehold(str, Enum):
 
     Indicates the household structure type.
 
+    Source: eCH-0011 v9.0.0, Kapitel 3.4.5.5 (page 35)
     XSD: typeOfHouseholdType (restriction of xs:string)
     """
-    UNKNOWN = "0"                         # Unbekannt
-    SINGLE_HOUSEHOLD = "1"                # Einpersonenhaushalt
-    FAMILY_HOUSEHOLD = "2"                # Familienhaushalt
-    NON_FAMILY_HOUSEHOLD = "3"            # Nichtfamilienhaushalt (WG, etc.)
+    NOT_YET_ASSIGNED = "0"                # Haushaltsart noch nicht zugeteilt
+    PRIVATE_HOUSEHOLD = "1"               # Privathaushalt
+    COLLECTIVE_HOUSEHOLD = "2"            # Kollektivhaushalt
+    GROUP_HOUSEHOLD = "3"                 # Sammelhaushalt
 
 
 class FederalRegister(str, Enum):

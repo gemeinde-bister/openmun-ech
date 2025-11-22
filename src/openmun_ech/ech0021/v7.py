@@ -66,7 +66,7 @@ class ECH0021PersonAdditionalData(BaseModel):
 
     mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Salutation: 1=Mr/Herr, 2=Mrs/Frau (eCH-0010 mrMrsType)"
+        description="Salutation: 1=Mrs/Frau, 2=Mr/Herr (eCH-0010 mrMrsType)"
     )
     title: Optional[str] = Field(
         None,
@@ -323,7 +323,7 @@ class ECH0021NameOfParent(BaseModel):
 
     type_of_relationship: Optional[TypeOfRelationship] = Field(
         None,
-        description="Type of relationship (3=father, 4=mother)"
+        description="Type of relationship (3=mother, 4=father)"
     )
     official_proof_of_name_of_parents_yes_no: Optional[bool] = Field(
         None,
@@ -334,8 +334,8 @@ class ECH0021NameOfParent(BaseModel):
     @classmethod
     def validate_parent_relationship(cls, v):
         """Validate that relationship type is father or mother."""
-        if v is not None and v not in [TypeOfRelationship.FATHER, TypeOfRelationship.MOTHER]:
-            raise ValueError(f"Parent relationship must be father (3) or mother (4), got {v}")
+        if v is not None and v not in [TypeOfRelationship.MOTHER, TypeOfRelationship.FATHER]:
+            raise ValueError(f"Parent relationship must be mother (3) or father (4), got {v}")
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
@@ -347,7 +347,10 @@ class ECH0021NameOfParent(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        # Choice: full name OR firstName only OR officialName only
+        # XSD CHOICE: exactly one of three options:
+        # - firstName + officialName (both names known)
+        # - firstNameOnly (only first name known)
+        # - officialNameOnly (only official name known)
         if self.first_name and self.official_name:
             fn_elem = ET.SubElement(elem, f'{{{namespace}}}firstName')
             fn_elem.text = self.first_name
@@ -489,7 +492,7 @@ class ECH0021UIDStructure(BaseModel):
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
         cat_elem = ET.SubElement(elem, f'{{{namespace}}}uidOrganisationIdCategorie')
-        cat_elem.text = self.uid_organisation_id_categorie
+        cat_elem.text = self.uid_organisation_id_categorie.value  # Enum value: "CHE" or "ADM"
 
         id_elem = ET.SubElement(elem, f'{{{namespace}}}uidOrganisationId')
         id_elem.text = f"{self.uid_organisation_id:09d}"
@@ -739,16 +742,16 @@ class ECH0021MaritalRelationship(BaseModel):
     partner: ECH0021Partner = Field(..., description="Partner information")
     type_of_relationship: TypeOfRelationship = Field(
         ...,
-        description="Type of marital relationship (1=married, 2=registered partnership)"
+        description="Type of marital relationship (1=spouse, 2=registered partner)"
     )
 
     @field_validator('type_of_relationship')
     @classmethod
     def validate_marital_relationship_type(cls, v: TypeOfRelationship) -> TypeOfRelationship:
         """Validate that relationship type is married or registered partnership."""
-        if v not in (TypeOfRelationship.MARRIED, TypeOfRelationship.REGISTERED_PARTNERSHIP):
+        if v not in (TypeOfRelationship.SPOUSE, TypeOfRelationship.REGISTERED_PARTNER):
             raise ValueError(
-                f"Marital relationship must be MARRIED (1) or REGISTERED_PARTNERSHIP (2), got: {v}"
+                f"Marital relationship must be SPOUSE (1) or REGISTERED_PARTNER (2), got: {v}"
             )
         return v
 
@@ -809,7 +812,7 @@ class ECH0021ParentalRelationship(BaseModel):
     )
     type_of_relationship: TypeOfRelationship = Field(
         ...,
-        description="Type of parental relationship (3=father, 4=mother, 5=adoptive father, 6=adoptive mother)"
+        description="Type of parental relationship (3=mother, 4=father, 5=foster father, 6=foster mother)"
     )
     care: CareType = Field(
         ...,
@@ -821,14 +824,14 @@ class ECH0021ParentalRelationship(BaseModel):
     def validate_parental_relationship_type(cls, v: TypeOfRelationship) -> TypeOfRelationship:
         """Validate that relationship type is a parental one."""
         parental_types = (
-            TypeOfRelationship.FATHER,
             TypeOfRelationship.MOTHER,
-            TypeOfRelationship.ADOPTIVE_FATHER,
-            TypeOfRelationship.ADOPTIVE_MOTHER
+            TypeOfRelationship.FATHER,
+            TypeOfRelationship.FOSTER_FATHER,
+            TypeOfRelationship.FOSTER_MOTHER
         )
         if v not in parental_types:
             raise ValueError(
-                f"Parental relationship must be FATHER, MOTHER, ADOPTIVE_FATHER, or ADOPTIVE_MOTHER, got: {v}"
+                f"Parental relationship must be MOTHER (3), FATHER (4), FOSTER_FATHER (5), or FOSTER_MOTHER (6), got: {v}"
             )
         return v
 
@@ -1008,7 +1011,7 @@ class ECH0021GuardianRelationship(BaseModel):
 
     type_of_relationship: TypeOfRelationship = Field(
         ...,
-        description="Type of guardian relationship (7=person, 8=organization, 9=representative, 10=curator)"
+        description="Type of guardian relationship (7=legal assistant, 8=advisor, 9=guardian, 10=healthcare proxy)"
     )
 
     guardian_measure_info: ECH0021GuardianMeasureInfo = Field(
@@ -1029,15 +1032,15 @@ class ECH0021GuardianRelationship(BaseModel):
         XSD restriction (lines 158-163): Only values 7, 8, 9, 10 allowed.
         """
         guardian_types = (
-            TypeOfRelationship.GUARDIAN_PERSON,           # 7
-            TypeOfRelationship.GUARDIAN_ORGANIZATION,     # 8
-            TypeOfRelationship.LEGAL_REPRESENTATIVE,      # 9
-            TypeOfRelationship.CURATOR                    # 10
+            TypeOfRelationship.LEGAL_ASSISTANT,           # 7
+            TypeOfRelationship.ADVISOR,                   # 8
+            TypeOfRelationship.GUARDIAN,                  # 9
+            TypeOfRelationship.HEALTHCARE_PROXY           # 10
         )
         if v not in guardian_types:
             raise ValueError(
-                f"Guardian relationship must be GUARDIAN_PERSON (7), GUARDIAN_ORGANIZATION (8), "
-                f"LEGAL_REPRESENTATIVE (9), or CURATOR (10), got: {v}"
+                f"Guardian relationship must be LEGAL_ASSISTANT (7), ADVISOR (8), "
+                f"GUARDIAN (9), or HEALTHCARE_PROXY (10), got: {v}"
             )
         return v
 
@@ -1084,23 +1087,34 @@ class ECH0021GuardianRelationship(BaseModel):
             if self.person_identification:
                 self.person_identification.to_xml(
                     parent=partner_elem,
-                    element_name='personIdentification'
+                    element_name='personIdentification',
+                    wrapper_namespace=namespace
                 )
             elif self.person_identification_partner:
                 self.person_identification_partner.to_xml(
                     parent=partner_elem,
-                    element_name='personIdentificationPartner'
+                    element_name='personIdentificationPartner',
+                    wrapper_namespace=namespace
                 )
             elif self.partner_id_organisation:
-                # ECH0011PartnerIdOrganisation uses different signature
+                # ECH0011PartnerIdOrganisation uses wrapper_namespace parameter
+                # Wrapper element uses eCH-0021, content uses eCH-0011
                 self.partner_id_organisation.to_xml(
                     parent=partner_elem,
-                    tag='partnerIdOrganisation'
+                    tag='partnerIdOrganisation',
+                    wrapper_namespace=namespace  # Use eCH-0021 for wrapper element
                 )
 
             # address (optional, inside partner)
             if self.partner_address:
-                self.partner_address.to_xml(parent=partner_elem, namespace=namespace)
+                # Element name must be 'address' per eCH-0021 XSD (line 151)
+                # Wrapper element in eCH-0021 namespace, content in eCH-0010 v5
+                self.partner_address.to_xml(
+                    parent=partner_elem,
+                    element_name='address',
+                    wrapper_namespace=namespace  # eCH-0021 for wrapper
+                    # namespace parameter defaults to eCH-0010 v5 for content
+                )
 
         # typeOfRelationship (required)
         rel_elem = ET.SubElement(elem, f'{{{namespace}}}typeOfRelationship')
@@ -1138,22 +1152,24 @@ class ECH0021GuardianRelationship(BaseModel):
 
         if partner_elem is not None:
             # Try to find person identification (full)
-            person_id_elem = partner_elem.find('eCH-0044:personIdentification', ns)
+            person_id_elem = partner_elem.find('eCH-0021:personIdentification', ns)
             if person_id_elem is not None:
                 person_identification = ECH0044PersonIdentification.from_xml(person_id_elem)
 
             # Try to find person identification (light/partner)
-            person_partner_elem = partner_elem.find('eCH-0044:personIdentificationPartner', ns)
+            person_partner_elem = partner_elem.find('eCH-0021:personIdentificationPartner', ns)
             if person_partner_elem is not None:
                 person_identification_partner = ECH0044PersonIdentificationLight.from_xml(person_partner_elem)
 
             # Try to find organization
-            org_elem = partner_elem.find('eCH-0011:partnerIdOrganisation', ns)
+            # Note: wrapper element is in eCH-0021 namespace, content in eCH-0011
+            org_elem = partner_elem.find('eCH-0021:partnerIdOrganisation', ns)
             if org_elem is not None:
                 partner_id_organisation = ECH0011PartnerIdOrganisation.from_xml(org_elem)
 
             # Try to find address (inside partner)
-            addr_elem = partner_elem.find('eCH-0010:address', {'eCH-0010': 'http://www.ech.ch/xmlns/eCH-0010/6'})
+            # Note: wrapper element 'address' is in eCH-0021 namespace, content in eCH-0010 v5
+            addr_elem = partner_elem.find('eCH-0021:address', ns)
             if addr_elem is not None:
                 partner_address = ECH0010MailAddress.from_xml(addr_elem)
 

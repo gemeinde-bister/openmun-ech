@@ -22,7 +22,7 @@ from enum import Enum
 from typing import Optional
 
 from lxml import etree
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ResidencePermitCategoryType(str, Enum):
@@ -114,7 +114,7 @@ class InhabitantControlType(str, Enum):
     N_ASYLUM = "0804"  # 08 + 04
     S_PROTECTION = "0905"  # 09 + 05
     MANDATORY_REG = "1006"  # 10 + 06
-    DIPLOMAT_IMMUNITY = "1108"  # 11 + 08 (note: spec shows 1107, XSD shows 1108)
+    DIPLOMAT_IMMUNITY = "1107"  # 11 + 07 per eCH-0006 v1.0.1 (1108 replaced by 1107)
     INTL_NO_IMMUNITY = "1208"  # 12 + 08
     NOT_ASSIGNED = "1300"  # 13 + 00
 
@@ -328,11 +328,11 @@ class PermitRoot(BaseModel):
     residence_permit_detailed_type: Optional[ResidencePermitDetailedType] = None
     residence_permit_to_be_registered_type: Optional[ResidencePermitToBeRegisteredType] = None
 
-    class Config:
-        """Pydantic configuration."""
-        str_strip_whitespace = True
-        validate_assignment = True
-        use_enum_values = False  # Keep enum objects, not string values
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        use_enum_values=False,  # Keep enum objects, not string values
+    )
 
     def to_xml(self, nsmap: Optional[dict] = None) -> etree.Element:
         """Convert to XML element.

@@ -1,10 +1,14 @@
 # OpenMun eCH Models Library
 
-A comprehensive Python implementation of Swiss e-government (eCH) standards for municipal administration systems.
+A Python implementation of Swiss e-government (eCH) standards for municipal administration systems.
 
 ## Overview
 
-This library provides Pydantic-based models for various eCH standards used in Swiss e-government communications, with a focus on municipal population registry (Einwohnerregister) data exchange.
+This library provides Pydantic-based models for eCH standards used in Swiss e-government communications, with a focus on municipal population registry (Einwohnerregister) data exchange.
+
+The library offers two APIs:
+- **Layer 2** (Simplified): For creating new eCH-0020 deliveries from application data
+- **Layer 1** (XSD-compliant): For parsing and processing production XML files
 
 ## Implemented Standards
 
@@ -21,11 +25,13 @@ This library provides Pydantic-based models for various eCH standards used in Sw
 
 ## Features
 
-- **100% Pydantic Validation**: All XML serialization/deserialization through type-safe Pydantic models
+- **Two-Layer API**: Simplified Layer 2 for creating deliveries, XSD-compliant Layer 1 for parsing
+- **Pydantic Validation**: Type-safe serialization and deserialization
 - **Zero Data Loss**: Production-tested with real government XML files
 - **XSD Compliance**: Full compliance with official eCH XSD schemas
-- **Comprehensive Testing**: 456+ passing tests including production data roundtrip validation
+- **Comprehensive Testing**: 700+ tests including production data roundtrip validation
 - **Namespace Handling**: Proper cross-schema composition with namespace management
+ - **Optional Swiss Data Validation (warnings-only)**: Postal code ↔ town, municipality BFS, canton code, street name, cross-field checks, and religion code audit
 
 ## Installation
 
@@ -33,31 +39,160 @@ This library provides Pydantic-based models for various eCH standards used in Sw
 pip install -e .
 ```
 
-## Usage
+## Quick Start (Layer 2)
+
+For creating new eCH-0020 deliveries from application data:
+
+```python
+from datetime import date
+from openmun_ech.ech0020 import (
+    BaseDeliveryPerson,
+    BaseDeliveryEvent,
+    DeliveryConfig,
+    ResidenceType,
+    PlaceType,
+)
+
+# 1. Load your deployment configuration (from YAML, environment, etc.)
+config = DeliveryConfig(
+    sender_id="1-6172-1",              # Your sedex sender ID
+    manufacturer="Your Company",
+    product="Your Application",
+    product_version="1.0.0",
+    test_delivery_flag=True,           # Test vs production
+)
+
+# 2. Create person data from your database/forms
+person = BaseDeliveryPerson(
+    local_person_id="12345",
+    local_person_id_category="MU.6172",  # Format: MU.{your_bfs_number}
+    official_name="Müller",
+    first_name="Anna",
+    sex="2",
+    date_of_birth=date(1985, 3, 15),
+    birth_place_type=PlaceType.SWISS,
+    birth_municipality_bfs="261",        # Zürich
+    birth_municipality_name="Zürich",
+    religion="111",                      # Roman Catholic
+    marital_status="1",                  # Unmarried
+    nationality_status="1",              # Swiss
+    data_lock="0",                       # No lock
+    places_of_origin=[{"bfs_code": "6172", "name": "Bister", "canton": "VS"}],
+)
+
+# 3. Create delivery event
+event = BaseDeliveryEvent(
+    person=person,
+    residence_type=ResidenceType.MAIN,
+    reporting_municipality_bfs="6172",       # Your municipality
+    reporting_municipality_name="Bister",
+    arrival_date=date(2025, 1, 15),
+    dwelling_address={"town": "Bister", "swiss_zip_code": 3983, "type_of_household": "1"},
+)
+
+# 4. Finalize and export
+delivery = event.finalize(config)
+delivery.to_file("output.xml")
+```
+
+### Batch finalize (multi-person exports)
+
+- eCH-0020 baseDelivery (many persons in one message):
+
+```python
+from openmun_ech.finalize import finalize_0020_base
+
+events = [event1, event2, event3]
+delivery = finalize_0020_base(events, config)
+delivery.to_file("base_delivery.xml")
+```
+
+Note: For eCH-0020 you cannot mix different single event kinds (e.g., moveIn + moveOut) in one delivery; multi-message is only for baseDelivery.
+
+- eCH-0099 statistics (many reported persons in one message):
+
+```python
+from openmun_ech.finalize import finalize_0099
+
+delivery = finalize_0099([rp1, rp2], config)
+delivery.to_file("statpop.xml")
+```
+
+See `docs/QUICKSTART.md` for detailed examples and configuration management.
+
+### Optional Swiss Data Validation (warnings-only)
+
+You can request non-blocking validation against Swiss open data and standard code lists:
+
+```python
+ctx = person.validate_swiss_data()
+if ctx.has_warnings():
+    for w in ctx.warnings:
+        print(w)
+```
+
+Included checks (no exceptions are raised):
+- Postal code ↔ town consistency (Swiss postal database)
+- Municipality BFS existence
+- Canton code validity
+- Street name lookup and suggestions (Swiss street directory)
+- Cross-field checks (e.g., postal code vs municipality, street vs postal)
+- Religion code audit (warns if value not in eCH-0011 code list)
+
+Notes:
+- Validation uses in-memory caches and is fast after first load.
+- Works even if you pass strings for Layer 2 enum fields; models accept both strings and enum instances.
+
+## Production XML Parsing (Layer 1)
+
+For parsing and processing existing XML files from production systems:
 
 ```python
 from openmun_ech.ech0020.v3 import ECH0020Delivery
-from openmun_ech.ech0011.v8 import ECH0011Person
-import xml.etree.ElementTree as ET
 
-# Parse eCH-0020 delivery
-tree = ET.parse('delivery.xml')
-root = tree.getroot()
-delivery = ECH0020Delivery.from_xml(root)
+# Parse XML file
+delivery = ECH0020Delivery.from_file("delivery.xml")
 
-# Access person data
-if hasattr(delivery.event, 'base_delivery'):
-    for person in delivery.event.base_delivery.person:
-        print(f"Name: {person.name_data.official_name}")
-        print(f"VN: {person.identity_card.vn}")
+# Access delivery metadata
+print(f"Sender: {delivery.delivery_header.sender_id}")
+print(f"Message Type: {delivery.delivery_header.message_type}")
+
+# Handle different event types
+if isinstance(delivery.event, list):
+    # baseDelivery or keyExchange (list of events)
+    for event in delivery.event:
+        if hasattr(event, 'base_delivery_person'):
+            person = event.base_delivery_person
+            if person.person_identification:
+                print(f"Name: {person.person_identification.official_name}")
+                print(f"VN: {person.person_identification.vn}")
+else:
+    # Other event types (single event)
+    print(f"Event type: {type(delivery.event).__name__}")
 
 # Export back to XML
-exported = delivery.to_xml()
+delivery.to_file("output.xml")
 ```
+
+## When to Use Layer 2 vs Layer 1
+
+**Use Layer 2 when:**
+- Creating new eCH deliveries from application data
+- Constructing events from database records or user input
+- Simplifying integration with LLM-based data processing
+- Reducing code complexity (1-2 nesting levels vs 7 levels)
+
+**Use Layer 1 when:**
+- Parsing production XML files from other systems
+- Processing batch imports from canton/federal registries
+- Implementing XML validators or inspection tools
+- Accessing all XSD elements including rarely-used fields
+
+Both layers maintain zero data loss and full XSD compliance.
 
 ## Testing
 
-Run the comprehensive test suite:
+Run the complete test suite:
 
 ```bash
 pytest tests/ -v
@@ -67,7 +202,8 @@ Test specific standards:
 
 ```bash
 pytest tests/test_ech0020_*.py -v
-pytest tests/test_ech0099_roundtrip.py -v
+pytest tests/test_ech0099_*.py -v
+pytest tests/test_layer2*.py -v
 ```
 
 ## Production Validation
@@ -102,6 +238,13 @@ self.has_main_residence.to_xml(
 )
 ```
 
+## Documentation
+
+- **Quick Start Guide**: `docs/QUICKSTART.md` - Complete walkthrough for Layer 2
+- **API Reference**: `docs/API_REFERENCE.md` - Full API documentation
+- **Architecture**: `docs/TWO_LAYER_ARCHITECTURE_ROADMAP.md` - Implementation details
+- **Validation**: `docs/VALIDATION_LAYER_DESIGN.md` - Optional Swiss data validation
+
 ## License
 
 This library is part of the OpenMun project for Swiss municipal administration.
@@ -110,13 +253,13 @@ This library is part of the OpenMun project for Swiss municipal administration.
 
 ### Most Needed: Production XML Data
 
-We have validated this library against **19 eCH-0020 event types**, **eCH-0020 and eCH-0099 base deliveries** using 204 production files. However, **many event types remain untested** due to limited access to production data.
+We have validated this library against 19 eCH-0020 event types using 204 production files. However, many event types remain untested due to limited access to production data.
 
-**We urgently need:**
-- **Validation** using our roundtrip scripts against your live government data
-- **Temporary access to production XML files** from your municipality/canton
-- **Testing reports** from your environment with error details
-- **Bug reports** with anonymized XML samples
+**We need:**
+- Validation using our roundtrip scripts against your live government data
+- Temporary access to production XML files from your municipality/canton
+- Testing reports from your environment with error details
+- Bug reports with anonymized XML samples
 
 ### Development Guidelines
 

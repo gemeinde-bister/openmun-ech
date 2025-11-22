@@ -633,7 +633,7 @@ class ECH0011BirthData(BaseModel):
 
         # Sex (required)
         sex_elem = ET.SubElement(elem, f'{{{namespace}}}sex')
-        sex_elem.text = self.sex
+        sex_elem.text = self.sex.value if hasattr(self.sex, 'value') else str(self.sex)
 
         return elem
 
@@ -822,7 +822,7 @@ class ECH0011SeparationData(BaseModel):
         # Separation type (optional)
         if self.separation:
             sep_elem = ET.SubElement(elem, f'{{{namespace}}}separation')
-            sep_elem.text = self.separation
+            sep_elem.text = self.separation.value if hasattr(self.separation, 'value') else str(self.separation)
 
         # Valid from (optional)
         if self.separation_valid_from:
@@ -926,7 +926,7 @@ class ECH0011MaritalData(BaseModel):
 
         # Marital status (required)
         status_elem = ET.SubElement(elem, f'{{{namespace}}}maritalStatus')
-        status_elem.text = self.marital_status
+        status_elem.text = self.marital_status.value if hasattr(self.marital_status, 'value') else str(self.marital_status)
 
         # Date of marital status (optional)
         if self.date_of_marital_status:
@@ -936,7 +936,7 @@ class ECH0011MaritalData(BaseModel):
         # Cancelation reason (optional)
         if self.cancelation_reason:
             cancel_elem = ET.SubElement(elem, f'{{{namespace}}}cancelationReason')
-            cancel_elem.text = self.cancelation_reason
+            cancel_elem.text = self.cancelation_reason.value if hasattr(self.cancelation_reason, 'value') else str(self.cancelation_reason)
 
         # Official proof (optional)
         if self.official_proof_of_marital_status_yes_no is not None:
@@ -1306,7 +1306,7 @@ class ECH0011NationalityData(BaseModel):
 
         # Nationality status (required)
         status_elem = ET.SubElement(elem, f'{{{namespace}}}nationalityStatus')
-        status_elem.text = self.nationality_status
+        status_elem.text = self.nationality_status.value if hasattr(self.nationality_status, 'value') else str(self.nationality_status)
 
         # Country info list (optional, unbounded)
         for country_info in self.country_info:
@@ -1518,7 +1518,7 @@ class ECH0011ResidencePermitData(BaseModel):
 
         # Residence permit (required)
         permit_elem = ET.SubElement(elem, f'{{{namespace}}}residencePermit')
-        permit_elem.text = self.residence_permit
+        permit_elem.text = self.residence_permit.value if hasattr(self.residence_permit, 'value') else str(self.residence_permit)
 
         # Valid from (optional)
         if self.residence_permit_valid_from:
@@ -1765,13 +1765,15 @@ class ECH0011PartnerIdOrganisation(BaseModel):
     )
 
     def to_xml(self, parent: ET.Element, tag: str = "partnerIdOrganisation",
-               nsmap: Optional[Dict[str, str]] = None) -> ET.Element:
+               nsmap: Optional[Dict[str, str]] = None,
+               wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Convert to XML element.
 
         Args:
             parent: Parent XML element
             tag: Tag name for this element
-            nsmap: Namespace map (optional)
+            nsmap: Namespace map (optional, for backward compatibility)
+            wrapper_namespace: Namespace for wrapper element (overrides nsmap[None] if provided)
 
         Returns:
             Created XML element
@@ -1782,11 +1784,16 @@ class ECH0011PartnerIdOrganisation(BaseModel):
                 "eCH-0044": "http://www.ech.ch/xmlns/eCH-0044/4"
             }
 
-        elem = ET.SubElement(parent, f"{{{nsmap[None]}}}{tag}")
+        # Use wrapper_namespace for wrapper element if provided, otherwise use nsmap[None]
+        wrapper_ns = wrapper_namespace if wrapper_namespace is not None else nsmap[None]
+        # Content namespace always uses eCH-0011
+        content_ns = "http://www.ech.ch/xmlns/eCH-0011/8"
+
+        elem = ET.SubElement(parent, f"{{{wrapper_ns}}}{tag}")
 
         # Add local person ID (required)
         # The localPersonId element is in eCH-0011 namespace, but its children are in eCH-0044
-        local_elem = ET.SubElement(elem, f"{{{nsmap[None]}}}localPersonId")
+        local_elem = ET.SubElement(elem, f"{{{content_ns}}}localPersonId")
         category_elem = ET.SubElement(local_elem, f"{{{nsmap['eCH-0044']}}}personIdCategory")
         category_elem.text = self.local_person_id.person_id_category
         id_elem = ET.SubElement(local_elem, f"{{{nsmap['eCH-0044']}}}personId")
@@ -2377,7 +2384,7 @@ class ECH0011DwellingAddress(BaseModel):
 
         # Type of household (required)
         type_elem = ET.SubElement(elem, f'{{{namespace}}}typeOfHousehold')
-        type_elem.text = self.type_of_household
+        type_elem.text = str(self.type_of_household.value if hasattr(self.type_of_household, 'value') else self.type_of_household)
 
         # Moving date (optional)
         if self.moving_date:
@@ -3170,7 +3177,7 @@ class ECH0011Person(BaseModel):
 
         # Sex (required)
         sex_elem = ET.SubElement(elem, f'{{{ech0044_ns}}}sex')
-        sex_elem.text = person_id.sex
+        sex_elem.text = person_id.sex.value if hasattr(person_id.sex, 'value') else str(person_id.sex)
 
         # Date of birth (required)
         person_id.date_of_birth.to_xml(elem, ech0044_ns, 'dateOfBirth')

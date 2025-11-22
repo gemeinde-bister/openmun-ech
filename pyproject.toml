@@ -8,6 +8,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "lxml>=4.9.0",
     "pyyaml>=6.0.0",
+    "xmlschema>=2.0.0",
     "openmun-opendata>=0.1.0",
 ]
 
