@@ -3750,14 +3750,13 @@ class SecondaryResidenceInfo(BaseModel):
     When a person has main residence in one municipality, they can have
     0-n secondary residences in other municipalities.
 
-    This is a SIMPLE model (only 3 fields) for secondary residence list.
-
     Example:
         Person lives in Zürich (main), has vacation home in Davos (secondary):
         >>> sec = SecondaryResidenceInfo(
         ...     bfs="3851",
         ...     name="Davos",
-        ...     canton="GR"
+        ...     canton="GR",
+        ...     history_id="3851"
         ... )
     """
     bfs: str = Field(
@@ -3771,6 +3770,10 @@ class SecondaryResidenceInfo(BaseModel):
     canton: Optional[str] = Field(
         None,
         description="Canton abbreviation (e.g., 'ZH', 'BE', 'GR')"
+    )
+    history_id: Optional[str] = Field(
+        None,
+        description="Historical BFS number for merged municipalities"
     )
 
 
@@ -3940,18 +3943,32 @@ class DestinationInfo(BaseModel):
         ...     town="Berlin"
         ... )
 
-    Complete example with mail address:
+    Complete example with Swiss mail address:
         >>> dest = DestinationInfo(
         ...     place_type=PlaceType.SWISS,
         ...     municipality_bfs="261",
         ...     municipality_name="Zürich",
         ...     canton_abbreviation="ZH",
-        ...     # Optional mail address at destination
+        ...     # Optional mail address at destination (Swiss)
         ...     mail_address_street="Bahnhofstrasse",
         ...     mail_address_house_number="1",
         ...     mail_address_town="Zürich",
-        ...     mail_address_zip=8001,
+        ...     mail_address_swiss_zip_code=8001,
         ...     mail_address_country="CH"
+        ... )
+
+    Example with foreign mail address:
+        >>> dest = DestinationInfo(
+        ...     place_type=PlaceType.FOREIGN,
+        ...     country_iso="DE",
+        ...     country_name_short="Deutschland",
+        ...     town="Berlin",
+        ...     # Optional mail address at destination (foreign)
+        ...     mail_address_street="Beispielstrasse",
+        ...     mail_address_house_number="1",
+        ...     mail_address_town="Berlin",
+        ...     mail_address_foreign_zip_code="10115",
+        ...     mail_address_country="DE"
         ... )
 
     Layer 1 mapping: ECH0011DestinationType (CHOICE of unknown/swiss/foreign + mail_address)
@@ -4026,13 +4043,19 @@ class DestinationInfo(BaseModel):
         None,
         description="Mail address town at destination (optional)"
     )
-    mail_address_zip: Optional[int] = Field(
+    mail_address_swiss_zip_code: Optional[int] = Field(
         None,
-        description="Mail address ZIP code at destination (optional)"
+        le=9999,
+        description="Mail address Swiss ZIP code (4 digits, e.g., 8001)"
     )
-    mail_address_zip_addon: Optional[str] = Field(
+    mail_address_swiss_zip_code_addon: Optional[str] = Field(
         None,
-        description="Mail address ZIP add-on at destination (optional)"
+        description="Mail address Swiss ZIP add-on (e.g., '02')"
+    )
+    mail_address_foreign_zip_code: Optional[str] = Field(
+        None,
+        max_length=15,
+        description="Mail address foreign ZIP code (e.g., '65812' for Germany)"
     )
     mail_address_country: Optional[str] = Field(
         None,
@@ -4058,6 +4081,29 @@ class DestinationInfo(BaseModel):
                     "FOREIGN destination requires country_iso and country_name_short"
                 )
         # UNKNOWN requires no additional fields
+
+        return self
+
+    @model_validator(mode='after')
+    def validate_mail_address_zip_choice(self) -> 'DestinationInfo':
+        """Validate mail address ZIP code CHOICE: swiss XOR foreign.
+
+        Per eCH-0010 XSD: mail address can have either swiss_zip_code sequence
+        OR foreign_zip_code, but not both. Both can be omitted if no mail address.
+        """
+        has_swiss = self.mail_address_swiss_zip_code is not None
+        has_foreign = self.mail_address_foreign_zip_code is not None
+
+        if has_swiss and has_foreign:
+            raise ValueError(
+                "Cannot have both mail_address_swiss_zip_code and mail_address_foreign_zip_code"
+            )
+
+        # Swiss zip add-on only valid with Swiss zip code
+        if self.mail_address_swiss_zip_code_addon and not has_swiss:
+            raise ValueError(
+                "mail_address_swiss_zip_code_addon requires mail_address_swiss_zip_code"
+            )
 
         return self
 
@@ -4264,6 +4310,13 @@ class BaseDeliveryEvent(BaseModel):
         None,
         description=(
             "Reporting municipality canton abbreviation (e.g., 'ZH'). "
+            "Optional, only valid with reporting_municipality"
+        )
+    )
+    reporting_municipality_history_id: Optional[str] = Field(
+        None,
+        description=(
+            "Reporting municipality historical BFS number (for merged municipalities). "
             "Optional, only valid with reporting_municipality"
         )
     )
@@ -4566,7 +4619,7 @@ class BaseDeliveryEvent(BaseModel):
             foreign_country = country
             foreign_town = dest.town
 
-        # Convert optional mail address (9 fields → Layer 1)
+        # Convert optional mail address (Layer 2 flat fields → Layer 1 ECH0010AddressInformation)
         if any([
             dest.mail_address_address_line1,
             dest.mail_address_street,
@@ -4574,8 +4627,9 @@ class BaseDeliveryEvent(BaseModel):
             dest.mail_address_dwelling_number,
             dest.mail_address_locality,
             dest.mail_address_town,
-            dest.mail_address_zip,
-            dest.mail_address_zip_addon,
+            dest.mail_address_swiss_zip_code,
+            dest.mail_address_swiss_zip_code_addon,
+            dest.mail_address_foreign_zip_code,
             dest.mail_address_country
         ]):
             mail_address = ECH0010AddressInformation(
@@ -4586,8 +4640,9 @@ class BaseDeliveryEvent(BaseModel):
                 dwelling_number=dest.mail_address_dwelling_number,
                 locality=dest.mail_address_locality,
                 town=dest.mail_address_town,
-                swiss_zip_code=dest.mail_address_zip,
-                swiss_zip_code_add_on=dest.mail_address_zip_addon,
+                swiss_zip_code=dest.mail_address_swiss_zip_code,
+                swiss_zip_code_add_on=dest.mail_address_swiss_zip_code_addon,
+                foreign_zip_code=dest.mail_address_foreign_zip_code,
                 country=dest.mail_address_country
             )
 
@@ -4604,7 +4659,8 @@ class BaseDeliveryEvent(BaseModel):
         self,
         bfs: str,
         name: str,
-        canton: Optional[str]
+        canton: Optional[str],
+        history_id: Optional[str] = None
     ) -> ECH0007SwissMunicipality:
         """Convert reporting municipality fields (Layer 2) → ECH0007SwissMunicipality (Layer 1).
 
@@ -4612,6 +4668,7 @@ class BaseDeliveryEvent(BaseModel):
             bfs: BFS municipality number (e.g., '261' for Zürich)
             name: Municipality name (e.g., 'Zürich')
             canton: Optional canton abbreviation (e.g., 'ZH')
+            history_id: Optional historical BFS number for merged municipalities
 
         Returns:
             ECH0007SwissMunicipality: Layer 1 municipality
@@ -4619,7 +4676,8 @@ class BaseDeliveryEvent(BaseModel):
         return ECH0007SwissMunicipality(
             municipality_id=bfs,
             municipality_name=name,
-            canton_abbreviation=canton
+            canton_abbreviation=canton,
+            history_municipality_id=history_id
         )
 
     def _convert_secondary_residence_list(
@@ -4641,7 +4699,8 @@ class BaseDeliveryEvent(BaseModel):
             ECH0007SwissMunicipality(
                 municipality_id=sec.bfs,
                 municipality_name=sec.name,
-                canton_abbreviation=sec.canton
+                canton_abbreviation=sec.canton,
+                history_municipality_id=sec.history_id
             )
             for sec in secondary_list
         ]
@@ -4669,7 +4728,8 @@ class BaseDeliveryEvent(BaseModel):
             reporting_municipality = self._convert_reporting_municipality(
                 self.reporting_municipality_bfs,
                 self.reporting_municipality_name,
-                self.reporting_municipality_canton
+                self.reporting_municipality_canton,
+                self.reporting_municipality_history_id
             )
         elif self.federal_register:
             federal_register = FederalRegister(self.federal_register)
@@ -4716,7 +4776,8 @@ class BaseDeliveryEvent(BaseModel):
             reporting_municipality = self._convert_reporting_municipality(
                 self.reporting_municipality_bfs,
                 self.reporting_municipality_name,
-                self.reporting_municipality_canton
+                self.reporting_municipality_canton,
+                self.reporting_municipality_history_id
             )
         elif self.federal_register:
             federal_register = FederalRegister(self.federal_register)
@@ -4767,7 +4828,8 @@ class BaseDeliveryEvent(BaseModel):
             reporting_municipality = self._convert_reporting_municipality(
                 self.reporting_municipality_bfs,
                 self.reporting_municipality_name,
-                self.reporting_municipality_canton
+                self.reporting_municipality_canton,
+                self.reporting_municipality_history_id
             )
         elif self.federal_register:
             federal_register = FederalRegister(self.federal_register)
@@ -4979,15 +5041,16 @@ class BaseDeliveryEvent(BaseModel):
                 "unknown, swiss_municipality, or foreign_country"
             )
 
-        # Extract optional mail address (ECH0010AddressInformation → 9 flat fields)
+        # Extract optional mail address (ECH0010AddressInformation → flat fields)
         mail_address_address_line1 = None
         mail_address_street = None
         mail_address_house_number = None
         mail_address_dwelling_number = None
         mail_address_locality = None
         mail_address_town = None
-        mail_address_zip = None
-        mail_address_zip_addon = None
+        mail_address_swiss_zip_code = None
+        mail_address_swiss_zip_code_addon = None
+        mail_address_foreign_zip_code = None
         mail_address_country = None
 
         if dest.mail_address:
@@ -4998,14 +5061,10 @@ class BaseDeliveryEvent(BaseModel):
             mail_address_dwelling_number = addr.dwelling_number
             mail_address_locality = addr.locality
             mail_address_town = addr.town
-            # ZIP code: Use swiss_zip_code if present, else foreign_zip_code
-            # Note: ECH0010AddressInformation has CHOICE (swiss_zip_code XOR foreign_zip_code)
-            # Layer 2 uses single mail_address_zip field (int for Swiss, will need type change for foreign)
-            if addr.swiss_zip_code:
-                mail_address_zip = addr.swiss_zip_code
-            # Note: foreign_zip_code is string, but Layer 2 mail_address_zip is int
-            # This is a known limitation - foreign zip codes may be lost if non-numeric
-            mail_address_zip_addon = addr.swiss_zip_code_add_on
+            # ZIP code CHOICE: swiss_zip_code XOR foreign_zip_code
+            mail_address_swiss_zip_code = addr.swiss_zip_code
+            mail_address_swiss_zip_code_addon = addr.swiss_zip_code_add_on
+            mail_address_foreign_zip_code = addr.foreign_zip_code
             mail_address_country = addr.country
 
         # Construct flattened Layer 2 model
@@ -5025,31 +5084,33 @@ class BaseDeliveryEvent(BaseModel):
             mail_address_dwelling_number=mail_address_dwelling_number,
             mail_address_locality=mail_address_locality,
             mail_address_town=mail_address_town,
-            mail_address_zip=mail_address_zip,
-            mail_address_zip_addon=mail_address_zip_addon,
+            mail_address_swiss_zip_code=mail_address_swiss_zip_code,
+            mail_address_swiss_zip_code_addon=mail_address_swiss_zip_code_addon,
+            mail_address_foreign_zip_code=mail_address_foreign_zip_code,
             mail_address_country=mail_address_country
         )
 
     @staticmethod
     def _flatten_reporting_municipality(
         muni: 'ECH0007SwissMunicipality'
-    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
-        """Flatten ECH0007SwissMunicipality → reporting_municipality fields (3 strings).
+    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+        """Flatten ECH0007SwissMunicipality → reporting_municipality fields (4 strings).
 
         Extracts:
         - BFS municipality number
         - Municipality name
         - Canton abbreviation (enum → string conversion)
+        - History municipality ID (for merged municipalities)
 
         Args:
             muni: Layer 1 ECH0007SwissMunicipality model
 
         Returns:
-            Tuple of (bfs, name, canton) - all Optional[str]
+            Tuple of (bfs, name, canton, history_id) - all Optional[str]
 
         Pattern:
-            Layer 1: ECH0007SwissMunicipality (3 fields, 1 enum)
-            Layer 2: reporting_municipality_bfs, reporting_municipality_name, reporting_municipality_canton
+            Layer 1: ECH0007SwissMunicipality (4 fields, 1 enum)
+            Layer 2: reporting_municipality_bfs, reporting_municipality_name, reporting_municipality_canton, reporting_municipality_history_id
 
         Phase: 2.2.11
         """
@@ -5057,8 +5118,9 @@ class BaseDeliveryEvent(BaseModel):
         name = muni.municipality_name
         # Convert canton enum to string if present
         canton = muni.canton_abbreviation.value if muni.canton_abbreviation else None
+        history_id = muni.history_municipality_id
 
-        return (bfs, name, canton)
+        return (bfs, name, canton, history_id)
 
     @staticmethod
     def _flatten_secondary_residence_list(
@@ -5066,7 +5128,7 @@ class BaseDeliveryEvent(BaseModel):
     ) -> Optional[List[SecondaryResidenceInfo]]:
         """Flatten List[ECH0007SwissMunicipality] → List[SecondaryResidenceInfo].
 
-        Maps each Swiss municipality to SecondaryResidenceInfo (3 fields).
+        Maps each Swiss municipality to SecondaryResidenceInfo (4 fields).
 
         Args:
             secondary_list: Optional list of Layer 1 secondary residence municipalities (0-n)
@@ -5076,7 +5138,7 @@ class BaseDeliveryEvent(BaseModel):
 
         Pattern:
             Layer 1: List[ECH0007SwissMunicipality] (0-n items)
-            Layer 2: List[SecondaryResidenceInfo] (0-n items, each with bfs, name, canton)
+            Layer 2: List[SecondaryResidenceInfo] (0-n items, each with bfs, name, canton, history_id)
 
         Phase: 2.2.12
         """
@@ -5090,11 +5152,13 @@ class BaseDeliveryEvent(BaseModel):
             name = muni.municipality_name
             # Convert canton enum to string if present
             canton = muni.canton_abbreviation.value if muni.canton_abbreviation else None
+            history_id = muni.history_municipality_id
 
             result.append(SecondaryResidenceInfo(
                 bfs=bfs,
                 name=name,
-                canton=canton
+                canton=canton,
+                history_id=history_id
             ))
 
         return result if result else None
@@ -5132,14 +5196,16 @@ class BaseDeliveryEvent(BaseModel):
         reporting_municipality_bfs = None
         reporting_municipality_name = None
         reporting_municipality_canton = None
+        reporting_municipality_history_id = None
         federal_register = None
 
         if residence.reporting_municipality:
             # Use helper to flatten reporting municipality
-            bfs, name, canton = cls._flatten_reporting_municipality(residence.reporting_municipality)
+            bfs, name, canton, history_id = cls._flatten_reporting_municipality(residence.reporting_municipality)
             reporting_municipality_bfs = bfs
             reporting_municipality_name = name
             reporting_municipality_canton = canton
+            reporting_municipality_history_id = history_id
         elif residence.federal_register:
             # Extract federal register enum value
             federal_register = residence.federal_register.value if hasattr(residence.federal_register, 'value') else str(residence.federal_register)
@@ -5177,6 +5243,7 @@ class BaseDeliveryEvent(BaseModel):
             reporting_municipality_bfs=reporting_municipality_bfs,
             reporting_municipality_name=reporting_municipality_name,
             reporting_municipality_canton=reporting_municipality_canton,
+            reporting_municipality_history_id=reporting_municipality_history_id,
             federal_register=federal_register,
             arrival_date=arrival_date,
             dwelling_address=dwelling_address,
@@ -5220,14 +5287,16 @@ class BaseDeliveryEvent(BaseModel):
         reporting_municipality_bfs = None
         reporting_municipality_name = None
         reporting_municipality_canton = None
+        reporting_municipality_history_id = None
         federal_register = None
 
         if residence.reporting_municipality:
             # Use helper to flatten reporting municipality
-            bfs, name, canton = cls._flatten_reporting_municipality(residence.reporting_municipality)
+            bfs, name, canton, history_id = cls._flatten_reporting_municipality(residence.reporting_municipality)
             reporting_municipality_bfs = bfs
             reporting_municipality_name = name
             reporting_municipality_canton = canton
+            reporting_municipality_history_id = history_id
         elif residence.federal_register:
             # Extract federal register enum value
             federal_register = residence.federal_register.value if hasattr(residence.federal_register, 'value') else str(residence.federal_register)
@@ -5250,7 +5319,7 @@ class BaseDeliveryEvent(BaseModel):
             goes_to = cls._flatten_destination(residence.goes_to)
 
         # Flatten main_residence (REQUIRED for SECONDARY) - use helper 2.2.11
-        main_bfs, main_name, main_canton = cls._flatten_reporting_municipality(residence.main_residence)
+        main_bfs, main_name, main_canton, _ = cls._flatten_reporting_municipality(residence.main_residence)
 
         # No secondary_residence_list for SECONDARY type (only for MAIN)
 
@@ -5261,6 +5330,7 @@ class BaseDeliveryEvent(BaseModel):
             reporting_municipality_bfs=reporting_municipality_bfs,
             reporting_municipality_name=reporting_municipality_name,
             reporting_municipality_canton=reporting_municipality_canton,
+            reporting_municipality_history_id=reporting_municipality_history_id,
             federal_register=federal_register,
             arrival_date=arrival_date,
             dwelling_address=dwelling_address,
@@ -5304,14 +5374,16 @@ class BaseDeliveryEvent(BaseModel):
         reporting_municipality_bfs = None
         reporting_municipality_name = None
         reporting_municipality_canton = None
+        reporting_municipality_history_id = None
         federal_register = None
 
         if residence.reporting_municipality:
             # Use helper to flatten reporting municipality
-            bfs, name, canton = cls._flatten_reporting_municipality(residence.reporting_municipality)
+            bfs, name, canton, history_id = cls._flatten_reporting_municipality(residence.reporting_municipality)
             reporting_municipality_bfs = bfs
             reporting_municipality_name = name
             reporting_municipality_canton = canton
+            reporting_municipality_history_id = history_id
         elif residence.federal_register:
             # Extract federal register enum value
             federal_register = residence.federal_register.value if hasattr(residence.federal_register, 'value') else str(residence.federal_register)
@@ -5343,6 +5415,7 @@ class BaseDeliveryEvent(BaseModel):
             reporting_municipality_bfs=reporting_municipality_bfs,
             reporting_municipality_name=reporting_municipality_name,
             reporting_municipality_canton=reporting_municipality_canton,
+            reporting_municipality_history_id=reporting_municipality_history_id,
             federal_register=federal_register,
             arrival_date=arrival_date,
             dwelling_address=dwelling_address,
