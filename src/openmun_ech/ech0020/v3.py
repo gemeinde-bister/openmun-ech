@@ -6413,10 +6413,12 @@ class ECH0020EventCorrectName(BaseModel):
             elem = ET.Element(f'{{{ns_020}}}{element_name}')
 
         # correctNamePerson (required)
+        # Element is in eCH-0020 namespace, but content type is eCH-0044:personIdentificationType
         self.correct_name_person.to_xml(
             parent=elem,
             namespace=ns_044,
-            element_name='correctNamePerson'
+            element_name='correctNamePerson',
+            wrapper_namespace=ns_020  # Element wrapper in eCH-0020 namespace
         )
 
         # nameInfo (required)
@@ -6869,10 +6871,12 @@ class ECH0020EventCorrectResidencePermit(BaseModel):
             elem = ET.Element(f'{{{ns_020}}}{element_name}')
 
         # correctResidencePermitPerson (required)
+        # Element is in eCH-0020 namespace, but content type is eCH-0044:personIdentificationType
         self.correct_residence_permit_person.to_xml(
             parent=elem,
             namespace=ns_044,
-            element_name='correctResidencePermitPerson'
+            element_name='correctResidencePermitPerson',
+            wrapper_namespace=ns_020  # Element wrapper in eCH-0020 namespace
         )
 
         # residencePermitData (optional) - wrapper in eCH-0020, content from eCH-0011
@@ -9899,8 +9903,12 @@ class ECH0020EventCorrectPersonAdditionalData(BaseModel):
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
         # correctPersonAdditionalDataPerson (required)
+        # Element is in eCH-0020 namespace, but content type is eCH-0044:personIdentificationType
         self.correct_person_additional_data_person.to_xml(
-            elem, ns_044, 'correctPersonAdditionalDataPerson'
+            parent=elem,
+            namespace=ns_044,
+            element_name='correctPersonAdditionalDataPerson',
+            wrapper_namespace=ns_020  # Element wrapper in eCH-0020 namespace
         )
 
         # personAdditionalData (optional) - wrapper in eCH-0020, content from eCH-0021
@@ -11368,10 +11376,11 @@ class ECH0020Delivery(BaseModel):
             event = ECH0020EventContact.from_xml(contact_elem)
 
         else:
-            # TODO: Add parsers for other 52 event types as needed
+            # All 19 event types found in production data are implemented.
+            # Additional event types from the eCH-0020 spec can be added when production examples become available.
             supported = "baseDelivery, correctReporting, moveIn, correctContact, moveOut, move, death, marriage, correctMaritalInfo, correctBirthInfo, correctIdentification, correctName, correctPersonAdditionalData, correctResidencePermit, correctParentalRelationship, correctPlaceOfOrigin, birth, changeName, contact"
             raise NotImplementedError(
-                f"from_xml() currently supports: {supported}. Other event types will be added as needed."
+                f"Unsupported event type. Currently implemented (19 types): {supported}"
             )
 
         return cls(

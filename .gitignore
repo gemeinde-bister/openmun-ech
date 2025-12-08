@@ -160,10 +160,56 @@ cython_debug/
 /production_data/
 /test_data/
 *.bak
+*.orig
 
 # Configuration with sensitive paths
 config.yaml
 
+# Private tests (use production data, must never be committed)
+tests/private/
+
+# Project instructions (internal only)
+CLAUDE.md
+
+# Debug and analysis scripts (internal development)
+debug_*.py
+analyze_*.py
+check_*.py
+find_*.py
+dump_*.py
+show_*.py
+investigate_*.py
+compare_*.py
+verify_*.py
+verify_*.sh
+test_all_*.py
+test_manual_*.py
+test_xsd_*.py
+test_coverage_report.md
+field_coverage_analysis.txt
+demo_*.py
+*_production_roundtrip*.py
+
+# Internal documentation (not for public)
+docs/
+archive/
+tools/
+ECH*.md
+ECH*.txt
+ENUM*.md
+GIT_*.md
+GIT_*.txt
+BREAKING_CHANGES*.md
+DATA_MINIMIZATION*.md
+DOCSTRING_CORRECTIONS*.md
+tests/IMPLEMENTATION_STATUS.md
+tests/NEXT_SESSION_TIPS.md
+tests/ECH0020_EVENT_COVERAGE.md
+
+# Schema cache (downloaded XSDs)
+.schema_cache/
+
 # SCM
 .hg/
+.hgignore
 .jj/

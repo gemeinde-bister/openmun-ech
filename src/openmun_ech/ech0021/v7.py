@@ -432,11 +432,27 @@ class ECH0021BirthAddonData(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        for parent_name in self.name_of_parent:
+        # XSD requires strict ordering: nameOfFather (0..1) MUST come before nameOfMother (0..1)
+        # Sort parents by relationship type to ensure correct order:
+        # - FATHER (value='4') comes first
+        # - MOTHER (value='3') comes second
+        # - Others (if any) come last
+        def sort_key(p):
+            if p.type_of_relationship:
+                if p.type_of_relationship.value == '4':  # FATHER
+                    return 0
+                elif p.type_of_relationship.value == '3':  # MOTHER
+                    return 1
+            return 2  # Unknown/other
+
+        sorted_parents = sorted(self.name_of_parent, key=sort_key)
+
+        for parent_name in sorted_parents:
             # Determine element name based on type_of_relationship
-            if parent_name.type_of_relationship and parent_name.type_of_relationship.value == '3':
+            # TypeOfRelationship.MOTHER = "3", TypeOfRelationship.FATHER = "4"
+            if parent_name.type_of_relationship and parent_name.type_of_relationship.value == '4':
                 elem_name = 'nameOfFather'
-            elif parent_name.type_of_relationship and parent_name.type_of_relationship.value == '4':
+            elif parent_name.type_of_relationship and parent_name.type_of_relationship.value == '3':
                 elem_name = 'nameOfMother'
             else:
                 elem_name = 'nameOfParent'  # Fallback to generic

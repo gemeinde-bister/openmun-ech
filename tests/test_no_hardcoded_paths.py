@@ -35,8 +35,9 @@ class TestNoHardcodedPaths:
         ]
 
         # Directories to exclude
-        exclude_dirs = {'.git', 'venv', '__pycache__', '.pytest_cache',
-                       'tests', 'node_modules', '.tox', 'build', 'dist'}
+        exclude_dirs = {'.git', 'venv', '.venv', '__pycache__', '.pytest_cache',
+                       'tests', 'node_modules', '.tox', 'build', 'dist',
+                       'docs', 'tools', 'archive', '.schema_cache'}
 
         # File extensions to scan
         scan_extensions = {'.py', '.md', '.rst', '.txt', '.yml', '.yaml', '.toml', ''}
@@ -55,6 +56,14 @@ class TestNoHardcodedPaths:
 
             # Skip this test file itself
             if file_path.name == 'test_no_hardcoded_paths.py':
+                continue
+
+            # Skip debug files and analysis files (not part of library)
+            if file_path.name.startswith('debug_') or file_path.name.endswith('_ANALYSIS.md'):
+                continue
+
+            # Skip audit/commit log files
+            if 'AUDIT' in file_path.name or 'COMMIT' in file_path.name:
                 continue
 
             # Only scan text files
