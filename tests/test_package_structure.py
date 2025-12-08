@@ -188,6 +188,47 @@ class TestSubmodulesExist:
         assert hasattr(openmun_ech.validation, 'ValidationContext')
         assert hasattr(openmun_ech.validation, 'PostalCodeValidator')
 
+    def test_utils_submodule_exists(self):
+        """Verify utils submodule exists."""
+        import openmun_ech
+        assert hasattr(openmun_ech, 'utils')
+
+    def test_utils_submodule_importable(self):
+        """Verify utils submodule can be imported."""
+        import openmun_ech.utils
+
+        # Should have __all__
+        assert hasattr(openmun_ech.utils, '__all__')
+        # Should have schema validation utilities
+        assert hasattr(openmun_ech.utils, 'ECH_SCHEMAS')
+        assert hasattr(openmun_ech.utils, 'validate_xml_cached')
+        assert hasattr(openmun_ech.utils, 'get_cached_schema')
+
+    def test_utils_exports_complete(self):
+        """Verify utils exports all expected functions."""
+        from openmun_ech.utils import (
+            ECH_SCHEMAS,
+            get_schema_cache_dir,
+            ensure_schema,
+            ensure_all_schemas,
+            validate_xml,
+            validate_xml_cached,
+            get_cached_schema,
+        )
+
+        # Verify all imported successfully
+        assert ECH_SCHEMAS is not None
+        assert callable(get_schema_cache_dir)
+        assert callable(ensure_schema)
+        assert callable(ensure_all_schemas)
+        assert callable(validate_xml)
+        assert callable(validate_xml_cached)
+        assert callable(get_cached_schema)
+
+        # Verify ECH_SCHEMAS has expected content
+        assert len(ECH_SCHEMAS) >= 10  # At least 10 schemas
+        assert 'eCH-0020-3-0.xsd' in ECH_SCHEMAS
+
 
 class TestModuleDocstring:
     """Verify module docstring content."""

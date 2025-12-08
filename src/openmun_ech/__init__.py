@@ -27,15 +27,18 @@ Optional Validation:
     >>> # Validate person data against Swiss open data
 
 Package Structure:
+- ech0006/: eCH-0006 Residence permit codes (v2)
 - ech0007/: eCH-0007 Municipality models (v5)
 - ech0008/: eCH-0008 Country models (v3)
 - ech0010/: eCH-0010 Address models (v5)
 - ech0011/: eCH-0011 Person data models (v8)
 - ech0020/: eCH-0020 Population registry models (v3, Layer 2)
-- ech0021/: eCH-0021 Person additional data models (v8)
+- ech0021/: eCH-0021 Person additional data models (v7, v8)
 - ech0044/: eCH-0044 Person identification models (v4)
-- ech0058/: eCH-0058 Message header models (v5)
+- ech0058/: eCH-0058 Message header models (v4, v5)
+- ech0099/: eCH-0099 Statistics delivery models (v2)
 - validation/: Optional Swiss open data validation
+- utils/: XSD schema caching and validation utilities
 - version_router: Automatic version detection and routing
 
 See Also:
