@@ -21,10 +21,7 @@ Common Swiss residence permits:
 from enum import Enum
 from typing import Optional
 
-from lxml import etree
-from pydantic import BaseModel, ConfigDict, Field
-
-from openmun_ech.core import NS
+from openmun_ech.core import ECHModel, NS, xml_field
 
 
 class ResidencePermitCategoryType(str, Enum):
@@ -312,7 +309,7 @@ class ResidencePermitType(str, Enum):
     NOT_ASSIGNED = "1300"
 
 
-class PermitRoot(BaseModel):
+class PermitRoot(ECHModel):
     """Root element for permit data per eCH-0006 v2.0.
 
     XSD: permitRoot element (lines 176-189)
@@ -321,101 +318,33 @@ class PermitRoot(BaseModel):
     This is the main container for residence permit information.
     """
 
-    residence_permit_category: Optional[ResidencePermitCategoryType] = None
-    residence_permit_ruling: Optional[ResidencePermitRulingType] = None
-    residence_permit_border: Optional[ResidencePermitBorderType] = None
-    residence_permit_short_type: Optional[ResidencePermitShortType] = None
-    residence_permit: Optional[ResidencePermitType] = None
-    inhabitant_control: Optional[InhabitantControlType] = None
-    residence_permit_detailed_type: Optional[ResidencePermitDetailedType] = None
-    residence_permit_to_be_registered_type: Optional[ResidencePermitToBeRegisteredType] = None
+    __xml_ns__ = NS.ECH0006_V2
+    __xml_element__ = 'permitRoot'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False,  # Keep enum objects, not string values
+    residence_permit_category: Optional[ResidencePermitCategoryType] = xml_field(
+        'residencePermitCategory', default=None
     )
-
-    def to_xml(self, nsmap: Optional[dict] = None) -> etree.Element:
-        """Convert to XML element.
-
-        Args:
-            nsmap: Optional namespace map. Defaults to eCH-0006 namespace.
-
-        Returns:
-            lxml Element for permitRoot
-        """
-        if nsmap is None:
-            nsmap = {None: NS.ECH0006_V2}
-
-        root = etree.Element(f"{{{NS.ECH0006_V2}}}permitRoot", nsmap=nsmap)
-
-        if self.residence_permit_category is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitCategory")
-            elem.text = self.residence_permit_category.value
-
-        if self.residence_permit_ruling is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitRuling")
-            elem.text = self.residence_permit_ruling.value
-
-        if self.residence_permit_border is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitBorder")
-            elem.text = self.residence_permit_border.value
-
-        if self.residence_permit_short_type is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitShortType")
-            elem.text = self.residence_permit_short_type.value
-
-        if self.residence_permit is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermit")
-            elem.text = self.residence_permit.value
-
-        if self.inhabitant_control is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}inhabitantControl")
-            elem.text = self.inhabitant_control.value
-
-        if self.residence_permit_detailed_type is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitDetailedType")
-            elem.text = self.residence_permit_detailed_type.value
-
-        if self.residence_permit_to_be_registered_type is not None:
-            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitToBeRegisteredType")
-            elem.text = self.residence_permit_to_be_registered_type.value
-
-        return root
-
-    @classmethod
-    def from_xml(cls, elem: etree.Element) -> 'PermitRoot':
-        """Parse from XML element.
-
-        Args:
-            elem: lxml Element for permitRoot
-
-        Returns:
-            PermitRoot instance
-        """
-        ns = {"ech": NS.ECH0006_V2}
-
-        # Extract all optional fields
-        category_elem = elem.find("ech:residencePermitCategory", ns)
-        ruling_elem = elem.find("ech:residencePermitRuling", ns)
-        border_elem = elem.find("ech:residencePermitBorder", ns)
-        short_type_elem = elem.find("ech:residencePermitShortType", ns)
-        permit_elem = elem.find("ech:residencePermit", ns)
-        control_elem = elem.find("ech:inhabitantControl", ns)
-        detailed_elem = elem.find("ech:residencePermitDetailedType", ns)
-        to_register_elem = elem.find("ech:residencePermitToBeRegisteredType", ns)
-
-        return cls(
-            residence_permit_category=ResidencePermitCategoryType(category_elem.text) if category_elem is not None else None,
-            residence_permit_ruling=ResidencePermitRulingType(ruling_elem.text) if ruling_elem is not None else None,
-            residence_permit_border=ResidencePermitBorderType(border_elem.text) if border_elem is not None else None,
-            residence_permit_short_type=ResidencePermitShortType(short_type_elem.text) if short_type_elem is not None else None,
-            residence_permit=ResidencePermitType(permit_elem.text) if permit_elem is not None else None,
-            inhabitant_control=InhabitantControlType(control_elem.text) if control_elem is not None else None,
-            residence_permit_detailed_type=ResidencePermitDetailedType(detailed_elem.text) if detailed_elem is not None else None,
-            residence_permit_to_be_registered_type=ResidencePermitToBeRegisteredType(to_register_elem.text) if to_register_elem is not None else None,
-        )
+    residence_permit_ruling: Optional[ResidencePermitRulingType] = xml_field(
+        'residencePermitRuling', default=None
+    )
+    residence_permit_border: Optional[ResidencePermitBorderType] = xml_field(
+        'residencePermitBorder', default=None
+    )
+    residence_permit_short_type: Optional[ResidencePermitShortType] = xml_field(
+        'residencePermitShortType', default=None
+    )
+    residence_permit: Optional[ResidencePermitType] = xml_field(
+        'residencePermit', default=None
+    )
+    inhabitant_control: Optional[InhabitantControlType] = xml_field(
+        'inhabitantControl', default=None
+    )
+    residence_permit_detailed_type: Optional[ResidencePermitDetailedType] = xml_field(
+        'residencePermitDetailedType', default=None
+    )
+    residence_permit_to_be_registered_type: Optional[ResidencePermitToBeRegisteredType] = xml_field(
+        'residencePermitToBeRegisteredType', default=None
+    )
 
 
 # Helper function for display

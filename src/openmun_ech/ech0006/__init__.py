@@ -3,9 +3,19 @@
 Standard: eCH-0006 v2.0
 Source: https://www.ech.ch/de/standards/39487
 
-This package defines residence permit type enumerations used in eCH-0011
-residencePermitData. Common Swiss permits: L (short stay), B (residence),
-C (settlement), F (provisional), N (asylum), G (cross-border).
+Available versions:
+- v2: eCH-0006 v2.0 (used by eCH-0011 v8, eCH-0020 v3)
+
+Types:
+- PermitRoot: permitRoot container (ECHModel, declarative XML)
+- ResidencePermitType: Main permit type enum (45 values)
+- ResidencePermitCategoryType: Base category codes (01-13)
+- ResidencePermitRulingType: Ruling/regulation type codes
+- ResidencePermitBorderType: Cross-border commuter duration codes
+- ResidencePermitShortType: Short-term residence subcategories
+- InhabitantControlType: Combined category+ruling codes
+- ResidencePermitDetailedType: Most detailed permit codes (leaf nodes)
+- ResidencePermitToBeRegisteredType: Mandatory registration subcategories
 """
 
 from .v2 import (
