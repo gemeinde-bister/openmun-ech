@@ -4,6 +4,7 @@ Exports versioned address models.
 """
 
 from openmun_ech.ech0010.v5 import (
+    MrMrs,
     ECH0010PersonMailAddressInfo,
     ECH0010OrganisationMailAddressInfo,
     ECH0010AddressInformation,
@@ -14,6 +15,7 @@ from openmun_ech.ech0010.v5 import (
 )
 
 __all__ = [
+    'MrMrs',
     'ECH0010PersonMailAddressInfo',
     'ECH0010OrganisationMailAddressInfo',
     'ECH0010AddressInformation',

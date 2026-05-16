@@ -2377,10 +2377,11 @@ class ECH0011DwellingAddress(BaseModel):
             hh_elem.text = self.household_id
 
         # Address (required) - eCH-0010 swissAddressInformationType
-        address_elem = ET.SubElement(elem, f'{{{namespace}}}address')
         self.address.to_xml(
-            parent=address_elem,
-            namespace=NS.ECH0010_V5
+            parent=elem,
+            namespace=NS.ECH0010_V5,
+            element_name='address',
+            wrapper_namespace=namespace
         )
 
         # Type of household (required)
