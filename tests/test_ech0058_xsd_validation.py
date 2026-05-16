@@ -22,11 +22,7 @@ from openmun_ech.ech0058 import (
     ECH0058PartialDelivery,
     ECH0058Header,
 )
-
-
-# Path to eCH XSD schemas
-ECH_SCHEMA_DIR = Path(__file__).parent.parent / "docs" / "eCH"
-ECH_0058_V5_XSD = ECH_SCHEMA_DIR / "eCH-0058-5-0.xsd"
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 
 @pytest.mark.skipif(not HAS_XMLSCHEMA, reason="xmlschema library not installed")
@@ -36,9 +32,7 @@ class TestECH0058XSDValidation:
     @pytest.fixture
     def schema(self):
         """Load eCH-0058 v5.0 XSD schema."""
-        if not ECH_0058_V5_XSD.exists():
-            pytest.skip(f"eCH-0058 XSD not found: {ECH_0058_V5_XSD}")
-        return xmlschema.XMLSchema(str(ECH_0058_V5_XSD))
+        return get_cached_schema('eCH-0058-5-0.xsd')
 
     def test_named_metadata_structure(self, schema):
         """Test that named metadata XML structure is XSD-compliant."""

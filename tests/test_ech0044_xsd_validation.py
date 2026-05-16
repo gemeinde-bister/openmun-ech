@@ -20,9 +20,7 @@ from openmun_ech.ech0044 import (
     ECH0044NamedPersonId,
     ECH0044PersonIdentification,
 )
-
-# Path to eCH-0044 XSD schema
-XSD_PATH = Path(__file__).parent.parent / 'docs' / 'eCH' / 'eCH-0044-4-1.xsd'
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 # Skip all tests if xmlschema not installed
 pytestmark = pytest.mark.skipif(not HAS_XMLSCHEMA, reason="xmlschema library not installed")
@@ -31,9 +29,7 @@ pytestmark = pytest.mark.skipif(not HAS_XMLSCHEMA, reason="xmlschema library not
 @pytest.fixture(scope='module')
 def schema():
     """Load eCH-0044 XSD schema."""
-    if not XSD_PATH.exists():
-        pytest.skip(f"XSD schema not found at {XSD_PATH}")
-    return xmlschema.XMLSchema(str(XSD_PATH))
+    return get_cached_schema('eCH-0044-4-1.xsd')
 
 
 class TestECH0044PersonIdentificationXSD:

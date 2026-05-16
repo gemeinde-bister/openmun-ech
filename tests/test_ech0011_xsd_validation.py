@@ -23,10 +23,7 @@ from openmun_ech.ech0011 import (
 )
 from openmun_ech.ech0007 import ECH0007Municipality, CantonAbbreviation
 from openmun_ech.ech0008 import ECH0008Country
-
-
-# XSD schema path
-ECH0011_XSD_PATH = Path(__file__).parent.parent / 'docs' / 'eCH' / 'eCH-0011-8-1.xsd'
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 
 class TestECH0011XSDValidation:
@@ -35,8 +32,7 @@ class TestECH0011XSDValidation:
     @pytest.fixture(scope='class')
     def schema(self):
         """Load eCH-0011 XSD schema once for all tests."""
-        assert ECH0011_XSD_PATH.exists(), f"XSD not found at {ECH0011_XSD_PATH}"
-        return xmlschema.XMLSchema(str(ECH0011_XSD_PATH))
+        return get_cached_schema('eCH-0011-8-1.xsd')
 
     def test_minimal_name_data_valid(self, schema):
         """Test minimal name data validates against XSD."""
@@ -470,7 +466,7 @@ class TestECH0011ManualValidation:
 
     def test_roundtrip_preserves_validity(self):
         """Test roundtrip (export -> import -> export) preserves validity."""
-        schema = xmlschema.XMLSchema(str(ECH0011_XSD_PATH))
+        schema = get_cached_schema("eCH-0011-8-1.xsd")
 
         original = ECH0011BirthData(
             date_of_birth=date(1990, 5, 15),
@@ -509,7 +505,7 @@ class TestECH0011ManualValidation:
 
     def test_real_world_swiss_person(self):
         """Test real-world Swiss person data scenario."""
-        schema = xmlschema.XMLSchema(str(ECH0011_XSD_PATH))
+        schema = get_cached_schema("eCH-0011-8-1.xsd")
 
         # Name
         name = ECH0011NameData(
@@ -584,7 +580,7 @@ class TestECH0011ManualValidation:
 
     def test_real_world_married_person(self):
         """Test married person with maiden name scenario."""
-        schema = xmlschema.XMLSchema(str(ECH0011_XSD_PATH))
+        schema = get_cached_schema("eCH-0011-8-1.xsd")
 
         name = ECH0011NameData(
             official_name="Meier-Schmidt",
@@ -613,7 +609,7 @@ class TestECH0011ManualValidation:
 
     def test_real_world_foreign_born_person(self):
         """Test person born in foreign country scenario."""
-        schema = xmlschema.XMLSchema(str(ECH0011_XSD_PATH))
+        schema = get_cached_schema("eCH-0011-8-1.xsd")
 
         birth = ECH0011BirthData(
             date_of_birth=date(1985, 3, 10),

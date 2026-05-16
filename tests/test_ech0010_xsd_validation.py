@@ -15,10 +15,7 @@ from openmun_ech.ech0010 import (
     ECH0010AddressInformation,
     ECH0010MailAddress,
 )
-
-
-# XSD schema path
-ECH0010_XSD_PATH = Path(__file__).parent.parent / 'docs' / 'eCH' / 'eCH-0010-5-1.xsd'
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 
 class TestECH0010XSDValidation:
@@ -27,8 +24,7 @@ class TestECH0010XSDValidation:
     @pytest.fixture(scope='class')
     def schema(self):
         """Load eCH-0010 XSD schema once for all tests."""
-        assert ECH0010_XSD_PATH.exists(), f"XSD not found at {ECH0010_XSD_PATH}"
-        return xmlschema.XMLSchema(str(ECH0010_XSD_PATH))
+        return get_cached_schema('eCH-0010-5-1.xsd')
 
     def test_minimal_person_address_valid(self, schema):
         """Test minimal person address validates against XSD."""
@@ -375,7 +371,7 @@ class TestECH0010ManualValidation:
     def test_roundtrip_preserves_validity(self, schema=None):
         """Test roundtrip (export -> import -> export) preserves validity."""
         if schema is None:
-            schema = xmlschema.XMLSchema(str(ECH0010_XSD_PATH))
+            schema = get_cached_schema('eCH-0010-5-1.xsd')
 
         original = ECH0010MailAddress(
             person=ECH0010PersonMailAddressInfo(
@@ -409,7 +405,7 @@ class TestECH0010ManualValidation:
     def test_real_world_swiss_addresses(self, schema=None):
         """Test real-world Swiss address scenarios."""
         if schema is None:
-            schema = xmlschema.XMLSchema(str(ECH0010_XSD_PATH))
+            schema = get_cached_schema('eCH-0010-5-1.xsd')
 
         # Scenario 1: Rural address with dwelling number
         addr1 = ECH0010MailAddress(

@@ -16,8 +16,6 @@ This test validates that our Pydantic models produce XML that:
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict
-import urllib.request
-import shutil
 
 import pytest
 
@@ -28,68 +26,12 @@ except ImportError:
     HAS_XMLSCHEMA = False
 
 from openmun_ech.ech0099.v2 import ECH0099Delivery
-
-
-# Schema URLs from eCH.ch
-ECH_SCHEMAS = {
-    'eCH-0099-2-1.xsd': 'https://www.ech.ch/xmlns/eCH-0099/2/eCH-0099-2-1.xsd',
-    'eCH-0058-5-0.xsd': 'https://www.ech.ch/xmlns/eCH-0058/5/eCH-0058-5-0.xsd',
-    'eCH-0011-8-1.xsd': 'https://www.ech.ch/xmlns/eCH-0011/8/eCH-0011-8-1.xsd',
-    'eCH-0044-4-1.xsd': 'https://www.ech.ch/xmlns/eCH-0044/4/eCH-0044-4-1.xsd',
-    'eCH-0010-6-0.xsd': 'https://www.ech.ch/xmlns/eCH-0010/6/eCH-0010-6-0.xsd',
-    'eCH-0007-6-0.xsd': 'https://www.ech.ch/xmlns/eCH-0007/6/eCH-0007-6-0.xsd',
-    'eCH-0008-3-0.xsd': 'https://www.ech.ch/xmlns/eCH-0008/3/eCH-0008-3-0.xsd',
-}
-
-
-def get_schema_cache_dir() -> Path:
-    """Get or create schema cache directory."""
-    cache_dir = Path(__file__).parent.parent / '.schema_cache' / 'eCH'
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir
-
-
-def download_schema(schema_name: str, url: str, cache_dir: Path) -> Path:
-    """Download XSD schema from eCH.ch if not already cached.
-
-    Args:
-        schema_name: Name of the schema file
-        url: URL to download from
-        cache_dir: Directory to cache schemas
-
-    Returns:
-        Path to the cached schema file
-    """
-    schema_path = cache_dir / schema_name
-
-    if schema_path.exists():
-        return schema_path
-
-    print(f"Downloading {schema_name} from {url}...")
-
-    try:
-        with urllib.request.urlopen(url) as response:
-            with open(schema_path, 'wb') as f:
-                shutil.copyfileobj(response, f)
-        print(f"  ✓ Downloaded to {schema_path}")
-        return schema_path
-    except Exception as e:
-        print(f"  ✗ Failed to download: {e}")
-        raise
+from openmun_ech.utils.schema_cache import ensure_schema, get_cached_schema
 
 
 def ensure_schemas() -> Path:
-    """Ensure all required eCH schemas are downloaded.
-
-    Returns:
-        Path to the eCH-0099-2-1.xsd schema
-    """
-    cache_dir = get_schema_cache_dir()
-
-    for schema_name, url in ECH_SCHEMAS.items():
-        download_schema(schema_name, url, cache_dir)
-
-    return cache_dir / 'eCH-0099-2-1.xsd'
+    """Ensure eCH-0099 schema (and its transitive deps) are downloaded."""
+    return ensure_schema('eCH-0099-2-1.xsd')
 
 
 def count_elements(elem: ET.Element) -> Dict[str, int]:
@@ -159,7 +101,7 @@ class TestECH0099RoundtripXSDValidation:
         schema_path = ensure_schemas()
 
         # Load schema
-        schema = xmlschema.XMLSchema(str(schema_path))
+        schema = get_cached_schema("eCH-0099-2-1.xsd")
 
         # Validate original production file
         try:
@@ -190,7 +132,7 @@ class TestECH0099RoundtripXSDValidation:
         schema_path = ensure_schemas()
 
         # Load schema
-        schema = xmlschema.XMLSchema(str(schema_path))
+        schema = get_cached_schema("eCH-0099-2-1.xsd")
 
         # Parse original
         tree = ET.parse(xml_file)
@@ -241,7 +183,7 @@ class TestECH0099RoundtripXSDValidation:
 
         # Download schemas
         schema_path = ensure_schemas()
-        schema = xmlschema.XMLSchema(str(schema_path))
+        schema = get_cached_schema("eCH-0099-2-1.xsd")
 
         failures = []
 

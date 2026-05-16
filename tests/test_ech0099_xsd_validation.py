@@ -38,11 +38,7 @@ from openmun_ech.ech0011 import (
 from openmun_ech.ech0044 import ECH0044PersonIdentification, ECH0044DatePartiallyKnown, ECH0044NamedPersonId
 from openmun_ech.ech0058.v4 import ECH0058Header, ECH0058SendingApplication, ActionType
 from openmun_ech.ech0008 import ECH0008Country
-
-
-# Path to eCH XSD schemas
-ECH_SCHEMA_DIR = Path(__file__).parent.parent / "docs" / "eCH"
-ECH_0099_V2_1_XSD = ECH_SCHEMA_DIR / "eCH-0099-2-1.xsd"
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 
 @pytest.mark.skipif(not HAS_XMLSCHEMA, reason="xmlschema library not installed")
@@ -52,9 +48,7 @@ class TestECH0099XSDValidation:
     @pytest.fixture
     def schema(self):
         """Load eCH-0099 v2.1 XSD schema."""
-        if not ECH_0099_V2_1_XSD.exists():
-            pytest.skip(f"eCH-0099 XSD not found: {ECH_0099_V2_1_XSD}")
-        return xmlschema.XMLSchema(str(ECH_0099_V2_1_XSD))
+        return get_cached_schema('eCH-0099-2-1.xsd')
 
     @pytest.fixture
     def sample_person_identification(self):

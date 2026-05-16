@@ -36,23 +36,12 @@ from openmun_ech.ech0021 import (
 from openmun_ech.ech0044 import ECH0044PersonIdentification, ECH0044DatePartiallyKnown, ECH0044NamedPersonId
 from openmun_ech.ech0011 import ECH0011GeneralPlace
 from openmun_ech.ech0007 import ECH0007Municipality, CantonAbbreviation
-
-
-# XSD schema path - loaded lazily via fixture
-XSD_PATH = Path(__file__).parent.parent / "docs" / "eCH" / "eCH-0021-8-0.xsd"
-
-# Module-level schema cache (lazy loaded)
-_schema = None
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 
 def get_schema():
-    """Get or load the XSD schema (lazy loading)."""
-    global _schema
-    if _schema is None:
-        if not XSD_PATH.exists():
-            pytest.skip(f"XSD schema not found at {XSD_PATH}")
-        _schema = xmlschema.XMLSchema(str(XSD_PATH))
-    return _schema
+    """Get the eCH-0021 v8 XSD schema (cached)."""
+    return get_cached_schema('eCH-0021-8-0.xsd')
 
 
 def validate_fragment(xml_element: ET.Element, type_name: str):

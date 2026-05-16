@@ -25,11 +25,7 @@ from openmun_ech.ech0007 import (
     CantonAbbreviation,
     CantonFLAbbreviation,
 )
-
-
-# Path to eCH XSD schemas
-ECH_SCHEMA_DIR = Path(__file__).parent.parent / "docs" / "eCH"
-ECH_0007_V5_XSD = ECH_SCHEMA_DIR / "eCH-0007-5-0.xsd"
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 
 @pytest.mark.skipif(not HAS_XMLSCHEMA, reason="xmlschema library not installed")
@@ -39,9 +35,7 @@ class TestECH0007XSDValidation:
     @pytest.fixture
     def schema(self):
         """Load eCH-0007 v5.0 XSD schema."""
-        if not ECH_0007_V5_XSD.exists():
-            pytest.skip(f"eCH-0007 XSD not found: {ECH_0007_V5_XSD}")
-        return xmlschema.XMLSchema(str(ECH_0007_V5_XSD))
+        return get_cached_schema('eCH-0007-5-0.xsd')
 
     def test_swiss_municipality_structure_valid(self, schema):
         """Test that Swiss municipality XML structure is XSD-compliant."""

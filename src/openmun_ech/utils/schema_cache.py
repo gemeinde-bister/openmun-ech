@@ -16,9 +16,11 @@ import xml.etree.ElementTree as ET
 
 try:
     import xmlschema
+    from xmlschema.loaders import SchemaLoader
     HAS_XMLSCHEMA = True
 except ImportError:
     HAS_XMLSCHEMA = False
+    SchemaLoader = object  # type: ignore
 
 
 # Official eCH schema URLs
@@ -37,10 +39,59 @@ ECH_SCHEMAS = {
     'eCH-0099-2-1.xsd': 'https://www.ech.ch/xmlns/eCH-0099/2/eCH-0099-2-1.xsd',
     # XSD import dependencies (referenced by other schemas)
     'eCH-0006-2-0.xsd': 'https://www.ech.ch/xmlns/eCH-0006/2/eCH-0006-2-0.xsd',
+    'eCH-0006-3-0.xsd': 'https://www.ech.ch/xmlns/eCH-0006/3/eCH-0006-3-0.xsd',
     'eCH-0007-5-0.xsd': 'https://www.ech.ch/xmlns/eCH-0007/5/eCH-0007-5-0.xsd',
     'eCH-0010-5-1.xsd': 'https://www.ech.ch/xmlns/eCH-0010/5/eCH-0010-5-1.xsd',
+    'eCH-0010-8-0.xsd': 'https://www.ech.ch/xmlns/eCH-0010/8/eCH-0010-8-0.xsd',
+    'eCH-0011-9-0.xsd': 'https://www.ech.ch/xmlns/eCH-0011/9/eCH-0011-9-0.xsd',
     'eCH-0058-4-0.xsd': 'https://www.ech.ch/xmlns/eCH-0058/4/eCH-0058-4-0.xsd',
+    'eCH-0135-1-0.xsd': 'https://www.ech.ch/xmlns/eCH-0135/1/eCH-0135-1-0.xsd',
 }
+
+
+def _build_url_to_local_map(cache_dir: Path) -> dict[str, str]:
+    """Build remote-URL-to-local-path mapping by scanning cached XSD files.
+
+    Parses the targetNamespace from each .xsd file in the cache directory
+    and derives the canonical remote URL (targetNamespace + '/' + filename)
+    as used in xs:import schemaLocation attributes.
+
+    Returns both http:// and https:// variants since eCH schemas use http://
+    in schemaLocation but canonical URLs may use https://.
+    """
+    url_to_local = {}
+    for xsd_file in cache_dir.glob('*.xsd'):
+        try:
+            for _, elem in ET.iterparse(str(xsd_file), events=['start']):
+                ns = elem.get('targetNamespace')
+                if ns:
+                    # schemaLocation in XSD imports: {namespace}/{filename}
+                    http_url = f"{ns}/{xsd_file.name}"
+                    https_url = http_url.replace('http://', 'https://', 1)
+                    local = str(xsd_file)
+                    url_to_local[http_url] = local
+                    url_to_local[https_url] = local
+                break  # Only need the root element
+        except ET.ParseError:
+            continue
+    return url_to_local
+
+
+def _make_local_cache_loader(url_to_local: dict[str, str]) -> type:
+    """Create a SchemaLoader subclass that redirects remote URLs to local files.
+
+    Lazy resolution: only intercepts xs:import when the import is actually
+    being resolved. URLs not in the mapping fall through to the upstream
+    fetch, preserving the remote-fallback behavior.
+    """
+    class LocalCacheLoader(SchemaLoader):
+        def load_schema(self, source, namespace=None, base_url=None,
+                        build=False, partial=False):
+            if isinstance(source, str) and source in url_to_local:
+                source = url_to_local[source]
+            return super().load_schema(source, namespace, base_url, build, partial)
+
+    return LocalCacheLoader
 
 
 def get_schema_cache_dir() -> Path:
@@ -167,8 +218,10 @@ def validate_xml(
     # Ensure all dependent schemas are downloaded (for imports)
     ensure_all_schemas()
 
-    # Load schema
-    schema = xmlschema.XMLSchema(str(schema_path))
+    # Load schema — prefer local cache, fall back to upstream
+    cache_dir = get_schema_cache_dir()
+    loader_class = _make_local_cache_loader(_build_url_to_local_map(cache_dir))
+    schema = xmlschema.XMLSchema(str(schema_path), loader_class=loader_class)
 
     # Validate
     if raise_on_error:
@@ -202,7 +255,11 @@ def get_cached_schema(schema_name: str = 'eCH-0020-3-0.xsd') -> 'xmlschema.XMLSc
     if schema_name not in _SCHEMA_CACHE:
         schema_path = ensure_schema(schema_name)
         ensure_all_schemas()  # Ensure dependencies
-        _SCHEMA_CACHE[schema_name] = xmlschema.XMLSchema(str(schema_path))
+        cache_dir = get_schema_cache_dir()
+        loader_class = _make_local_cache_loader(_build_url_to_local_map(cache_dir))
+        _SCHEMA_CACHE[schema_name] = xmlschema.XMLSchema(
+            str(schema_path), loader_class=loader_class
+        )
 
     return _SCHEMA_CACHE[schema_name]
 

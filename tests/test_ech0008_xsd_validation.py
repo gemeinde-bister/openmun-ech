@@ -19,11 +19,7 @@ except ImportError:
     HAS_XMLSCHEMA = False
 
 from openmun_ech.ech0008 import ECH0008Country
-
-
-# Path to eCH XSD schemas
-ECH_SCHEMA_DIR = Path(__file__).parent.parent / "docs" / "eCH"
-ECH_0008_V3_XSD = ECH_SCHEMA_DIR / "eCH-0008-3-0.xsd"
+from openmun_ech.utils.schema_cache import get_cached_schema
 
 
 @pytest.mark.skipif(not HAS_XMLSCHEMA, reason="xmlschema library not installed")
@@ -33,9 +29,7 @@ class TestECH0008XSDValidation:
     @pytest.fixture
     def schema(self):
         """Load eCH-0008 v3.0 XSD schema."""
-        if not ECH_0008_V3_XSD.exists():
-            pytest.skip(f"eCH-0008 XSD not found: {ECH_0008_V3_XSD}")
-        return xmlschema.XMLSchema(str(ECH_0008_V3_XSD))
+        return get_cached_schema('eCH-0008-3-0.xsd')
 
     def test_country_structure_valid(self, schema):
         """Test that country XML structure is XSD-compliant."""
