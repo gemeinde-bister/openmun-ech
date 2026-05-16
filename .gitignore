@@ -162,8 +162,8 @@ cython_debug/
 *.bak
 *.orig
 
-# Configuration with sensitive paths
-config.yaml
+# Environment (sensitive paths)
+.env
 
 # Private tests (use production data, must never be committed)
 tests/private/

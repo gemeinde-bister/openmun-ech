@@ -1064,14 +1064,17 @@ class StatisticsPerson(BaseModel):
                 swiss_municipality=ECH0007Municipality(swiss_municipality=swiss_muni)
             )
         else:  # FOREIGN
-            # country_id must be string, country_name_short is required
             country_id_str = str(self.birth_country_id) if self.birth_country_id else None
-            # Use provided name or fallback to ISO code
-            country_name = self.birth_country_name or self.birth_country_iso2 or "Unknown"
+            if not self.birth_country_name:
+                raise ValueError(
+                    f"Person missing birth_country_name for foreign birth place "
+                    f"(country_id={self.birth_country_id}, iso2={self.birth_country_iso2}). "
+                    f"eCH-0008 countryNameShort is required — cannot invent country names."
+                )
             country = ECH0008Country(
                 country_id=country_id_str,
                 country_id_iso2=self.birth_country_iso2,
-                country_name_short=country_name
+                country_name_short=self.birth_country_name
             )
             return ECH0011GeneralPlace(foreign_country=country)
 
@@ -1092,11 +1095,16 @@ class StatisticsPerson(BaseModel):
             )
         else:  # FOREIGN
             country_id_str = str(self.death_country_id) if self.death_country_id else None
-            country_name = self.death_country_name or self.death_country_iso2 or "Unknown"
+            if not self.death_country_name:
+                raise ValueError(
+                    f"Person missing death_country_name for foreign death place "
+                    f"(country_id={self.death_country_id}, iso2={self.death_country_iso2}). "
+                    f"eCH-0008 countryNameShort is required — cannot invent country names."
+                )
             country = ECH0008Country(
                 country_id=country_id_str,
                 country_id_iso2=self.death_country_iso2,
-                country_name_short=country_name
+                country_name_short=self.death_country_name
             )
             return ECH0011GeneralPlace(foreign_country=country)
 
@@ -1575,13 +1583,17 @@ class StatisticsDeliveryEvent(BaseModel):
                 mail_address=mail_address
             )
         else:  # FOREIGN
-            # country_id must be string, country_name_short is required
             country_id_str = str(dest.country_id) if dest.country_id else None
-            country_name = dest.country_name or dest.country_iso2 or "Unknown"
+            if not dest.country_name:
+                raise ValueError(
+                    f"Destination missing country_name for foreign destination "
+                    f"(country_id={dest.country_id}, iso2={dest.country_iso2}). "
+                    f"eCH-0008 countryNameShort is required — cannot invent country names."
+                )
             country = ECH0008Country(
                 country_id=country_id_str,
                 country_id_iso2=dest.country_iso2,
-                country_name_short=country_name
+                country_name_short=dest.country_name
             )
             return ECH0011DestinationType(
                 foreign_country=country,

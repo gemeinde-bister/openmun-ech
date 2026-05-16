@@ -27,7 +27,7 @@ class TestNoProductionDataLeakage:
         3. Scans entire repository (code, tests, docs) for these values
         4. Fails if any production value is found
 
-        Requires production data to be configured via config.yaml or env var.
+        Requires production data to be configured via OPENMUN_PRODUCTION_DATA env var.
         """
         project_root = Path(__file__).parent.parent
 

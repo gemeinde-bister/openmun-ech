@@ -70,9 +70,7 @@ tests/
 
 ### Production Data Path
 
-Tests auto-discover production data from:
-1. `OPENMUN_PRODUCTION_DATA` environment variable (if set)
-2. `config.yaml` file (see `config.yaml.sample`)
+Tests require the `OPENMUN_PRODUCTION_DATA` environment variable:
 
 Set custom path:
 ```bash

@@ -21,7 +21,7 @@ class TestNoHardcodedPaths:
 
         Excluded from scan:
         - tests/ directory (test fixtures are allowed to reference test data)
-        - Config files (config.yaml - gitignored anyway)
+        - .env file (contains local paths by design)
         - .git, venv, __pycache__ directories
         - This test file itself
         """
@@ -50,8 +50,8 @@ class TestNoHardcodedPaths:
             if any(excluded in file_path.parts for excluded in exclude_dirs):
                 continue
 
-            # Skip config files (gitignored, contain local paths by design)
-            if file_path.name in ('config.yaml', '.env'):
+            # Skip env file (contains local paths by design)
+            if file_path.name == '.env':
                 continue
 
             # Skip this test file itself
@@ -96,8 +96,8 @@ class TestNoHardcodedPaths:
             )
             msg += "\n".join(f"  • {v}" for v in violations)
             msg += (
-                "\n\n💡 Use config.yaml or environment variables instead.\n"
-                "   See config.yaml.sample for configuration options."
+                "\n\n💡 Use OPENMUN_PRODUCTION_DATA environment variable instead.\n"
+                "   See .env for configuration."
             )
             raise AssertionError(msg)
 

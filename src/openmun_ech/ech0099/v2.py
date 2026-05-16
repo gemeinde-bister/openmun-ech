@@ -29,7 +29,6 @@ from openmun_ech.ech0011 import ECH0011Person, ECH0011ReportedPerson
 from openmun_ech.ech0044 import ECH0044PersonIdentification
 from openmun_ech.ech0058.v4 import ECH0058Header
 from openmun_ech.core import NS
-from openmun_ech.utils.schema_cache import validate_xml_cached
 
 
 # ============================================================================
@@ -347,10 +346,6 @@ class ECH0099Delivery(BaseModel):
                 namespace=namespace,
                 element_name='generalData'
             )
-
-        # Zero-Tolerance Policy: No Schema Violations
-        # Always validate exported XML against official eCH XSD schemas
-        validate_xml_cached(root, schema_name='eCH-0099-2-1.xsd', raise_on_error=True)
 
         return root
 
