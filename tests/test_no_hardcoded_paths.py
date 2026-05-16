@@ -50,8 +50,8 @@ class TestNoHardcodedPaths:
             if any(excluded in file_path.parts for excluded in exclude_dirs):
                 continue
 
-            # Skip config.yaml (it's gitignored)
-            if file_path.name == 'config.yaml':
+            # Skip config files (gitignored, contain local paths by design)
+            if file_path.name in ('config.yaml', '.env'):
                 continue
 
             # Skip this test file itself

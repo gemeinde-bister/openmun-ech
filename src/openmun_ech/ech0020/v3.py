@@ -41,11 +41,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator, ConfigD
 # XSD validation (Zero-Tolerance Policy #5: No Schema Violations)
 from openmun_ech.utils.schema_cache import validate_xml_cached
 
-# eCH-0020 v3.0 namespace constant
-NAMESPACE_ECH0020_V3 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-NAMESPACE_ECH0011_V8 = 'http://www.ech.ch/xmlns/eCH-0011/8'
-NAMESPACE_ECH0021_V7 = 'http://www.ech.ch/xmlns/eCH-0021/7'
-NAMESPACE_ECH0044_V4 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+from openmun_ech.core import NS
 
 # Import dependencies from other eCH standards
 from openmun_ech.ech0006 import ResidencePermitType
@@ -139,7 +135,7 @@ class ECH0020NameInfo(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'nameInfo'
     ) -> ET.Element:
         """Export to eCH-0020 v3 XML."""
@@ -152,7 +148,7 @@ class ECH0020NameInfo(BaseModel):
         # Create wrapper element in eCH-0020 namespace
         name_wrapper = ET.SubElement(elem, f'{{{namespace}}}nameData')
         # Generate eCH-0011 content and move children to wrapper
-        name_content = self.name_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+        name_content = self.name_data.to_xml(namespace=NS.ECH0011_V8)
         for child in name_content:
             name_wrapper.append(child)
 
@@ -166,8 +162,8 @@ class ECH0020NameInfo(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020NameInfo':
         """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': 'http://www.ech.ch/xmlns/eCH-0020/3'}
-        ns_0011 = {'eCH-0011': 'http://www.ech.ch/xmlns/eCH-0011/8'}
+        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
+        ns_0011 = {'eCH-0011': NS.ECH0011_V8}
 
         # nameData (required, wrapper in eCH-0020, content in eCH-0011)
         name_data_elem = element.find('eCH-0020:nameData', ns_0020)
@@ -213,7 +209,7 @@ class ECH0020BirthInfo(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'birthInfo'
     ) -> ET.Element:
         """Export to eCH-0020 v3 XML."""
@@ -226,7 +222,7 @@ class ECH0020BirthInfo(BaseModel):
         # Create wrapper element in eCH-0020 namespace
         birth_wrapper = ET.SubElement(elem, f'{{{namespace}}}birthData')
         # Generate eCH-0011 content and move children to wrapper
-        birth_content = self.birth_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+        birth_content = self.birth_data.to_xml(namespace=NS.ECH0011_V8)
         for child in birth_content:
             birth_wrapper.append(child)
 
@@ -235,7 +231,7 @@ class ECH0020BirthInfo(BaseModel):
             # Create wrapper element in eCH-0020 namespace
             addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}birthAddonData')
             # Generate eCH-0021 content and move children to wrapper
-            addon_content = self.birth_addon_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            addon_content = self.birth_addon_data.to_xml(namespace=NS.ECH0021_V7)
             for child in addon_content:
                 addon_wrapper.append(child)
 
@@ -244,8 +240,8 @@ class ECH0020BirthInfo(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020BirthInfo':
         """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': 'http://www.ech.ch/xmlns/eCH-0020/3'}
-        ns_0021 = {'eCH-0021': 'http://www.ech.ch/xmlns/eCH-0021/7'}
+        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
+        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
 
         # birthData (required, wrapper element in eCH-0020 namespace, content in eCH-0011)
         birth_data_elem = element.find('eCH-0020:birthData', ns_0020)
@@ -291,7 +287,7 @@ class ECH0020MaritalInfo(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'maritalInfo'
     ) -> ET.Element:
         """Export to eCH-0020 v3 XML."""
@@ -304,7 +300,7 @@ class ECH0020MaritalInfo(BaseModel):
         # Create wrapper element in eCH-0020 namespace
         marital_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalData')
         # Generate eCH-0011 content and move children to wrapper
-        marital_content = self.marital_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+        marital_content = self.marital_data.to_xml(namespace=NS.ECH0011_V8)
         for child in marital_content:
             marital_wrapper.append(child)
 
@@ -313,7 +309,7 @@ class ECH0020MaritalInfo(BaseModel):
             # Create wrapper element in eCH-0020 namespace
             addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalDataAddon')
             # Generate eCH-0021 content and move children to wrapper
-            addon_content = self.marital_data_addon.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            addon_content = self.marital_data_addon.to_xml(namespace=NS.ECH0021_V7)
             for child in addon_content:
                 addon_wrapper.append(child)
 
@@ -322,8 +318,8 @@ class ECH0020MaritalInfo(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020MaritalInfo':
         """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': 'http://www.ech.ch/xmlns/eCH-0020/3'}
-        ns_0021 = {'eCH-0021': 'http://www.ech.ch/xmlns/eCH-0021/7'}
+        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
+        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
 
         # maritalData (required, wrapper element in eCH-0020 namespace, content in eCH-0011)
         marital_data_elem = element.find('eCH-0020:maritalData', ns_0020)
@@ -379,7 +375,7 @@ class ECH0020MaritalInfoRestrictedMarriage(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'maritalInfo'
     ) -> ET.Element:
         """Export to eCH-0020 v3 XML."""
@@ -405,7 +401,7 @@ class ECH0020MaritalInfoRestrictedMarriage(BaseModel):
             # Create wrapper element in eCH-0020 namespace
             addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalDataAddon')
             # Generate eCH-0021 content and move children to wrapper
-            addon_content = self.marital_data_addon.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            addon_content = self.marital_data_addon.to_xml(namespace=NS.ECH0021_V7)
             for child in addon_content:
                 addon_wrapper.append(child)
 
@@ -414,8 +410,8 @@ class ECH0020MaritalInfoRestrictedMarriage(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020MaritalInfoRestrictedMarriage':
         """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': 'http://www.ech.ch/xmlns/eCH-0020/3'}
-        ns_0021 = {'eCH-0021': 'http://www.ech.ch/xmlns/eCH-0021/7'}
+        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
+        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
 
         # maritalData (inline complexType, required)
         marital_data_elem = element.find('eCH-0020:maritalData', ns_0020)
@@ -474,7 +470,7 @@ class ECH0020PlaceOfOriginInfo(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'placeOfOriginInfo'
     ) -> ET.Element:
         """Export to eCH-0020 v3 XML."""
@@ -487,7 +483,7 @@ class ECH0020PlaceOfOriginInfo(BaseModel):
         # Create wrapper element in eCH-0020 namespace
         origin_wrapper = ET.SubElement(elem, f'{{{namespace}}}placeOfOrigin')
         # Generate eCH-0011 content and move children to wrapper
-        origin_content = self.place_of_origin.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+        origin_content = self.place_of_origin.to_xml(namespace=NS.ECH0011_V8)
         for child in origin_content:
             origin_wrapper.append(child)
 
@@ -496,7 +492,7 @@ class ECH0020PlaceOfOriginInfo(BaseModel):
             # Create wrapper element in eCH-0020 namespace
             addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}placeOfOriginAddonData')
             # Generate eCH-0021 content and move children to wrapper
-            addon_content = self.place_of_origin_addon_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            addon_content = self.place_of_origin_addon_data.to_xml(namespace=NS.ECH0021_V7)
             for child in addon_content:
                 addon_wrapper.append(child)
 
@@ -505,8 +501,8 @@ class ECH0020PlaceOfOriginInfo(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020PlaceOfOriginInfo':
         """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': 'http://www.ech.ch/xmlns/eCH-0020/3'}
-        ns_0021 = {'eCH-0021': 'http://www.ech.ch/xmlns/eCH-0021/7'}
+        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
+        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
 
         # placeOfOrigin (required, wrapper element in eCH-0020 namespace, content in eCH-0011)
         place_of_origin_elem = element.find('eCH-0020:placeOfOrigin', ns_0020)
@@ -597,7 +593,7 @@ class ECH0020InfostarPerson(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'infostarPerson'
     ) -> ET.Element:
         """Serialize to XML element.
@@ -618,7 +614,7 @@ class ECH0020InfostarPerson(BaseModel):
         # 1. personIdentification (required, eCH-0044/4 namespace)
         self.person_identification.to_xml(
             parent=elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0044/4',
+            namespace=NS.ECH0044_V4,
             element_name='personIdentification'
         )
 
@@ -648,7 +644,7 @@ class ECH0020InfostarPerson(BaseModel):
         # 5. nationalityData (required, eCH-0011/8 namespace)
         self.nationality_data.to_xml(
             parent=elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0011/8',
+            namespace=NS.ECH0011_V8,
             element_name='nationalityData'
         )
 
@@ -665,7 +661,7 @@ class ECH0020InfostarPerson(BaseModel):
         if self.death_data:
             self.death_data.to_xml(
                 parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0011/8',
+                namespace=NS.ECH0011_V8,
                 element_name='deathData'
             )
 
@@ -682,9 +678,9 @@ class ECH0020InfostarPerson(BaseModel):
             Parsed ECH0020InfostarPerson instance
         """
         # Define namespaces
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # 1. personIdentification (required)
         person_id_elem = element.find(f'{{{ns_020}}}personIdentification')
@@ -933,7 +929,7 @@ class ECH0020BaseDeliveryPerson(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'baseDeliveryPerson'
     ) -> ET.Element:
         """Serialize to XML element.
@@ -951,9 +947,9 @@ class ECH0020BaseDeliveryPerson(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_011 = NS.ECH0011_V8
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # 1. personIdentification (required, eCH-0044/4)
         # Create wrapper element in parent namespace
@@ -1134,10 +1130,10 @@ class ECH0020BaseDeliveryPerson(BaseModel):
         Returns:
             Parsed ECH0020BaseDeliveryPerson instance
         """
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # Required fields
         person_id_elem = element.find(f'{{{ns_020}}}personIdentification')
@@ -1440,7 +1436,7 @@ class ECH0020BaseDeliveryRestrictedMoveInPerson(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'baseDeliveryRestrictedMoveInPerson'
     ) -> ET.Element:
         """Serialize to XML element.
@@ -1458,9 +1454,9 @@ class ECH0020BaseDeliveryRestrictedMoveInPerson(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_011 = NS.ECH0011_V8
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # 1. personIdentification (required, eCH-0044/4)
         # Create wrapper element in parent namespace
@@ -1635,10 +1631,10 @@ class ECH0020BaseDeliveryRestrictedMoveInPerson(BaseModel):
         Returns:
             Parsed ECH0020BaseDeliveryRestrictedMoveInPerson instance
         """
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # Required fields
         person_id_elem = element.find(f'{{{ns_020}}}personIdentification')
@@ -1859,7 +1855,7 @@ class ECH0020ReportingMunicipality(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'reportingMunicipality'
     ) -> ET.Element:
         """Serialize to XML element.
@@ -1877,8 +1873,8 @@ class ECH0020ReportingMunicipality(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE: reportingMunicipality OR federalRegister
         if self.reporting_municipality:
@@ -1937,9 +1933,9 @@ class ECH0020ReportingMunicipality(BaseModel):
         Returns:
             Parsed ECH0020ReportingMunicipality instance
         """
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE: reportingMunicipality OR federalRegister
         reporting_municipality = None
@@ -2068,7 +2064,7 @@ class ECH0020ReportingMunicipalityRestrictedBaseMain(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'reportingMunicipality'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -2077,8 +2073,8 @@ class ECH0020ReportingMunicipalityRestrictedBaseMain(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         if self.reporting_municipality:
@@ -2131,8 +2127,8 @@ class ECH0020ReportingMunicipalityRestrictedBaseMain(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020ReportingMunicipalityRestrictedBaseMain':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         reporting_municipality = None
@@ -2262,7 +2258,7 @@ class ECH0020ReportingMunicipalityRestrictedBaseSecondary(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'reportingMunicipality'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -2271,8 +2267,8 @@ class ECH0020ReportingMunicipalityRestrictedBaseSecondary(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         if self.reporting_municipality:
@@ -2319,8 +2315,8 @@ class ECH0020ReportingMunicipalityRestrictedBaseSecondary(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020ReportingMunicipalityRestrictedBaseSecondary':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         reporting_municipality = None
@@ -2533,7 +2529,7 @@ class ECH0020EventBaseDelivery(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventBaseDelivery',
         skip_wrapper: bool = False
     ) -> ET.Element:
@@ -2557,8 +2553,8 @@ class ECH0020EventBaseDelivery(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # 1. baseDeliveryPerson (required)
         self.base_delivery_person.to_xml(
@@ -2683,9 +2679,9 @@ class ECH0020EventBaseDelivery(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020EventBaseDelivery':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # Required: baseDeliveryPerson
         person_elem = element.find(f'{{{ns_020}}}baseDeliveryPerson')
@@ -2857,7 +2853,7 @@ class ECH0020EventKeyExchange(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventKeyExchange'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -2866,7 +2862,7 @@ class ECH0020EventKeyExchange(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_044 = NS.ECH0044_V4
 
         # keyExchangePerson (1-n, required)
         for person in self.key_exchange_person:
@@ -2887,7 +2883,7 @@ class ECH0020EventKeyExchange(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020EventKeyExchange':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns_020 = NS.ECH0020_V3
 
         # keyExchangePerson (1-n, required)
         person_elems = element.findall(f'{{{ns_020}}}keyExchangePerson')
@@ -2942,7 +2938,7 @@ class ECH0020EventDataRequest(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventDataRequest'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -2951,8 +2947,8 @@ class ECH0020EventDataRequest(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_007 = NS.ECH0007_V5
+        ns_044 = NS.ECH0044_V4
 
         # dataRequestPerson (0-n, optional)
         if self.data_request_person:
@@ -2987,7 +2983,7 @@ class ECH0020EventDataRequest(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020EventDataRequest':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns_020 = NS.ECH0020_V3
 
         # dataRequestPerson (0-n, optional)
         data_request_person = None
@@ -3112,7 +3108,7 @@ class ECH0020EventAdoption(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventAdoption'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -3121,7 +3117,7 @@ class ECH0020EventAdoption(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_021 = NS.ECH0021_V7
 
         # 1. adoptionPerson (required)
         self.adoption_person.to_xml(parent=elem, namespace=namespace, element_name='adoptionPerson')
@@ -3164,7 +3160,7 @@ class ECH0020EventAdoption(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020EventAdoption':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns_020 = NS.ECH0020_V3
 
         # Required: adoptionPerson
         person_elem = element.find(f'{{{ns_020}}}adoptionPerson')
@@ -3287,12 +3283,12 @@ class ECH0020EventChildRelationship(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChildRelationship'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_021 = NAMESPACE_ECH0021_V7
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -3360,8 +3356,8 @@ class ECH0020EventChildRelationship(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChildRelationship':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_021 = NAMESPACE_ECH0021_V7
+        ns_020 = NS.ECH0020_V3
+        ns_021 = NS.ECH0021_V7
 
         # childRelationshipPerson (required)
         child_person_elem = elem.find(f'{{{ns_020}}}childRelationshipPerson')
@@ -3472,7 +3468,7 @@ class ECH0020SwissNationality(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'nationality'
     ) -> ET.Element:
         """Serialize to XML with nested country element."""
@@ -3496,7 +3492,7 @@ class ECH0020SwissNationality(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020SwissNationality':
         """Parse from XML element with XSD validation."""
-        ns = NAMESPACE_ECH0020_V3
+        ns = NS.ECH0020_V3
 
         # nationalityStatus (required)
         status_elem = elem.find(f'{{{ns}}}nationalityStatus')
@@ -3586,12 +3582,12 @@ class ECH0020EventNaturalizeForeigner(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventNaturalizeForeigner'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -3627,8 +3623,8 @@ class ECH0020EventNaturalizeForeigner(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventNaturalizeForeigner':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # naturalizeForeignerPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}naturalizeForeignerPerson')
@@ -3701,12 +3697,12 @@ class ECH0020EventNaturalizeSwiss(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventNaturalizeSwiss'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -3735,8 +3731,8 @@ class ECH0020EventNaturalizeSwiss(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventNaturalizeSwiss':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # naturalizeSwissPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}naturalizeSwissPerson')
@@ -3809,14 +3805,14 @@ class ECH0020EventUndoCitizen(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventUndoCitizen'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -3852,10 +3848,10 @@ class ECH0020EventUndoCitizen(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventUndoCitizen':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # undoCitizenPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}undoCitizenPerson')
@@ -3942,13 +3938,13 @@ class ECH0020EventUndoSwiss(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventUndoSwiss'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -3989,9 +3985,9 @@ class ECH0020EventUndoSwiss(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventUndoSwiss':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # undoSwissPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}undoSwissPerson')
@@ -4062,12 +4058,12 @@ class ECH0020EventChangeOrigin(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeOrigin'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -4096,8 +4092,8 @@ class ECH0020EventChangeOrigin(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeOrigin':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # changeOriginPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeOriginPerson')
@@ -4189,12 +4185,12 @@ class ECH0020EventBirth(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventBirth'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
+        ns_011 = NS.ECH0011_V8
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -4238,8 +4234,8 @@ class ECH0020EventBirth(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventBirth':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # birthPerson (required)
         person_elem = elem.find(f'{{{ns_020}}}birthPerson')
@@ -4313,13 +4309,13 @@ class ECH0020EventMarriage(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventMarriage'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -4357,9 +4353,9 @@ class ECH0020EventMarriage(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventMarriage':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # marriagePerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}marriagePerson')
@@ -4434,13 +4430,13 @@ class ECH0020EventPartnership(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventPartnership'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -4476,9 +4472,9 @@ class ECH0020EventPartnership(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventPartnership':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # partnershipPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}partnershipPerson')
@@ -4546,13 +4542,13 @@ class ECH0020EventSeparation(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventSeparation'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -4580,9 +4576,9 @@ class ECH0020EventSeparation(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventSeparation':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # separationPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}separationPerson')
@@ -4646,12 +4642,12 @@ class ECH0020EventUndoSeparation(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventUndoSeparation'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -4677,8 +4673,8 @@ class ECH0020EventUndoSeparation(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventUndoSeparation':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # undoSeparationPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}undoSeparationPerson')
@@ -4740,13 +4736,13 @@ class ECH0020EventDivorce(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventDivorce'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -4774,9 +4770,9 @@ class ECH0020EventDivorce(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventDivorce':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # divorcePerson (required)
         person_elem = elem.find(f'{{{ns_044}}}divorcePerson')
@@ -4918,7 +4914,7 @@ class ECH0020BirthPerson(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'birthPerson'
     ) -> ET.Element:
         """Export to eCH-0020 v3 XML."""
@@ -4930,7 +4926,7 @@ class ECH0020BirthPerson(BaseModel):
         # personIdentification (required) - wrapper in eCH-0020, content in eCH-0044
         self.person_identification.to_xml(
             parent=elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0044/4',
+            namespace=NS.ECH0044_V4,
             element_name='personIdentification',
             wrapper_namespace=namespace
         )
@@ -4943,33 +4939,33 @@ class ECH0020BirthPerson(BaseModel):
 
         # religionData (required) - manual wrapper pattern (type doesn't support wrapper_namespace yet)
         wrapper = ET.SubElement(elem, f'{{{namespace}}}religionData')
-        content = self.religion_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+        content = self.religion_data.to_xml(namespace=NS.ECH0011_V8)
         for child in content:
             wrapper.append(child)
 
         # maritalData (required) - manual wrapper pattern
         wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalData')
-        content = self.marital_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+        content = self.marital_data.to_xml(namespace=NS.ECH0011_V8)
         for child in content:
             wrapper.append(child)
 
         # nationalityData (required) - manual wrapper pattern
         wrapper = ET.SubElement(elem, f'{{{namespace}}}nationalityData')
-        content = self.nationality_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+        content = self.nationality_data.to_xml(namespace=NS.ECH0011_V8)
         for child in content:
             wrapper.append(child)
 
         # contactData (optional) - manual wrapper pattern
         if self.contact_data:
             wrapper = ET.SubElement(elem, f'{{{namespace}}}contactData')
-            content = self.contact_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+            content = self.contact_data.to_xml(namespace=NS.ECH0011_V8)
             for child in content:
                 wrapper.append(child)
 
         # personAdditionalData (optional) - manual wrapper pattern
         if self.person_additional_data:
             wrapper = ET.SubElement(elem, f'{{{namespace}}}personAdditionalData')
-            content = self.person_additional_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            content = self.person_additional_data.to_xml(namespace=NS.ECH0021_V7)
             for child in content:
                 wrapper.append(child)
 
@@ -4979,13 +4975,13 @@ class ECH0020BirthPerson(BaseModel):
                 origin_info.to_xml(parent=elem, namespace=namespace)
         elif self.residence_permit_data:
             wrapper = ET.SubElement(elem, f'{{{namespace}}}residencePermitData')
-            content = self.residence_permit_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0011/8')
+            content = self.residence_permit_data.to_xml(namespace=NS.ECH0011_V8)
             for child in content:
                 wrapper.append(child)
 
         # lockData (required) - manual wrapper pattern
         wrapper = ET.SubElement(elem, f'{{{namespace}}}lockData')
-        content = self.lock_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+        content = self.lock_data.to_xml(namespace=NS.ECH0021_V7)
         for child in content:
             wrapper.append(child)
 
@@ -4993,14 +4989,14 @@ class ECH0020BirthPerson(BaseModel):
         if self.parental_relationship:
             for parental_rel in self.parental_relationship:
                 wrapper = ET.SubElement(elem, f'{{{namespace}}}parentalRelationship')
-                content = parental_rel.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+                content = parental_rel.to_xml(namespace=NS.ECH0021_V7)
                 for child in content:
                     wrapper.append(child)
 
         # healthInsuranceData (optional) - manual wrapper pattern
         if self.health_insurance_data:
             wrapper = ET.SubElement(elem, f'{{{namespace}}}healthInsuranceData')
-            content = self.health_insurance_data.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0021/7')
+            content = self.health_insurance_data.to_xml(namespace=NS.ECH0021_V7)
             for child in content:
                 wrapper.append(child)
 
@@ -5009,10 +5005,10 @@ class ECH0020BirthPerson(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020BirthPerson':
         """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': 'http://www.ech.ch/xmlns/eCH-0020/3'}
-        ns_0044 = {'eCH-0044': 'http://www.ech.ch/xmlns/eCH-0044/4'}
-        ns_0011 = {'eCH-0011': 'http://www.ech.ch/xmlns/eCH-0011/8'}
-        ns_0021 = {'eCH-0021': 'http://www.ech.ch/xmlns/eCH-0021/7'}
+        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
+        ns_0044 = {'eCH-0044': NS.ECH0044_V4}
+        ns_0011 = {'eCH-0011': NS.ECH0011_V8}
+        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
 
         # Required fields - all wrappers in eCH-0020, content in respective namespaces
         person_id_elem = element.find('eCH-0020:personIdentification', ns_0020)
@@ -5135,13 +5131,13 @@ class ECH0020EventUndoMarriage(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventUndoMarriage'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5169,9 +5165,9 @@ class ECH0020EventUndoMarriage(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventUndoMarriage':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # undoMarriagePerson (required)
         person_elem = elem.find(f'{{{ns_044}}}undoMarriagePerson')
@@ -5232,13 +5228,13 @@ class ECH0020EventUndoPartnership(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventUndoPartnership'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5266,9 +5262,9 @@ class ECH0020EventUndoPartnership(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventUndoPartnership':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # undoPartnershipPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}undoPartnershipPerson')
@@ -5324,13 +5320,13 @@ class ECH0020EventDeath(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventDeath'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5360,9 +5356,9 @@ class ECH0020EventDeath(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventDeath':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # deathPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}deathPerson')
@@ -5423,13 +5419,13 @@ class ECH0020EventMissing(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventMissing'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5457,9 +5453,9 @@ class ECH0020EventMissing(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventMissing':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # missingPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}missingPerson')
@@ -5514,12 +5510,12 @@ class ECH0020EventUndoMissing(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventUndoMissing'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5545,8 +5541,8 @@ class ECH0020EventUndoMissing(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventUndoMissing':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # undoMissingPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}undoMissingPerson')
@@ -5602,13 +5598,13 @@ class ECH0020EventMaritalStatusPartner(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventMaritalStatusPartner'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5636,9 +5632,9 @@ class ECH0020EventMaritalStatusPartner(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventMaritalStatusPartner':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # maritalStatusPartnerPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}maritalStatusPartnerPerson')
@@ -5693,12 +5689,12 @@ class ECH0020EventChangeName(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeName'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5727,8 +5723,8 @@ class ECH0020EventChangeName(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeName':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # changeNamePerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}changeNamePerson')
@@ -5778,12 +5774,12 @@ class ECH0020ChangeSexPerson(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'changeSexPerson'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5806,8 +5802,8 @@ class ECH0020ChangeSexPerson(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020ChangeSexPerson':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # personIdentification (required)
         person_elem = elem.find(f'{{{ns_044}}}personIdentification')
@@ -5852,7 +5848,7 @@ class ECH0020EventChangeSex(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeSex'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
@@ -5877,7 +5873,7 @@ class ECH0020EventChangeSex(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeSex':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
+        ns_020 = NS.ECH0020_V3
 
         # changeSexPerson (required)
         person_elem = elem.find(f'{{{ns_020}}}changeSexPerson')
@@ -5935,7 +5931,7 @@ class ECH0020PersonIdOnly(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'personIdentificationAfter'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling.
@@ -5944,7 +5940,7 @@ class ECH0020PersonIdOnly(BaseModel):
         Example: <vn> (eCH-0020) contains text, <localPersonId> (eCH-0020) contains eCH-0044 children
         """
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -5987,8 +5983,8 @@ class ECH0020PersonIdOnly(BaseModel):
 
         Pattern: Wrapper elements in eCH-0020, content from eCH-0044.
         """
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # vn (optional) - in eCH-0020 namespace (not eCH-0044!)
         vn_elem = elem.find(f'{{{ns_020}}}vn')
@@ -6047,12 +6043,12 @@ class ECH0020CorrectIdentificationPerson(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'correctIdentificationPerson'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6079,8 +6075,8 @@ class ECH0020CorrectIdentificationPerson(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020CorrectIdentificationPerson':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # personIdentificationBefore (required) - wrapper in eCH-0020, content in eCH-0044
         before_elem = elem.find(f'{{{ns_020}}}personIdentificationBefore')
@@ -6132,7 +6128,7 @@ class ECH0020EventCorrectIdentification(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectIdentification'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
@@ -6162,7 +6158,7 @@ class ECH0020EventCorrectIdentification(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectIdentification':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
+        ns_020 = NS.ECH0020_V3
 
         # correctIdentificationPerson (required)
         person_elem = elem.find(f'{{{ns_020}}}correctIdentificationPerson')
@@ -6219,12 +6215,12 @@ class ECH0020IdentificationConversionPerson(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'identificationConversionPerson'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6255,8 +6251,8 @@ class ECH0020IdentificationConversionPerson(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020IdentificationConversionPerson':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # vn (optional)
         vn_elem = elem.find(f'{{{ns_044}}}vn')
@@ -6313,7 +6309,7 @@ class ECH0020EventIdentificationConversion(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventIdentificationConversion'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
@@ -6344,7 +6340,7 @@ class ECH0020EventIdentificationConversion(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventIdentificationConversion':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
+        ns_020 = NS.ECH0020_V3
 
         # identificationConversionPerson (required, unbounded)
         person_elems = elem.findall(f'{{{ns_020}}}identificationConversionPerson')
@@ -6400,12 +6396,12 @@ class ECH0020EventCorrectName(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectName'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6438,8 +6434,8 @@ class ECH0020EventCorrectName(BaseModel):
 
         Pattern: correctNamePerson wrapper in eCH-0020, content from eCH-0044.
         """
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # correctNamePerson (required) - wrapper in eCH-0020, content from eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}correctNamePerson')
@@ -6493,13 +6489,13 @@ class ECH0020EventCorrectNationality(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectNationality'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6527,9 +6523,9 @@ class ECH0020EventCorrectNationality(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectNationality':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # correctNationalityPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctNationalityPerson')
@@ -6583,13 +6579,13 @@ class ECH0020EventCorrectContact(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectContact'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6620,9 +6616,9 @@ class ECH0020EventCorrectContact(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectContact':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # correctContactPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}correctContactPerson')
@@ -6676,13 +6672,13 @@ class ECH0020EventCorrectReligion(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectReligion'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6710,9 +6706,9 @@ class ECH0020EventCorrectReligion(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectReligion':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # correctReligionPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctReligionPerson')
@@ -6766,12 +6762,12 @@ class ECH0020EventCorrectPlaceOfOrigin(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectPlaceOfOrigin'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6802,8 +6798,8 @@ class ECH0020EventCorrectPlaceOfOrigin(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectPlaceOfOrigin':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # correctPlaceOfOriginPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}correctPlaceOfOriginPerson')
@@ -6857,13 +6853,13 @@ class ECH0020EventCorrectResidencePermit(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectResidencePermit'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -6896,9 +6892,9 @@ class ECH0020EventCorrectResidencePermit(BaseModel):
 
         Pattern: Wrappers in eCH-0020, content from eCH-0044/eCH-0011.
         """
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = NAMESPACE_ECH0011_V8
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
+        ns_044 = NS.ECH0044_V4
 
         # correctResidencePermitPerson (required) - wrapper in eCH-0020
         person_elem = elem.find(f'{{{ns_020}}}correctResidencePermitPerson')
@@ -6959,13 +6955,13 @@ class ECH0020EventCorrectMaritalInfo(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectMaritalInfo'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -7003,9 +6999,9 @@ class ECH0020EventCorrectMaritalInfo(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectMaritalInfo':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_021 = NAMESPACE_ECH0021_V7
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_021 = NS.ECH0021_V7
+        ns_044 = NS.ECH0044_V4
 
         # correctMaritalDataPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}correctMaritalDataPerson')
@@ -7066,12 +7062,12 @@ class ECH0020EventCorrectBirthInfo(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectBirthInfo'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -7100,8 +7096,8 @@ class ECH0020EventCorrectBirthInfo(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectBirthInfo':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # correctBirthInfoPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}correctBirthInfoPerson')
@@ -7155,13 +7151,13 @@ class ECH0020EventCorrectGuardianRelationship(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectGuardianRelationship'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -7191,9 +7187,9 @@ class ECH0020EventCorrectGuardianRelationship(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectGuardianRelationship':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # correctGuardianRelationshipPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctGuardianRelationshipPerson')
@@ -7245,13 +7241,13 @@ class ECH0020EventCorrectParentalRelationship(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectParentalRelationship'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -7282,9 +7278,9 @@ class ECH0020EventCorrectParentalRelationship(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectParentalRelationship':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # correctParentalRelationshipPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}correctParentalRelationshipPerson')
@@ -7374,13 +7370,13 @@ class ECH0020EventCorrectReporting(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectReporting'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_011 = NAMESPACE_ECH0011_V8
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -7430,8 +7426,8 @@ class ECH0020EventCorrectReporting(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectReporting':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # correctReportingPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_wrapper = elem.find(f'{{{ns_020}}}correctReportingPerson')
@@ -7505,13 +7501,13 @@ class ECH0020EventCorrectOccupation(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectOccupation'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -7540,9 +7536,9 @@ class ECH0020EventCorrectOccupation(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectOccupation':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # correctOccupationPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctOccupationPerson')
@@ -7594,13 +7590,13 @@ class ECH0020EventCorrectDeathData(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NAMESPACE_ECH0020_V3,
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventCorrectDeathData'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_011 = NAMESPACE_ECH0011_V8
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -7627,9 +7623,9 @@ class ECH0020EventCorrectDeathData(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectDeathData':
         """Parse from XML element."""
-        ns_020 = NAMESPACE_ECH0020_V3
-        ns_044 = NAMESPACE_ECH0044_V4
-        ns_011 = NAMESPACE_ECH0011_V8
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         # correctDeathDataPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctDeathDataPerson')
@@ -7718,7 +7714,7 @@ class ECH0020ReportingMunicipalityRestrictedMoveIn(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'reportingMunicipality'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -7727,8 +7723,8 @@ class ECH0020ReportingMunicipalityRestrictedMoveIn(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         if self.reporting_municipality:
@@ -7762,8 +7758,8 @@ class ECH0020ReportingMunicipalityRestrictedMoveIn(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020ReportingMunicipalityRestrictedMoveIn':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         reporting_municipality = None
@@ -7865,7 +7861,7 @@ class ECH0020ReportingMunicipalityRestrictedMoveOut(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'reportingMunicipality'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -7874,8 +7870,8 @@ class ECH0020ReportingMunicipalityRestrictedMoveOut(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         if self.reporting_municipality:
@@ -7903,8 +7899,8 @@ class ECH0020ReportingMunicipalityRestrictedMoveOut(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020ReportingMunicipalityRestrictedMoveOut':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         reporting_municipality = None
@@ -7995,7 +7991,7 @@ class ECH0020ReportingMunicipalityRestrictedMove(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'reportingMunicipality'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -8004,8 +8000,8 @@ class ECH0020ReportingMunicipalityRestrictedMove(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         if self.reporting_municipality:
@@ -8030,8 +8026,8 @@ class ECH0020ReportingMunicipalityRestrictedMove(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020ReportingMunicipalityRestrictedMove':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         reporting_municipality = None
@@ -8106,7 +8102,7 @@ class ECH0020HasMainResidenceMoveIn(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'hasMainResidence'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -8115,8 +8111,8 @@ class ECH0020HasMainResidenceMoveIn(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         if self.reporting_municipality:
@@ -8162,8 +8158,8 @@ class ECH0020HasMainResidenceMoveIn(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020HasMainResidenceMoveIn':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         reporting_municipality = None
@@ -8253,7 +8249,7 @@ class ECH0020HasSecondaryResidenceMoveIn(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'hasSecondaryResidence'
     ) -> ET.Element:
         """Serialize to XML element."""
@@ -8262,8 +8258,8 @@ class ECH0020HasSecondaryResidenceMoveIn(BaseModel):
         else:
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
-        ns_007 = 'http://www.ech.ch/xmlns/eCH-0007/5'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_007 = NS.ECH0007_V5
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         if self.reporting_municipality:
@@ -8303,8 +8299,8 @@ class ECH0020HasSecondaryResidenceMoveIn(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0020HasSecondaryResidenceMoveIn':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_011 = NS.ECH0011_V8
 
         # CHOICE
         reporting_municipality = None
@@ -8416,7 +8412,7 @@ class ECH0020EventMoveIn(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventMoveIn'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
@@ -8459,7 +8455,7 @@ class ECH0020EventMoveIn(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventMoveIn':
         """Parse from XML element."""
-        ns = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns = NS.ECH0020_V3
 
         # moveInPerson (required)
         person_elem = elem.find(f'{{{ns}}}moveInPerson')
@@ -8522,12 +8518,12 @@ class ECH0020EventMove(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventMove'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -8556,8 +8552,8 @@ class ECH0020EventMove(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventMove':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # movePerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}movePerson')
@@ -8608,7 +8604,7 @@ class ECH0020EventContact(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventContact'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling.
@@ -8618,8 +8614,8 @@ class ECH0020EventContact(BaseModel):
         - Content inside wrappers from eCH-0044 and eCH-0011 (with prefix)
         """
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -8654,9 +8650,9 @@ class ECH0020EventContact(BaseModel):
         - Wrapper elements (contactPerson, contactData) are in eCH-0020 (no prefix)
         - Content inside wrappers is from eCH-0044 and eCH-0011 (with prefix)
         """
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         # contactPerson (required) - wrapper in ns_020
         person_elem = elem.find(f'{{{ns_020}}}contactPerson')
@@ -8707,12 +8703,12 @@ class ECH0020EventMoveOut(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventMoveOut'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_044 = NS.ECH0044_V4
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -8741,8 +8737,8 @@ class ECH0020EventMoveOut(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventMoveOut':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # moveOutPerson (required) - wrapper in eCH-0020, content in eCH-0044
         person_elem = elem.find(f'{{{ns_020}}}moveOutPerson')
@@ -8801,7 +8797,7 @@ class ECH0020EventChangeResidenceType(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeResidenceTypeType'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
@@ -8838,7 +8834,7 @@ class ECH0020EventChangeResidenceType(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeResidenceType':
         """Parse from XML element."""
-        ns = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns = NS.ECH0020_V3
 
         # changeResidenceTypePerson (required)
         person_elem = elem.find(f'{{{ns}}}changeResidenceTypePerson')
@@ -8896,13 +8892,13 @@ class ECH0020EventChangeReligion(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeReligion'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -8930,9 +8926,9 @@ class ECH0020EventChangeReligion(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeReligion':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         # changeReligionPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeReligionPerson')
@@ -8985,13 +8981,13 @@ class ECH0020EventChangeOccupation(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeOccupation'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -9020,9 +9016,9 @@ class ECH0020EventChangeOccupation(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeOccupation':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # changeOccupationPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeOccupationPerson')
@@ -9072,13 +9068,13 @@ class ECH0020EventGuardianMeasure(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventGuardianMeasure'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -9106,9 +9102,9 @@ class ECH0020EventGuardianMeasure(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventGuardianMeasure':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # guardianMeasurePerson (required)
         person_elem = elem.find(f'{{{ns_044}}}guardianMeasurePerson')
@@ -9169,13 +9165,13 @@ class ECH0020EventUndoGuardian(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventUndoGuardian'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -9208,9 +9204,9 @@ class ECH0020EventUndoGuardian(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventUndoGuardian':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # undoGuardianPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}undoGuardianPerson')
@@ -9275,13 +9271,13 @@ class ECH0020EventChangeGuardian(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeGuardian'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -9314,9 +9310,9 @@ class ECH0020EventChangeGuardian(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeGuardian':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # changeGuardianPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeGuardianPerson')
@@ -9374,13 +9370,13 @@ class ECH0020EventChangeNationality(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventChangeNationality'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -9408,9 +9404,9 @@ class ECH0020EventChangeNationality(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeNationality':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_011 = NS.ECH0011_V8
 
         # changeNationalityPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeNationalityPerson')
@@ -9471,14 +9467,14 @@ class ECH0020EventEntryResidencePermit(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventEntryResidencePermit'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
+        ns_011 = NS.ECH0011_V8
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -9514,10 +9510,10 @@ class ECH0020EventEntryResidencePermit(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventEntryResidencePermit':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
-        ns_011 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
+        ns_011 = NS.ECH0011_V8
 
         # entryResidencePermitPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}entryResidencePermitPerson')
@@ -9589,13 +9585,13 @@ class ECH0020EventDataLock(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'eventDataLock'
     ) -> ET.Element:
         """Serialize to XML with proper namespace handling."""
         ns_020 = namespace
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         if parent is not None:
             elem = ET.SubElement(parent, f'{{{ns_020}}}{element_name}')
@@ -9633,9 +9629,9 @@ class ECH0020EventDataLock(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventDataLock':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # dataLockPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}dataLockPerson')
@@ -9711,9 +9707,9 @@ class ECH0020EventPaperLock(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventPaperLock element
         if parent is not None:
@@ -9744,9 +9740,9 @@ class ECH0020EventPaperLock(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventPaperLock':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # paperLockPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}paperLockPerson')
@@ -9812,9 +9808,9 @@ class ECH0020EventCare(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventCare element
         if parent is not None:
@@ -9836,9 +9832,9 @@ class ECH0020EventCare(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCare':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # carePerson (required)
         person_elem = elem.find(f'{{{ns_044}}}carePerson')
@@ -9892,9 +9888,9 @@ class ECH0020EventCorrectPersonAdditionalData(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventCorrectPersonAdditionalData element
         if parent is not None:
@@ -9928,9 +9924,9 @@ class ECH0020EventCorrectPersonAdditionalData(BaseModel):
 
         Pattern: Wrapper in eCH-0020, content from eCH-0044/eCH-0021.
         """
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # correctPersonAdditionalDataPerson (required) - wrapper in eCH-0020
         person_elem = elem.find(f'{{{ns_020}}}correctPersonAdditionalDataPerson')
@@ -9986,9 +9982,9 @@ class ECH0020EventCorrectPoliticalRightData(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventCorrectPoliticalRightData element
         if parent is not None:
@@ -10012,9 +10008,9 @@ class ECH0020EventCorrectPoliticalRightData(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectPoliticalRightData':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # correctPoliticalRightDataPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctPoliticalRightDataPerson')
@@ -10079,9 +10075,9 @@ class ECH0020EventCorrectDataLock(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventCorrectDataLock element
         if parent is not None:
@@ -10113,8 +10109,8 @@ class ECH0020EventCorrectDataLock(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectDataLock':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # correctDataLockPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctDataLockPerson')
@@ -10193,8 +10189,8 @@ class ECH0020EventCorrectPaperLock(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # Create eventCorrectPaperLock element
         if parent is not None:
@@ -10226,8 +10222,8 @@ class ECH0020EventCorrectPaperLock(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventCorrectPaperLock':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # correctPaperLockPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}correctPaperLockPerson')
@@ -10296,8 +10292,8 @@ class ECH0020EventAnnounceDuplicate(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # Create eventAnnounceDuplicate element
         if parent is not None:
@@ -10319,8 +10315,8 @@ class ECH0020EventAnnounceDuplicate(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventAnnounceDuplicate':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # correctEntry (required)
         correct_elem = elem.find(f'{{{ns_044}}}correctEntry')
@@ -10374,8 +10370,8 @@ class ECH0020EventDeletedInRegister(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # Create eventDeletedInRegister element
         if parent is not None:
@@ -10393,8 +10389,8 @@ class ECH0020EventDeletedInRegister(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventDeletedInRegister':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
 
         # deledetInRegisterPerson (required) - XSD typo preserved
         person_elem = elem.find(f'{{{ns_044}}}deledetInRegisterPerson')
@@ -10442,9 +10438,9 @@ class ECH0020EventChangeArmedForces(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventChangeArmedForces element
         if parent is not None:
@@ -10466,9 +10462,9 @@ class ECH0020EventChangeArmedForces(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeArmedForces':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # changeArmedForcesPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeArmedForcesPerson')
@@ -10523,9 +10519,9 @@ class ECH0020EventChangeCivilDefense(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventChangeCivilDefense element
         if parent is not None:
@@ -10547,9 +10543,9 @@ class ECH0020EventChangeCivilDefense(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeCivilDefense':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # changeCivilDefensePerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeCivilDefensePerson')
@@ -10604,9 +10600,9 @@ class ECH0020EventChangeFireService(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventChangeFireService element
         if parent is not None:
@@ -10628,9 +10624,9 @@ class ECH0020EventChangeFireService(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeFireService':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # changeFireServicePerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeFireServicePerson')
@@ -10685,9 +10681,9 @@ class ECH0020EventChangeHealthInsurance(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventChangeHealthInsurance element
         if parent is not None:
@@ -10709,9 +10705,9 @@ class ECH0020EventChangeHealthInsurance(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeHealthInsurance':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # changeHealthInsurancePerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeHealthInsurancePerson')
@@ -10766,9 +10762,9 @@ class ECH0020EventChangeMatrimonialInheritanceArrangement(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # Create eventChangeMatrimonialInheritanceArrangement element
         if parent is not None:
@@ -10794,9 +10790,9 @@ class ECH0020EventChangeMatrimonialInheritanceArrangement(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020EventChangeMatrimonialInheritanceArrangement':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_044 = 'http://www.ech.ch/xmlns/eCH-0044/4'
-        ns_021 = 'http://www.ech.ch/xmlns/eCH-0021/7'
+        ns_020 = NS.ECH0020_V3
+        ns_044 = NS.ECH0044_V4
+        ns_021 = NS.ECH0021_V7
 
         # changeMatrimonialInheritanceArrangementPerson (required)
         person_elem = elem.find(f'{{{ns_044}}}changeMatrimonialInheritanceArrangementPerson')
@@ -10860,8 +10856,8 @@ class ECH0020Header(BaseModel):
         element_name: str
     ) -> ET.Element:
         """Serialize to XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_058 = 'http://www.ech.ch/xmlns/eCH-0058/5'
+        ns_020 = NS.ECH0020_V3
+        ns_058 = NS.ECH0058_V5
 
         # Create header element
         if parent is not None:
@@ -10893,8 +10889,8 @@ class ECH0020Header(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020Header':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
-        ns_058 = 'http://www.ech.ch/xmlns/eCH-0058/5'
+        ns_020 = NS.ECH0020_V3
+        ns_058 = NS.ECH0058_V5
 
         # Parse eCH-0058 base header (extension base - fields are inline)
         header = ECH0058Header.from_xml(elem)
@@ -10969,7 +10965,7 @@ class ECH0020Info(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020Info':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns_020 = NS.ECH0020_V3
 
         # infoText (required)
         info_text_elem = elem.find(f'{{{ns_020}}}infoText')
@@ -11022,7 +11018,7 @@ class ECH0020NegativeReport(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020NegativeReport':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns_020 = NS.ECH0020_V3
 
         # negativeReportInfo (required, unbounded)
         negative_report_info = []
@@ -11078,7 +11074,7 @@ class ECH0020PositiveReport(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element) -> 'ECH0020PositiveReport':
         """Parse from XML element."""
-        ns_020 = 'http://www.ech.ch/xmlns/eCH-0020/3'
+        ns_020 = NS.ECH0020_V3
 
         # positiveReportInfo (required, unbounded)
         positive_report_info = []
@@ -11193,7 +11189,7 @@ class ECH0020Delivery(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0020/3',
+        namespace: str = NS.ECH0020_V3,
         element_name: str = 'delivery'
     ) -> ET.Element:
         """Serialize to XML element.
@@ -11262,7 +11258,7 @@ class ECH0020Delivery(BaseModel):
         Returns:
             Parsed ECH0020Delivery model
         """
-        ns = {'eCH-0020': NAMESPACE_ECH0020_V3}
+        ns = {'eCH-0020': NS.ECH0020_V3}
 
         # Parse version attribute
         version = element.get('version', '3.0')

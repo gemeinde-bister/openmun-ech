@@ -9,6 +9,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Union
 
+from openmun_ech.core import NS
+
 
 class ECH0020Version(str, Enum):
     """Supported eCH-0020 versions."""
@@ -21,10 +23,10 @@ class VersionRouter:
 
     # Namespace mappings for version detection
     NAMESPACE_MAP = {
-        'http://www.ech.ch/xmlns/eCH-0020/3': ECH0020Version.V3_0,
-        'http://www.ech.ch/xmlns/eCH-0020-3/3': ECH0020Version.V3_0,  # Alternative
-        'http://www.ech.ch/xmlns/eCH-0020/5': ECH0020Version.V5_0,
-        'http://www.ech.ch/xmlns/eCH-0020-5/5': ECH0020Version.V5_0,  # Alternative
+        NS.ECH0020_V3: ECH0020Version.V3_0,
+        NS.ALT_ECH0020_V3: ECH0020Version.V3_0,  # Alternative
+        NS.ECH0020_V5: ECH0020Version.V5_0,
+        NS.ALT_ECH0020_V5: ECH0020Version.V5_0,  # Alternative
     }
 
     @staticmethod
@@ -73,7 +75,7 @@ class VersionRouter:
             return VersionRouter.NAMESPACE_MAP[namespace]
 
         # Strategy 2: Check version attribute
-        version_attr = root.get('version') or root.get('{http://www.ech.ch/xmlns/eCH-0020/3}version')
+        version_attr = root.get('version') or root.get(f'{{{NS.ECH0020_V3}}}version')
         if version_attr:
             if version_attr.startswith('3.'):
                 return ECH0020Version.V3_0

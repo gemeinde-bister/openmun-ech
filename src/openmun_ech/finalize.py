@@ -33,6 +33,7 @@ from openmun_ech.ech0099.models import (
 from openmun_ech.ech0058 import ActionType, ECH0058SendingApplication as ECH0058SendingApplicationV5
 from openmun_ech.ech0058 import v5 as ech0058_v5
 from openmun_ech.ech0058 import v4 as ech0058_v4
+from openmun_ech.core import NS
 
 
 def finalize_0020_base(
@@ -52,7 +53,7 @@ def finalize_0020_base(
     msg_id = message_id or str(uuid4())
     msg_date = message_date or datetime.now()
 
-    message_type = config.message_type_override or "http://www.ech.ch/xmlns/eCH-0020/3"
+    message_type = config.message_type_override or NS.ECH0020_V3
 
     sending_application = ech0058_v5.ECH0058SendingApplication(
         manufacturer=config.manufacturer,
@@ -104,7 +105,7 @@ def finalize_0099(
     msg_id = message_id or str(uuid4())
     msg_date = message_date or datetime.now()
 
-    message_type = "http://www.ech.ch/xmlns/eCH-0099/2"
+    message_type = NS.ECH0099_V2
 
     sending_application = ech0058_v4.ECH0058SendingApplication(
         manufacturer=config.manufacturer,

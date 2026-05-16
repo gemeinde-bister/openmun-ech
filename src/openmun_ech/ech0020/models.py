@@ -119,6 +119,7 @@ from openmun_ech.ech0010 import (
     ECH0010OrganisationMailAddressInfo,
     ECH0010OrganisationMailAddress,
 )
+from openmun_ech.core import NS
 
 
 # ============================================================================
@@ -5769,7 +5770,7 @@ class BaseDeliveryEvent(BaseModel):
             message_date = datetime.now()
 
         # Step 3: Determine message_type (auto-detect for eCH-0020 or use override)
-        message_type = config.message_type_override or "http://www.ech.ch/xmlns/eCH-0020/3"
+        message_type = config.message_type_override or NS.ECH0020_V3
 
         # Step 4: Build ECH0058SendingApplication from config
         sending_application = ECH0058SendingApplication(

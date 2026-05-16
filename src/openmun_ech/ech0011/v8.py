@@ -27,6 +27,7 @@ from openmun_ech.ech0044 import (
 )
 from openmun_ech.ech0010 import ECH0010MailAddress, ECH0010SwissAddressInformation, ECH0010AddressInformation
 from openmun_ech.ech0006 import ResidencePermitType
+from openmun_ech.core import NS
 
 # Import enums from this package
 from .enums import (
@@ -107,8 +108,8 @@ class ECH0011SwissMunicipalityWithoutBFS(BaseModel):
         """
         if nsmap is None:
             nsmap = {
-                None: "http://www.ech.ch/xmlns/eCH-0011/8",
-                "eCH-0007": "http://www.ech.ch/xmlns/eCH-0007/6"
+                None: NS.ECH0011_V8,
+                "eCH-0007": NS.ECH0007_V6
             }
 
         elem = ET.SubElement(parent, f"{{{nsmap[None]}}}{tag}")
@@ -142,8 +143,8 @@ class ECH0011SwissMunicipalityWithoutBFS(BaseModel):
         """
         if nsmap is None:
             nsmap = {
-                None: "http://www.ech.ch/xmlns/eCH-0011/8",
-                "eCH-0007": "http://www.ech.ch/xmlns/eCH-0007/6"
+                None: NS.ECH0011_V8,
+                "eCH-0007": NS.ECH0007_V6
             }
 
         ns_0007 = nsmap['eCH-0007']
@@ -188,7 +189,7 @@ class ECH0011ForeignerName(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'nameOnForeignPassport') -> ET.Element:
         """Export to eCH-0011 XML.
 
@@ -219,7 +220,7 @@ class ECH0011ForeignerName(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011ForeignerName':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ForeignerName':
         """Import from eCH-0011 XML.
 
         Args:
@@ -296,7 +297,7 @@ class ECH0011NameData(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> ET.Element:
+               namespace: str = NS.ECH0011_V8) -> ET.Element:
         """Export to eCH-0011 XML.
 
         Args:
@@ -354,7 +355,7 @@ class ECH0011NameData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011NameData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011NameData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -452,7 +453,7 @@ class ECH0011GeneralPlace(BaseModel):
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'placeOfBirth') -> ET.Element:
         """Export to eCH-0011 XML.
 
@@ -493,7 +494,7 @@ class ECH0011GeneralPlace(BaseModel):
             swiss_town_elem = ET.SubElement(elem, f'{{{namespace}}}swissTown')
             # Serialize municipality content (municipalityId, municipalityName, etc.) in eCH-0007 namespace
             swiss_muni = self.swiss_municipality.swiss_municipality
-            ech0007_ns = 'http://www.ech.ch/xmlns/eCH-0007/5'
+            ech0007_ns = NS.ECH0007_V5
             if swiss_muni.municipality_id:
                 ET.SubElement(swiss_town_elem, f'{{{ech0007_ns}}}municipalityId').text = swiss_muni.municipality_id
             ET.SubElement(swiss_town_elem, f'{{{ech0007_ns}}}municipalityName').text = swiss_muni.municipality_name
@@ -506,7 +507,7 @@ class ECH0011GeneralPlace(BaseModel):
             foreign_elem = ET.SubElement(elem, f'{{{namespace}}}foreignCountry')
             self.foreign_country.to_xml(
                 parent=foreign_elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0008/3',  # Content namespace
+                namespace=NS.ECH0008_V3,  # Content namespace
                 element_name='country',
                 wrapper_namespace=namespace  # Wrapper in eCH-0011
             )
@@ -520,7 +521,7 @@ class ECH0011GeneralPlace(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011GeneralPlace':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011GeneralPlace':
         """Import from eCH-0011 XML.
 
         Args:
@@ -535,8 +536,8 @@ class ECH0011GeneralPlace(BaseModel):
         """
         ns = {
             'eCH-0011': namespace,
-            'eCH-0007': 'http://www.ech.ch/xmlns/eCH-0007/5',
-            'eCH-0008': 'http://www.ech.ch/xmlns/eCH-0008/3'
+            'eCH-0007': NS.ECH0007_V5,
+            'eCH-0008': NS.ECH0008_V3
         }
 
         # Check for unknown
@@ -572,7 +573,7 @@ class ECH0011GeneralPlace(BaseModel):
             # country element is in eCH-0011 namespace (wrapper), content is in eCH-0008
             country_elem = foreign_container.find('eCH-0011:country', ns)
             if country_elem is not None:
-                foreign_country = ECH0008Country.from_xml(country_elem, 'http://www.ech.ch/xmlns/eCH-0008/3')
+                foreign_country = ECH0008Country.from_xml(country_elem, NS.ECH0008_V3)
 
             town_elem = foreign_container.find('eCH-0011:town', ns)
             foreign_town = town_elem.text.strip() if town_elem is not None and town_elem.text else None
@@ -607,7 +608,7 @@ class ECH0011BirthData(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> ET.Element:
+               namespace: str = NS.ECH0011_V8) -> ET.Element:
         """Export to eCH-0011 XML.
 
         Args:
@@ -625,7 +626,7 @@ class ECH0011BirthData(BaseModel):
         # Date of birth (required) - uses eCH-0044 datePartiallyKnownType
         dob_elem = ET.SubElement(elem, f'{{{namespace}}}dateOfBirth')
         # yearMonthDay is in eCH-0044 namespace per XSD
-        ymd_elem = ET.SubElement(dob_elem, '{http://www.ech.ch/xmlns/eCH-0044/4}yearMonthDay')
+        ymd_elem = ET.SubElement(dob_elem, f'{{{NS.ECH0044_V4}}}yearMonthDay')
         ymd_elem.text = self.date_of_birth.isoformat()
 
         # Place of birth (required)
@@ -639,7 +640,7 @@ class ECH0011BirthData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011BirthData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011BirthData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -659,7 +660,7 @@ class ECH0011BirthData(BaseModel):
         if dob_elem is None:
             raise ValueError("Missing required field: dateOfBirth")
         # Parse yearMonthDay element (full date) - in eCH-0044 namespace
-        ns_0044 = {'eCH-0044': 'http://www.ech.ch/xmlns/eCH-0044/4'}
+        ns_0044 = {'eCH-0044': NS.ECH0044_V4}
         ymd_elem = dob_elem.find('eCH-0044:yearMonthDay', ns_0044)
         if ymd_elem is None or not ymd_elem.text:
             raise ValueError("Missing yearMonthDay in dateOfBirth")
@@ -706,7 +707,7 @@ class ECH0011ReligionData(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+        namespace: str = NS.ECH0011_V8,
         element_name: str = 'religionData',
         wrapper_namespace: Optional[str] = None
     ) -> ET.Element:
@@ -752,7 +753,7 @@ class ECH0011ReligionData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011ReligionData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ReligionData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -804,7 +805,7 @@ class ECH0011SeparationData(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> ET.Element:
+               namespace: str = NS.ECH0011_V8) -> ET.Element:
         """Export to eCH-0011 XML.
 
         Args:
@@ -838,7 +839,7 @@ class ECH0011SeparationData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011SeparationData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011SeparationData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -909,7 +910,7 @@ class ECH0011MaritalData(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> ET.Element:
+               namespace: str = NS.ECH0011_V8) -> ET.Element:
         """Export to eCH-0011 XML.
 
         Args:
@@ -951,7 +952,7 @@ class ECH0011MaritalData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011MaritalData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011MaritalData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -1181,7 +1182,7 @@ class ECH0011CountryInfo(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> ET.Element:
+               namespace: str = NS.ECH0011_V8) -> ET.Element:
         """Export to eCH-0011 XML.
 
         Args:
@@ -1199,7 +1200,7 @@ class ECH0011CountryInfo(BaseModel):
         # Country (required) - wrapper in eCH-0011, content from eCH-0008
         country_wrapper = ET.SubElement(elem, f'{{{namespace}}}country')
         # Add eCH-0008 country content to the wrapper
-        for child in self.country.to_xml(namespace='http://www.ech.ch/xmlns/eCH-0008/3'):
+        for child in self.country.to_xml(namespace=NS.ECH0008_V3):
             country_wrapper.append(child)
 
         # Valid from date (optional)
@@ -1211,7 +1212,7 @@ class ECH0011CountryInfo(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011CountryInfo':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011CountryInfo':
         """Import from eCH-0011 XML.
 
         Args:
@@ -1226,7 +1227,7 @@ class ECH0011CountryInfo(BaseModel):
         """
         ns = {
             'eCH-0011': namespace,
-            'eCH-0008': 'http://www.ech.ch/xmlns/eCH-0008/3'
+            'eCH-0008': NS.ECH0008_V3
         }
 
         # Country (required) - wrapper in eCH-0011, content from eCH-0008
@@ -1234,7 +1235,7 @@ class ECH0011CountryInfo(BaseModel):
         if country_elem is None:
             raise ValueError("Missing required field: country")
         # Parse eCH-0008 country content from within the eCH-0011 wrapper
-        country = ECH0008Country.from_xml(country_elem, 'http://www.ech.ch/xmlns/eCH-0008/3')
+        country = ECH0008Country.from_xml(country_elem, NS.ECH0008_V3)
 
         # Valid from (optional)
         valid_elem = elem.find('eCH-0011:nationalityValidFrom', ns)
@@ -1271,7 +1272,7 @@ class ECH0011NationalityData(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+        namespace: str = NS.ECH0011_V8,
         element_name: str = 'nationalityData',
         wrapper_namespace: Optional[str] = None
     ) -> ET.Element:
@@ -1316,7 +1317,7 @@ class ECH0011NationalityData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011NationalityData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011NationalityData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -1377,7 +1378,7 @@ class ECH0011PlaceOfOrigin(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> ET.Element:
+               namespace: str = NS.ECH0011_V8) -> ET.Element:
         """Export to eCH-0011 XML.
 
         Args:
@@ -1414,7 +1415,7 @@ class ECH0011PlaceOfOrigin(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011PlaceOfOrigin':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011PlaceOfOrigin':
         """Import from eCH-0011 XML.
 
         Args:
@@ -1483,7 +1484,7 @@ class ECH0011ResidencePermitData(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+        namespace: str = NS.ECH0011_V8,
         element_name: str = 'residencePermit',
         wrapper_namespace: Optional[str] = None
     ) -> ET.Element:
@@ -1539,7 +1540,7 @@ class ECH0011ResidencePermitData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011ResidencePermitData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ResidencePermitData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -1597,7 +1598,7 @@ class ECH0011DeathPeriod(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> ET.Element:
+               namespace: str = NS.ECH0011_V8) -> ET.Element:
         """Export to eCH-0011 XML.
 
         Args:
@@ -1625,7 +1626,7 @@ class ECH0011DeathPeriod(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011DeathPeriod':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011DeathPeriod':
         """Import from eCH-0011 XML.
 
         Args:
@@ -1674,7 +1675,7 @@ class ECH0011DeathData(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'deathData',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0011 XML.
@@ -1707,7 +1708,7 @@ class ECH0011DeathData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011DeathData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011DeathData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -1780,14 +1781,14 @@ class ECH0011PartnerIdOrganisation(BaseModel):
         """
         if nsmap is None:
             nsmap = {
-                None: "http://www.ech.ch/xmlns/eCH-0011/8",
-                "eCH-0044": "http://www.ech.ch/xmlns/eCH-0044/4"
+                None: NS.ECH0011_V8,
+                "eCH-0044": NS.ECH0044_V4
             }
 
         # Use wrapper_namespace for wrapper element if provided, otherwise use nsmap[None]
         wrapper_ns = wrapper_namespace if wrapper_namespace is not None else nsmap[None]
         # Content namespace always uses eCH-0011
-        content_ns = "http://www.ech.ch/xmlns/eCH-0011/8"
+        content_ns = NS.ECH0011_V8
 
         elem = ET.SubElement(parent, f"{{{wrapper_ns}}}{tag}")
 
@@ -1823,8 +1824,8 @@ class ECH0011PartnerIdOrganisation(BaseModel):
         """
         if nsmap is None:
             nsmap = {
-                None: "http://www.ech.ch/xmlns/eCH-0011/8",
-                "eCH-0044": "http://www.ech.ch/xmlns/eCH-0044/4"
+                None: NS.ECH0011_V8,
+                "eCH-0044": NS.ECH0044_V4
             }
 
         ns = nsmap[None]
@@ -1937,7 +1938,7 @@ class ECH0011ContactData(BaseModel):
         return self
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'contactData',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0011 XML.
@@ -1963,14 +1964,14 @@ class ECH0011ContactData(BaseModel):
         if self.contact_person:
             self.contact_person.to_xml(
                 parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0044/4',  # Content namespace
+                namespace=NS.ECH0044_V4,  # Content namespace
                 element_name='personIdentification',
                 wrapper_namespace=namespace  # Wrapper in eCH-0011
             )
         elif self.contact_person_partner:
             self.contact_person_partner.to_xml(
                 parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0044/4',  # Content namespace
+                namespace=NS.ECH0044_V4,  # Content namespace
                 element_name='personIdentificationPartner',
                 wrapper_namespace=namespace  # Wrapper in eCH-0011
             )
@@ -1980,14 +1981,14 @@ class ECH0011ContactData(BaseModel):
                 tag='partnerIdOrganisation',
                 nsmap={
                     None: namespace,
-                    'eCH-0044': 'http://www.ech.ch/xmlns/eCH-0044/4'
+                    'eCH-0044': NS.ECH0044_V4
                 }
             )
 
         # Contact address (required) - wrapper in eCH-0011, content in eCH-0010
         self.contact_address.to_xml(
             parent=elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0010/5',  # Content namespace
+            namespace=NS.ECH0010_V5,  # Content namespace
             element_name='contactAddress',
             wrapper_namespace=namespace  # Wrapper in eCH-0011
         )
@@ -2006,7 +2007,7 @@ class ECH0011ContactData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011ContactData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ContactData':
         """Import from eCH-0011 XML.
 
         Args:
@@ -2021,8 +2022,8 @@ class ECH0011ContactData(BaseModel):
         """
         ns = {
             'eCH-0011': namespace,
-            'eCH-0044': 'http://www.ech.ch/xmlns/eCH-0044/4',
-            'eCH-0010': 'http://www.ech.ch/xmlns/eCH-0010/5'
+            'eCH-0044': NS.ECH0044_V4,
+            'eCH-0010': NS.ECH0010_V5
         }
 
         # Parse optional choice (at most one of three variants)
@@ -2035,7 +2036,7 @@ class ECH0011ContactData(BaseModel):
         if person_elem is not None:
             contact_person = ECH0044PersonIdentification.from_xml(
                 person_elem,
-                'http://www.ech.ch/xmlns/eCH-0044/4'
+                NS.ECH0044_V4
             )
 
         # Variant 2: personIdentificationPartner (light) - wrapper in eCH-0011, content in eCH-0044
@@ -2043,7 +2044,7 @@ class ECH0011ContactData(BaseModel):
         if partner_elem is not None:
             contact_person_partner = ECH0044PersonIdentificationLight.from_xml(
                 partner_elem,
-                'http://www.ech.ch/xmlns/eCH-0044/4'
+                NS.ECH0044_V4
             )
 
         # Variant 3: partnerIdOrganisation
@@ -2053,7 +2054,7 @@ class ECH0011ContactData(BaseModel):
                 org_elem,
                 nsmap={
                     None: namespace,
-                    'eCH-0044': 'http://www.ech.ch/xmlns/eCH-0044/4'
+                    'eCH-0044': NS.ECH0044_V4
                 }
             )
 
@@ -2061,7 +2062,7 @@ class ECH0011ContactData(BaseModel):
         address_elem = elem.find('eCH-0011:contactAddress', ns)
         if address_elem is None:
             raise ValueError("Missing required field: contactAddress")
-        contact_address = ECH0010MailAddress.from_xml(address_elem, 'http://www.ech.ch/xmlns/eCH-0010/5')
+        contact_address = ECH0010MailAddress.from_xml(address_elem, NS.ECH0010_V5)
 
         # Valid from (optional)
         from_elem = elem.find('eCH-0011:contactValidFrom', ns)
@@ -2118,7 +2119,7 @@ class ECH0011DestinationType(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+        namespace: str = NS.ECH0011_V8,
         element_name: str = 'comesFrom',
         wrapper_namespace: Optional[str] = None
     ) -> ET.Element:
@@ -2174,7 +2175,7 @@ class ECH0011DestinationType(BaseModel):
             # Swiss municipality - swissTown wrapper in eCH-0011, content in eCH-0007
             swiss_town_elem = ET.SubElement(elem, f'{{{namespace}}}swissTown')
             swiss_muni = self.swiss_municipality.swiss_municipality
-            ech0007_ns = 'http://www.ech.ch/xmlns/eCH-0007/5'
+            ech0007_ns = NS.ECH0007_V5
             if swiss_muni.municipality_id:
                 ET.SubElement(swiss_town_elem, f'{{{ech0007_ns}}}municipalityId').text = swiss_muni.municipality_id
             ET.SubElement(swiss_town_elem, f'{{{ech0007_ns}}}municipalityName').text = swiss_muni.municipality_name
@@ -2187,7 +2188,7 @@ class ECH0011DestinationType(BaseModel):
             foreign_elem = ET.SubElement(elem, f'{{{namespace}}}foreignCountry')
             self.foreign_country.to_xml(
                 parent=foreign_elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0008/3',  # Content namespace
+                namespace=NS.ECH0008_V3,  # Content namespace
                 element_name='country',
                 wrapper_namespace=namespace  # Wrapper in eCH-0011
             )
@@ -2199,7 +2200,7 @@ class ECH0011DestinationType(BaseModel):
         if self.mail_address:
             self.mail_address.to_xml(
                 parent=elem,
-                namespace='http://www.ech.ch/xmlns/eCH-0010/5',  # Content namespace
+                namespace=NS.ECH0010_V5,  # Content namespace
                 element_name='mailAddress',
                 wrapper_namespace=namespace  # Wrapper in eCH-0011
             )
@@ -2208,7 +2209,7 @@ class ECH0011DestinationType(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011DestinationType':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011DestinationType':
         """Import from eCH-0011 XML.
 
         Args:
@@ -2220,9 +2221,9 @@ class ECH0011DestinationType(BaseModel):
         """
         ns = {
             'eCH-0011': namespace,
-            'eCH-0007': 'http://www.ech.ch/xmlns/eCH-0007/5',
-            'eCH-0008': 'http://www.ech.ch/xmlns/eCH-0008/3',
-            'eCH-0010': 'http://www.ech.ch/xmlns/eCH-0010/5'
+            'eCH-0007': NS.ECH0007_V5,
+            'eCH-0008': NS.ECH0008_V3,
+            'eCH-0010': NS.ECH0010_V5
         }
 
         # Check for unknown
@@ -2258,7 +2259,7 @@ class ECH0011DestinationType(BaseModel):
             # country element is in eCH-0011 namespace (wrapper), content is in eCH-0008
             country_elem = foreign_container.find('eCH-0011:country', ns)
             if country_elem is not None:
-                foreign_country = ECH0008Country.from_xml(country_elem, 'http://www.ech.ch/xmlns/eCH-0008/3')
+                foreign_country = ECH0008Country.from_xml(country_elem, NS.ECH0008_V3)
 
             town_elem = foreign_container.find('eCH-0011:town', ns)
             foreign_town = town_elem.text.strip() if town_elem is not None and town_elem.text else None
@@ -2268,7 +2269,7 @@ class ECH0011DestinationType(BaseModel):
         mail_address = None
         if mail_elem is not None:
             # Parse addressInformationType content (no wrapper inside mailAddress)
-            mail_address = ECH0010AddressInformation.from_xml(mail_elem, 'http://www.ech.ch/xmlns/eCH-0010/5')
+            mail_address = ECH0010AddressInformation.from_xml(mail_elem, NS.ECH0010_V5)
 
         return cls(
             unknown=unknown if unknown else None,
@@ -2328,7 +2329,7 @@ class ECH0011DwellingAddress(BaseModel):
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+        namespace: str = NS.ECH0011_V8,
         element_name: str = 'dwellingAddress',
         wrapper_namespace: Optional[str] = None
     ) -> ET.Element:
@@ -2379,7 +2380,7 @@ class ECH0011DwellingAddress(BaseModel):
         address_elem = ET.SubElement(elem, f'{{{namespace}}}address')
         self.address.to_xml(
             parent=address_elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0010/5'
+            namespace=NS.ECH0010_V5
         )
 
         # Type of household (required)
@@ -2395,11 +2396,11 @@ class ECH0011DwellingAddress(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011DwellingAddress':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011DwellingAddress':
         """Import from eCH-0011 XML."""
         ns = {
             'eCH-0011': namespace,
-            'eCH-0010': 'http://www.ech.ch/xmlns/eCH-0010/5'
+            'eCH-0010': NS.ECH0010_V5
         }
 
         # EGID (optional)
@@ -2419,7 +2420,7 @@ class ECH0011DwellingAddress(BaseModel):
         address_elem = elem.find('eCH-0011:address', ns)
         if address_elem is None:
             raise ValueError("Missing required field: address")
-        address = ECH0010SwissAddressInformation.from_xml(address_elem, 'http://www.ech.ch/xmlns/eCH-0010/5')
+        address = ECH0010SwissAddressInformation.from_xml(address_elem, NS.ECH0010_V5)
 
         # Type of household (required)
         type_elem = elem.find('eCH-0011:typeOfHousehold', ns)
@@ -2488,7 +2489,7 @@ class ECH0011ResidenceData(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'mainResidence') -> ET.Element:
         """Export to eCH-0011 XML."""
         if parent is not None:
@@ -2500,7 +2501,7 @@ class ECH0011ResidenceData(BaseModel):
         # XSD: <xs:element name="reportingMunicipality" type="eCH-0007:swissMunicipalityType"/>
         # Content is direct children (municipalityId, municipalityName, cantonAbbreviation)
         reporting_muni_elem = ET.SubElement(elem, f'{{{namespace}}}reportingMunicipality')
-        ech0007_ns = 'http://www.ech.ch/xmlns/eCH-0007/5'
+        ech0007_ns = NS.ECH0007_V5
         swiss_muni = self.reporting_municipality.swiss_municipality
 
         # Add swissMunicipalityType fields directly (no wrapper element)
@@ -2544,11 +2545,11 @@ class ECH0011ResidenceData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011ResidenceData':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ResidenceData':
         """Import from eCH-0011 XML."""
         ns = {
             'eCH-0011': namespace,
-            'eCH-0007': 'http://www.ech.ch/xmlns/eCH-0007/5'
+            'eCH-0007': NS.ECH0007_V5
         }
 
         # Reporting municipality (required) - reportingMunicipality element in eCH-0011 namespace
@@ -2630,7 +2631,7 @@ class ECH0011MainResidence(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'hasMainResidence',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0011 XML.
@@ -2661,7 +2662,7 @@ class ECH0011MainResidence(BaseModel):
             sec_res_elem = ET.SubElement(elem, f'{{{namespace}}}secondaryResidence')
             # Serialize municipality content (municipalityId, municipalityName, etc.) in eCH-0007 namespace
             swiss_muni = secondary.swiss_municipality
-            ech0007_ns = 'http://www.ech.ch/xmlns/eCH-0007/5'
+            ech0007_ns = NS.ECH0007_V5
             if swiss_muni.municipality_id:
                 ET.SubElement(sec_res_elem, f'{{{ech0007_ns}}}municipalityId').text = swiss_muni.municipality_id
             ET.SubElement(sec_res_elem, f'{{{ech0007_ns}}}municipalityName').text = swiss_muni.municipality_name
@@ -2674,11 +2675,11 @@ class ECH0011MainResidence(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011MainResidence':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011MainResidence':
         """Import from eCH-0011 XML."""
         ns = {
             'eCH-0011': namespace,
-            'eCH-0007': 'http://www.ech.ch/xmlns/eCH-0007/5'
+            'eCH-0007': NS.ECH0007_V5
         }
 
         # Main residence (required)
@@ -2756,7 +2757,7 @@ class ECH0011SecondaryResidence(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'hasSecondaryResidence',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0011 XML.
@@ -2778,7 +2779,7 @@ class ECH0011SecondaryResidence(BaseModel):
         # Main residence municipality (required)
         self.main_residence.to_xml(
             parent=elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0007/5',
+            namespace=NS.ECH0007_V5,
             element_name='mainResidence'
         )
 
@@ -2788,7 +2789,7 @@ class ECH0011SecondaryResidence(BaseModel):
         # Reporting municipality (required)
         self.reporting_municipality.to_xml(
             parent=sec_elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0007/5',
+            namespace=NS.ECH0007_V5,
             element_name='reportingMunicipality'
         )
 
@@ -2823,18 +2824,18 @@ class ECH0011SecondaryResidence(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011SecondaryResidence':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011SecondaryResidence':
         """Import from eCH-0011 XML."""
         ns = {
             'eCH-0011': namespace,
-            'eCH-0007': 'http://www.ech.ch/xmlns/eCH-0007/5'
+            'eCH-0007': NS.ECH0007_V5
         }
 
         # Main residence municipality (required)
-        main_elem = elem.find('{http://www.ech.ch/xmlns/eCH-0007/5}mainResidence', ns)
+        main_elem = elem.find(f'{{{NS.ECH0007_V5}}}mainResidence', ns)
         if main_elem is None:
             raise ValueError("Missing required field: mainResidence")
-        main_residence = ECH0007Municipality.from_xml(main_elem, 'http://www.ech.ch/xmlns/eCH-0007/5')
+        main_residence = ECH0007Municipality.from_xml(main_elem, NS.ECH0007_V5)
 
         # Secondary residence element (required)
         sec_elem = elem.find('eCH-0011:secondaryResidence', ns)
@@ -2842,10 +2843,10 @@ class ECH0011SecondaryResidence(BaseModel):
             raise ValueError("Missing required field: secondaryResidence")
 
         # Reporting municipality (required)
-        mun_elem = sec_elem.find('{http://www.ech.ch/xmlns/eCH-0007/5}reportingMunicipality', ns)
+        mun_elem = sec_elem.find(f'{{{NS.ECH0007_V5}}}reportingMunicipality', ns)
         if mun_elem is None:
             raise ValueError("Missing required field: reportingMunicipality")
-        reporting_municipality = ECH0007Municipality.from_xml(mun_elem, 'http://www.ech.ch/xmlns/eCH-0007/5')
+        reporting_municipality = ECH0007Municipality.from_xml(mun_elem, NS.ECH0007_V5)
 
         # Arrival date (required)
         arrival_elem = sec_elem.find('eCH-0011:arrivalDate', ns)
@@ -2932,7 +2933,7 @@ class ECH0011OtherResidence(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'hasOtherResidence',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0011 XML.
@@ -2957,7 +2958,7 @@ class ECH0011OtherResidence(BaseModel):
         # Add reporting municipality
         self.reporting_municipality.to_xml(
             parent=secondary_residence_elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0007/5',
+            namespace=NS.ECH0007_V5,
             element_name='reportingMunicipality'
         )
 
@@ -3003,9 +3004,9 @@ class ECH0011OtherResidence(BaseModel):
         """
         if nsmap is None:
             nsmap = {
-                None: "http://www.ech.ch/xmlns/eCH-0011/8",
-                "eCH-0007": "http://www.ech.ch/xmlns/eCH-0007/6",
-                "eCH-0010": "http://www.ech.ch/xmlns/eCH-0010/6"
+                None: NS.ECH0011_V8,
+                "eCH-0007": NS.ECH0007_V6,
+                "eCH-0010": NS.ECH0010_V6
             }
 
         ns = nsmap[None]
@@ -3144,7 +3145,7 @@ class ECH0011Person(BaseModel):
             elem: The personIdentification element (already created in eCH-0011 namespace)
             person_id: The person identification data to populate
         """
-        ech0044_ns = 'http://www.ech.ch/xmlns/eCH-0044/4'
+        ech0044_ns = NS.ECH0044_V4
 
         # VN (optional)
         if person_id.vn:
@@ -3183,7 +3184,7 @@ class ECH0011Person(BaseModel):
         person_id.date_of_birth.to_xml(elem, ech0044_ns, 'dateOfBirth')
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8',
+               namespace: str = NS.ECH0011_V8,
                element_name: str = 'person') -> ET.Element:
         """Export to eCH-0011 XML.
 
@@ -3265,7 +3266,7 @@ class ECH0011Person(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0011/8') -> 'ECH0011Person':
+                 namespace: str = NS.ECH0011_V8) -> 'ECH0011Person':
         """Import from eCH-0011 XML.
 
         Args:
@@ -3280,7 +3281,7 @@ class ECH0011Person(BaseModel):
         """
         ns = {
             'eCH-0011': namespace,
-            'eCH-0044': 'http://www.ech.ch/xmlns/eCH-0044/4'
+            'eCH-0044': NS.ECH0044_V4
         }
 
         # Person identification (required, eCH-0044 type in eCH-0011 namespace)
@@ -3288,7 +3289,7 @@ class ECH0011Person(BaseModel):
         person_id_elem = elem.find('eCH-0011:personIdentification', ns)
         if person_id_elem is None:
             raise ValueError("Missing required field: personIdentification")
-        person_id = ECH0044PersonIdentification.from_xml(person_id_elem, 'http://www.ech.ch/xmlns/eCH-0044/4')
+        person_id = ECH0044PersonIdentification.from_xml(person_id_elem, NS.ECH0044_V4)
 
         # Name data (required)
         name_elem = elem.find('eCH-0011:nameData', ns)
@@ -3440,10 +3441,10 @@ class ECH0011ReportedPerson(BaseModel):
         """
         if nsmap is None:
             nsmap = {
-                None: "http://www.ech.ch/xmlns/eCH-0011/8",
-                "eCH-0007": "http://www.ech.ch/xmlns/eCH-0007/6",
-                "eCH-0010": "http://www.ech.ch/xmlns/eCH-0010/6",
-                "eCH-0044": "http://www.ech.ch/xmlns/eCH-0044/4"
+                None: NS.ECH0011_V8,
+                "eCH-0007": NS.ECH0007_V6,
+                "eCH-0010": NS.ECH0010_V6,
+                "eCH-0044": NS.ECH0044_V4
             }
 
         # Create root reportedPerson element
@@ -3475,10 +3476,10 @@ class ECH0011ReportedPerson(BaseModel):
         """
         if nsmap is None:
             nsmap = {
-                None: "http://www.ech.ch/xmlns/eCH-0011/8",
-                "eCH-0007": "http://www.ech.ch/xmlns/eCH-0007/6",
-                "eCH-0010": "http://www.ech.ch/xmlns/eCH-0010/6",
-                "eCH-0044": "http://www.ech.ch/xmlns/eCH-0044/4"
+                None: NS.ECH0011_V8,
+                "eCH-0007": NS.ECH0007_V6,
+                "eCH-0010": NS.ECH0010_V6,
+                "eCH-0044": NS.ECH0044_V4
             }
 
         ns = nsmap[None]

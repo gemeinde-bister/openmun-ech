@@ -83,6 +83,7 @@ from openmun_ech.ech0010 import (
 )
 from openmun_ech.ech0058.v4 import ECH0058Header, ECH0058SendingApplication
 from openmun_ech.ech0058 import ActionType
+from openmun_ech.core import NS
 
 
 # ============================================================================
@@ -1717,7 +1718,7 @@ def finalize_statistics_delivery(
     header = ECH0058Header(
         sender_id=config.sender_id,
         message_id=msg_id,
-        message_type="http://www.ech.ch/xmlns/eCH-0099/2",
+        message_type=NS.ECH0099_V2,
         sending_application=sending_application,
         message_date=msg_date,
         action=action,

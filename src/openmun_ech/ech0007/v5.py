@@ -15,6 +15,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from openmun_ech.core import NS
+
 
 class CantonAbbreviation(str, Enum):
     """Swiss canton abbreviations."""
@@ -142,7 +144,7 @@ class ECH0007SwissMunicipality(BaseModel):
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0007/5') -> ET.Element:
+               namespace: str = NS.ECH0007_V5) -> ET.Element:
         """Export to XML element.
 
         Args:
@@ -180,7 +182,7 @@ class ECH0007SwissMunicipality(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0007/5') -> 'ECH0007SwissMunicipality':
+                 namespace: str = NS.ECH0007_V5) -> 'ECH0007SwissMunicipality':
         """Import from XML element.
 
         Args:
@@ -279,7 +281,7 @@ class ECH0007SwissAndFLMunicipality(BaseModel):
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0007/5') -> ET.Element:
+               namespace: str = NS.ECH0007_V5) -> ET.Element:
         """Export to XML element.
 
         Args:
@@ -315,7 +317,7 @@ class ECH0007SwissAndFLMunicipality(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0007/5') -> 'ECH0007SwissAndFLMunicipality':
+                 namespace: str = NS.ECH0007_V5) -> 'ECH0007SwissAndFLMunicipality':
         """Import from XML element.
 
         Args:
@@ -405,7 +407,7 @@ class ECH0007Municipality(BaseModel):
         )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0007/5',
+               namespace: str = NS.ECH0007_V5,
                element_name: str = 'placeOfOrigin') -> ET.Element:
         """Export to XML element.
 
@@ -429,7 +431,7 @@ class ECH0007Municipality(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0007/5') -> 'ECH0007Municipality':
+                 namespace: str = NS.ECH0007_V5) -> 'ECH0007Municipality':
         """Import from XML element.
 
         Args:

@@ -16,6 +16,8 @@ import xml.etree.ElementTree as ET
 from typing import Optional, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from openmun_ech.core import NS
+
 
 class ECH0010PersonMailAddressInfo(BaseModel):
     """eCH-0010 Person information in mail address.
@@ -47,7 +49,7 @@ class ECH0010PersonMailAddressInfo(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5',
+               namespace: str = NS.ECH0010_V5,
                element_name: str = 'person') -> ET.Element:
         """Export to eCH-0010 XML.
 
@@ -87,7 +89,7 @@ class ECH0010PersonMailAddressInfo(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5') -> 'ECH0010PersonMailAddressInfo':
+                 namespace: str = NS.ECH0010_V5) -> 'ECH0010PersonMailAddressInfo':
         """Import from eCH-0010 XML.
 
         Args:
@@ -171,7 +173,7 @@ class ECH0010OrganisationMailAddressInfo(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5',
+               namespace: str = NS.ECH0010_V5,
                element_name: str = 'organisation') -> ET.Element:
         """Export to eCH-0010 XML.
 
@@ -222,7 +224,7 @@ class ECH0010OrganisationMailAddressInfo(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5') -> 'ECH0010OrganisationMailAddressInfo':
+                 namespace: str = NS.ECH0010_V5) -> 'ECH0010OrganisationMailAddressInfo':
         """Import from eCH-0010 XML.
 
         Args:
@@ -399,7 +401,7 @@ class ECH0010AddressInformation(BaseModel):
         return self
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5',
+               namespace: str = NS.ECH0010_V5,
                element_name: str = 'addressInformation',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0010 XML.
@@ -487,7 +489,7 @@ class ECH0010AddressInformation(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5') -> 'ECH0010AddressInformation':
+                 namespace: str = NS.ECH0010_V5) -> 'ECH0010AddressInformation':
         """Import from eCH-0010 XML.
 
         Args:
@@ -608,7 +610,7 @@ class ECH0010MailAddress(BaseModel):
         return self
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5',
+               namespace: str = NS.ECH0010_V5,
                element_name: str = 'mailAddress',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0010 XML.
@@ -643,7 +645,7 @@ class ECH0010MailAddress(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0010/5') -> 'ECH0010MailAddress':
+                 namespace: str = NS.ECH0010_V5) -> 'ECH0010MailAddress':
         """Import from eCH-0010 XML.
 
         Args:
@@ -696,7 +698,7 @@ class ECH0010PersonMailAddress(BaseModel):
         description="Address information (required)"
     )
 
-    def to_xml(self, parent: ET.Element, namespace: str = "http://www.ech.ch/xmlns/eCH-0010/5") -> None:
+    def to_xml(self, parent: ET.Element, namespace: str = NS.ECH0010_V5) -> None:
         """Serialize to XML element."""
         ns_prefix = f"{{{namespace}}}"
 
@@ -709,7 +711,7 @@ class ECH0010PersonMailAddress(BaseModel):
         self.address_information.to_xml(addr_elem, namespace)
 
     @classmethod
-    def from_xml(cls, elem: ET.Element, namespace: str = "http://www.ech.ch/xmlns/eCH-0010/5") -> "ECH0010PersonMailAddress":
+    def from_xml(cls, elem: ET.Element, namespace: str = NS.ECH0010_V5) -> "ECH0010PersonMailAddress":
         """Deserialize from XML element."""
         ns = {'eCH-0010': namespace}
 
@@ -749,7 +751,7 @@ class ECH0010OrganisationMailAddress(BaseModel):
         description="Address information (required)"
     )
 
-    def to_xml(self, parent: ET.Element, namespace: str = "http://www.ech.ch/xmlns/eCH-0010/5") -> None:
+    def to_xml(self, parent: ET.Element, namespace: str = NS.ECH0010_V5) -> None:
         """Serialize to XML element."""
         ns_prefix = f"{{{namespace}}}"
 
@@ -762,7 +764,7 @@ class ECH0010OrganisationMailAddress(BaseModel):
         self.address_information.to_xml(addr_elem, namespace)
 
     @classmethod
-    def from_xml(cls, elem: ET.Element, namespace: str = "http://www.ech.ch/xmlns/eCH-0010/5") -> "ECH0010OrganisationMailAddress":
+    def from_xml(cls, elem: ET.Element, namespace: str = NS.ECH0010_V5) -> "ECH0010OrganisationMailAddress":
         """Deserialize from XML element."""
         ns = {'eCH-0010': namespace}
 
@@ -869,7 +871,7 @@ class ECH0010SwissAddressInformation(BaseModel):
         """Ensure country code is uppercase."""
         return v.upper()
 
-    def to_xml(self, parent: ET.Element, namespace: str = "http://www.ech.ch/xmlns/eCH-0010/5") -> None:
+    def to_xml(self, parent: ET.Element, namespace: str = NS.ECH0010_V5) -> None:
         """Serialize to XML element."""
         ns_prefix = f"{{{namespace}}}"
 
@@ -905,7 +907,7 @@ class ECH0010SwissAddressInformation(BaseModel):
         ET.SubElement(parent, f"{ns_prefix}country").text = self.country
 
     @classmethod
-    def from_xml(cls, elem: ET.Element, namespace: str = "http://www.ech.ch/xmlns/eCH-0010/5") -> "ECH0010SwissAddressInformation":
+    def from_xml(cls, elem: ET.Element, namespace: str = NS.ECH0010_V5) -> "ECH0010SwissAddressInformation":
         """Deserialize from XML element."""
         ns = {'eCH-0010': namespace}
 

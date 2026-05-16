@@ -20,6 +20,8 @@ from datetime import date
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator
 
+from openmun_ech.core import NS
+
 
 class Sex(str, Enum):
     """Sex codes per eCH-0044 sexType.
@@ -67,7 +69,7 @@ class ECH0044DatePartiallyKnown(BaseModel):
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4',
+               namespace: str = NS.ECH0044_V4,
                element_name: str = 'dateOfBirth') -> ET.Element:
         """Export to eCH-0044 XML.
 
@@ -116,7 +118,7 @@ class ECH0044DatePartiallyKnown(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4') -> 'ECH0044DatePartiallyKnown':
+                 namespace: str = NS.ECH0044_V4) -> 'ECH0044DatePartiallyKnown':
         """Import from eCH-0044 XML.
 
         Args:
@@ -217,7 +219,7 @@ class ECH0044NamedPersonId(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4',
+               namespace: str = NS.ECH0044_V4,
                element_name: str = 'localPersonId') -> ET.Element:
         """Export to eCH-0044 XML.
 
@@ -246,7 +248,7 @@ class ECH0044NamedPersonId(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4') -> 'ECH0044NamedPersonId':
+                 namespace: str = NS.ECH0044_V4) -> 'ECH0044NamedPersonId':
         """Import from eCH-0044 XML.
 
         Args:
@@ -360,7 +362,7 @@ class ECH0044PersonIdentification(BaseModel):
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4',
+               namespace: str = NS.ECH0044_V4,
                element_name: str = 'personIdentification',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0044 XML.
@@ -422,7 +424,7 @@ class ECH0044PersonIdentification(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4') -> 'ECH0044PersonIdentification':
+                 namespace: str = NS.ECH0044_V4) -> 'ECH0044PersonIdentification':
         """Import from eCH-0044 XML.
 
         Args:
@@ -547,7 +549,7 @@ class ECH0044PersonIdentificationKeyOnly(BaseModel):
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4',
+               namespace: str = NS.ECH0044_V4,
                element_name: str = 'personIdentificationKeyOnly') -> ET.Element:
         """Export to eCH-0044 XML.
 
@@ -595,7 +597,7 @@ class ECH0044PersonIdentificationKeyOnly(BaseModel):
         Raises:
             ValueError: If required fields are missing
         """
-        ns = {'eCH-0044': 'http://www.ech.ch/xmlns/eCH-0044/4'}
+        ns = {'eCH-0044': NS.ECH0044_V4}
 
         # VN (optional)
         vn_elem = elem.find('eCH-0044:vn', ns)
@@ -702,7 +704,7 @@ class ECH0044PersonIdentificationLight(BaseModel):
         return v
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4',
+               namespace: str = NS.ECH0044_V4,
                element_name: str = 'personIdentificationPartner',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to eCH-0044 XML.
@@ -760,7 +762,7 @@ class ECH0044PersonIdentificationLight(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0044/4') -> 'ECH0044PersonIdentificationLight':
+                 namespace: str = NS.ECH0044_V4) -> 'ECH0044PersonIdentificationLight':
         """Import from eCH-0044 XML."""
         ns = {'eCH-0044': namespace}
 

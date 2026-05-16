@@ -24,6 +24,8 @@ from typing import Optional
 from lxml import etree
 from pydantic import BaseModel, ConfigDict, Field
 
+from openmun_ech.core import NS
+
 
 class ResidencePermitCategoryType(str, Enum):
     """Residence permit base category codes per eCH-0006 v2.0.
@@ -344,40 +346,40 @@ class PermitRoot(BaseModel):
             lxml Element for permitRoot
         """
         if nsmap is None:
-            nsmap = {None: "http://www.ech.ch/xmlns/eCH-0006/2"}
+            nsmap = {None: NS.ECH0006_V2}
 
-        root = etree.Element("{http://www.ech.ch/xmlns/eCH-0006/2}permitRoot", nsmap=nsmap)
+        root = etree.Element(f"{{{NS.ECH0006_V2}}}permitRoot", nsmap=nsmap)
 
         if self.residence_permit_category is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}residencePermitCategory")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitCategory")
             elem.text = self.residence_permit_category.value
 
         if self.residence_permit_ruling is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}residencePermitRuling")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitRuling")
             elem.text = self.residence_permit_ruling.value
 
         if self.residence_permit_border is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}residencePermitBorder")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitBorder")
             elem.text = self.residence_permit_border.value
 
         if self.residence_permit_short_type is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}residencePermitShortType")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitShortType")
             elem.text = self.residence_permit_short_type.value
 
         if self.residence_permit is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}residencePermit")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermit")
             elem.text = self.residence_permit.value
 
         if self.inhabitant_control is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}inhabitantControl")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}inhabitantControl")
             elem.text = self.inhabitant_control.value
 
         if self.residence_permit_detailed_type is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}residencePermitDetailedType")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitDetailedType")
             elem.text = self.residence_permit_detailed_type.value
 
         if self.residence_permit_to_be_registered_type is not None:
-            elem = etree.SubElement(root, "{http://www.ech.ch/xmlns/eCH-0006/2}residencePermitToBeRegisteredType")
+            elem = etree.SubElement(root, f"{{{NS.ECH0006_V2}}}residencePermitToBeRegisteredType")
             elem.text = self.residence_permit_to_be_registered_type.value
 
         return root
@@ -392,7 +394,7 @@ class PermitRoot(BaseModel):
         Returns:
             PermitRoot instance
         """
-        ns = {"ech": "http://www.ech.ch/xmlns/eCH-0006/2"}
+        ns = {"ech": NS.ECH0006_V2}
 
         # Extract all optional fields
         category_elem = elem.find("ech:residencePermitCategory", ns)

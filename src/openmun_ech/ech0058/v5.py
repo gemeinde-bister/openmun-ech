@@ -23,6 +23,8 @@ from typing import Optional, List, Any
 from datetime import datetime, date
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from openmun_ech.core import NS
+
 # Import enums from this package
 from .enums import ActionType
 
@@ -112,7 +114,7 @@ class ECH0058NamedMetaData(BaseModel):
     )
 
     def to_xml(self, parent: ET.Element,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5') -> ET.Element:
+               namespace: str = NS.ECH0058_V5) -> ET.Element:
         """Export to XML element.
 
         Args:
@@ -136,7 +138,7 @@ class ECH0058NamedMetaData(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5') -> 'ECH0058NamedMetaData':
+                 namespace: str = NS.ECH0058_V5) -> 'ECH0058NamedMetaData':
         """Import from XML element.
 
         Args:
@@ -197,7 +199,7 @@ class ECH0058SendingApplication(BaseModel):
     )
 
     def to_xml(self, parent: ET.Element,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5') -> ET.Element:
+               namespace: str = NS.ECH0058_V5) -> ET.Element:
         """Export to XML element.
 
         Args:
@@ -225,7 +227,7 @@ class ECH0058SendingApplication(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5') -> 'ECH0058SendingApplication':
+                 namespace: str = NS.ECH0058_V5) -> 'ECH0058SendingApplication':
         """Import from XML element.
 
         Args:
@@ -299,7 +301,7 @@ class ECH0058PartialDelivery(BaseModel):
         return v
 
     def to_xml(self, parent: ET.Element,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5') -> ET.Element:
+               namespace: str = NS.ECH0058_V5) -> ET.Element:
         """Export to XML element.
 
         Args:
@@ -327,7 +329,7 @@ class ECH0058PartialDelivery(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5') -> 'ECH0058PartialDelivery':
+                 namespace: str = NS.ECH0058_V5) -> 'ECH0058PartialDelivery':
         """Import from XML element.
 
         Args:
@@ -507,7 +509,7 @@ class ECH0058Header(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5',
+               namespace: str = NS.ECH0058_V5,
                skip_wrapper: bool = False) -> ET.Element:
         """Export to XML element.
 
@@ -664,7 +666,7 @@ class ECH0058Header(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0058/5') -> 'ECH0058Header':
+                 namespace: str = NS.ECH0058_V5) -> 'ECH0058Header':
         """Import from XML element.
 
         Args:

@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field, field_validator
 from openmun_ech.ech0011 import ECH0011Person, ECH0011ReportedPerson
 from openmun_ech.ech0044 import ECH0044PersonIdentification
 from openmun_ech.ech0058.v4 import ECH0058Header
+from openmun_ech.core import NS
 from openmun_ech.utils.schema_cache import validate_xml_cached
 
 
@@ -60,7 +61,7 @@ class ECH0099DataType(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2',
+               namespace: str = NS.ECH0099_V2,
                element_name: str = 'data') -> ET.Element:
         """Export to eCH-0099 XML.
 
@@ -89,7 +90,7 @@ class ECH0099DataType(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> 'ECH0099DataType':
+                 namespace: str = NS.ECH0099_V2) -> 'ECH0099DataType':
         """Import from eCH-0099 XML.
 
         Args:
@@ -140,7 +141,7 @@ class ECH0099ReportedPerson(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> ET.Element:
+               namespace: str = NS.ECH0099_V2) -> ET.Element:
         """Export to eCH-0099 XML.
 
         Args:
@@ -160,7 +161,7 @@ class ECH0099ReportedPerson(BaseModel):
         base_data_wrapper = ET.SubElement(elem, f'{{{namespace}}}baseData')
 
         # Add person and residence elements (from eCH-0011:reportedPersonType)
-        ech0011_ns = 'http://www.ech.ch/xmlns/eCH-0011/8'
+        ech0011_ns = NS.ECH0011_V8
 
         # Person (required)
         self.base_data.person.to_xml(
@@ -198,7 +199,7 @@ class ECH0099ReportedPerson(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> 'ECH0099ReportedPerson':
+                 namespace: str = NS.ECH0099_V2) -> 'ECH0099ReportedPerson':
         """Import from eCH-0099 XML.
 
         Args:
@@ -209,7 +210,7 @@ class ECH0099ReportedPerson(BaseModel):
             Parsed reported person object
         """
         ns_0099 = {'eCH-0099': namespace}
-        ns_0011 = {'eCH-0011': 'http://www.ech.ch/xmlns/eCH-0011/8'}
+        ns_0011 = {'eCH-0011': NS.ECH0011_V8}
 
         # baseData (required) - in eCH-0099 namespace, contains eCH-0011:reportedPersonType
         base_data_elem = elem.find('eCH-0099:baseData', ns_0099)
@@ -228,7 +229,7 @@ class ECH0099ReportedPerson(BaseModel):
         person_elem = base_data_elem.find('eCH-0011:person', ns_0011)
         if person_elem is None:
             raise ValueError("Missing required person element in baseData")
-        person = ECH0011Person.from_xml(person_elem, 'http://www.ech.ch/xmlns/eCH-0011/8')
+        person = ECH0011Person.from_xml(person_elem, NS.ECH0011_V8)
 
         # Residence (exactly one of three - XSD choice)
         has_main_residence = None
@@ -237,15 +238,15 @@ class ECH0099ReportedPerson(BaseModel):
 
         main_res_elem = base_data_elem.find('eCH-0011:hasMainResidence', ns_0011)
         if main_res_elem is not None:
-            has_main_residence = ECH0011MainResidence.from_xml(main_res_elem, 'http://www.ech.ch/xmlns/eCH-0011/8')
+            has_main_residence = ECH0011MainResidence.from_xml(main_res_elem, NS.ECH0011_V8)
 
         sec_res_elem = base_data_elem.find('eCH-0011:hasSecondaryResidence', ns_0011)
         if sec_res_elem is not None:
-            has_secondary_residence = ECH0011SecondaryResidence.from_xml(sec_res_elem, 'http://www.ech.ch/xmlns/eCH-0011/8')
+            has_secondary_residence = ECH0011SecondaryResidence.from_xml(sec_res_elem, NS.ECH0011_V8)
 
         other_res_elem = base_data_elem.find('eCH-0011:hasOtherResidence', ns_0011)
         if other_res_elem is not None:
-            has_other_residence = ECH0011OtherResidence.from_xml(other_res_elem, 'http://www.ech.ch/xmlns/eCH-0011/8')
+            has_other_residence = ECH0011OtherResidence.from_xml(other_res_elem, NS.ECH0011_V8)
 
         # Create the ECH0011ReportedPerson from the parsed components
         base_data = ECH0011ReportedPerson(
@@ -311,7 +312,7 @@ class ECH0099Delivery(BaseModel):
             raise ValueError(f"Version must be '2.1', got: {v}")
         return v
 
-    def to_xml(self, namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> ET.Element:
+    def to_xml(self, namespace: str = NS.ECH0099_V2) -> ET.Element:
         """Export to eCH-0099 XML.
 
         Creates the root <delivery> element with version attribute.
@@ -331,7 +332,7 @@ class ECH0099Delivery(BaseModel):
         header_wrapper = ET.SubElement(root, f'{{{namespace}}}deliveryHeader')
         self.delivery_header.to_xml(
             parent=header_wrapper,
-            namespace='http://www.ech.ch/xmlns/eCH-0058/4',
+            namespace=NS.ECH0058_V4,
             skip_wrapper=True
         )
 
@@ -355,7 +356,7 @@ class ECH0099Delivery(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> 'ECH0099Delivery':
+                 namespace: str = NS.ECH0099_V2) -> 'ECH0099Delivery':
         """Import from eCH-0099 XML.
 
         Args:
@@ -379,7 +380,7 @@ class ECH0099Delivery(BaseModel):
 
         delivery_header = ECH0058Header.from_xml(
             delivery_header_elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0058/4'
+            namespace=NS.ECH0058_V4
         )
 
         # reportedPerson[] (required, at least one)
@@ -497,7 +498,7 @@ class ECH0099ErrorInfo(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2',
+               namespace: str = NS.ECH0099_V2,
                element_name: str = 'errorInfo') -> ET.Element:
         """Export to eCH-0099 XML.
 
@@ -526,7 +527,7 @@ class ECH0099ErrorInfo(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> 'ECH0099ErrorInfo':
+                 namespace: str = NS.ECH0099_V2) -> 'ECH0099ErrorInfo':
         """Import from eCH-0099 XML.
 
         Args:
@@ -573,7 +574,7 @@ class ECH0099PersonError(BaseModel):
     )
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> ET.Element:
+               namespace: str = NS.ECH0099_V2) -> ET.Element:
         """Export to eCH-0099 XML.
 
         Args:
@@ -591,7 +592,7 @@ class ECH0099PersonError(BaseModel):
         # personIdentification (required) - wrapper in eCH-0099, content from eCH-0044
         self.person_identification.to_xml(
             parent=elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0044/4',
+            namespace=NS.ECH0044_V4,
             element_name='personIdentification',
             wrapper_namespace=namespace
         )
@@ -604,7 +605,7 @@ class ECH0099PersonError(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> 'ECH0099PersonError':
+                 namespace: str = NS.ECH0099_V2) -> 'ECH0099PersonError':
         """Import from eCH-0099 XML.
 
         Args:
@@ -623,7 +624,7 @@ class ECH0099PersonError(BaseModel):
 
         person_identification = ECH0044PersonIdentification.from_xml(
             person_id_elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0044/4'
+            namespace=NS.ECH0044_V4
         )
 
         # errorInfo[] (required, at least one)
@@ -685,7 +686,7 @@ class ECH0099ValidationReport(BaseModel):
             raise ValueError(f"Version must be '2.1', got: {v}")
         return v
 
-    def to_xml(self, namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> ET.Element:
+    def to_xml(self, namespace: str = NS.ECH0099_V2) -> ET.Element:
         """Export to eCH-0099 XML.
 
         Creates the root <validationReport> element with version attribute.
@@ -705,7 +706,7 @@ class ECH0099ValidationReport(BaseModel):
         header_wrapper = ET.SubElement(root, f'{{{namespace}}}validationReportHeader')
         self.validation_report_header.to_xml(
             parent=header_wrapper,
-            namespace='http://www.ech.ch/xmlns/eCH-0058/4',
+            namespace=NS.ECH0058_V4,
             skip_wrapper=True
         )
 
@@ -725,7 +726,7 @@ class ECH0099ValidationReport(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> 'ECH0099ValidationReport':
+                 namespace: str = NS.ECH0099_V2) -> 'ECH0099ValidationReport':
         """Import from eCH-0099 XML.
 
         Args:
@@ -749,7 +750,7 @@ class ECH0099ValidationReport(BaseModel):
 
         validation_report_header = ECH0058Header.from_xml(
             header_elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0058/4'
+            namespace=NS.ECH0058_V4
         )
 
         # generalError[] (optional)
@@ -815,7 +816,7 @@ class ECH0099Receipt(BaseModel):
             raise ValueError(f"Version must be '2.1', got: {v}")
         return v
 
-    def to_xml(self, namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> ET.Element:
+    def to_xml(self, namespace: str = NS.ECH0099_V2) -> ET.Element:
         """Export to eCH-0099 XML.
 
         Creates the root <receipt> element with version attribute.
@@ -835,7 +836,7 @@ class ECH0099Receipt(BaseModel):
         header_wrapper = ET.SubElement(root, f'{{{namespace}}}receiptHeader')
         self.receipt_header.to_xml(
             parent=header_wrapper,
-            namespace='http://www.ech.ch/xmlns/eCH-0058/4',
+            namespace=NS.ECH0058_V4,
             skip_wrapper=True
         )
 
@@ -847,7 +848,7 @@ class ECH0099Receipt(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0099/2') -> 'ECH0099Receipt':
+                 namespace: str = NS.ECH0099_V2) -> 'ECH0099Receipt':
         """Import from eCH-0099 XML.
 
         Args:
@@ -871,7 +872,7 @@ class ECH0099Receipt(BaseModel):
 
         receipt_header = ECH0058Header.from_xml(
             header_elem,
-            namespace='http://www.ech.ch/xmlns/eCH-0058/4'
+            namespace=NS.ECH0058_V4
         )
 
         # eventTime (required)

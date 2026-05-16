@@ -17,6 +17,7 @@ from typing import Optional, Dict
 
 from pydantic import BaseModel, Field, field_validator
 
+from openmun_ech.core import NS
 from openmun_opendata.countries import get_country, get_country_by_bfs
 
 
@@ -119,7 +120,7 @@ class ECH0008Country(BaseModel):
 
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0008/3',
+               namespace: str = NS.ECH0008_V3,
                element_name: str = 'country',
                wrapper_namespace: Optional[str] = None) -> ET.Element:
         """Export to XML element.
@@ -159,7 +160,7 @@ class ECH0008Country(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0008/3') -> 'ECH0008Country':
+                 namespace: str = NS.ECH0008_V3) -> 'ECH0008Country':
         """Import from XML element.
 
         Args:
@@ -235,7 +236,7 @@ class ECH0008CountryShort(BaseModel):
         return cls(country_name_short=country_name.strip())
 
     def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = 'http://www.ech.ch/xmlns/eCH-0008/3',
+               namespace: str = NS.ECH0008_V3,
                element_name: str = 'country') -> ET.Element:
         """Export to XML element.
 
@@ -260,7 +261,7 @@ class ECH0008CountryShort(BaseModel):
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
-                 namespace: str = 'http://www.ech.ch/xmlns/eCH-0008/3') -> 'ECH0008CountryShort':
+                 namespace: str = NS.ECH0008_V3) -> 'ECH0008CountryShort':
         """Import from XML element.
 
         Args:
