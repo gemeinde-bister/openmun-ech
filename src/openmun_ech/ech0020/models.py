@@ -2350,12 +2350,28 @@ class BaseDeliveryPerson(BaseModel):
 
             # Create address if we have town (required field) and organisation name
             if self.health_insurance_address_town and self.health_insurance_name:
+                # Determine country: if swiss_zip_code is used, country MUST be CH
+                # Otherwise use provided country - NO fallback (zero data invention)
+                has_swiss_postal_code = bool(self.health_insurance_address_postal_code)
+                if has_swiss_postal_code:
+                    # Swiss postal code implies country='CH'
+                    country = 'CH'
+                elif self.health_insurance_address_country:
+                    # Foreign address with explicit country
+                    country = self.health_insurance_address_country
+                else:
+                    # No postal code and no country - cannot determine
+                    raise ValueError(
+                        f"Health insurance address for '{self.health_insurance_name}' "
+                        f"has town but no postal code and no country. Cannot determine "
+                        f"country - provide swiss postal code OR explicit country."
+                    )
                 address_info = ECH0010AddressInformation(
                     street=self.health_insurance_address_street,
                     house_number=self.health_insurance_address_house_number,
                     town=self.health_insurance_address_town,
                     swiss_zip_code=int(self.health_insurance_address_postal_code) if self.health_insurance_address_postal_code else None,
-                    country=self.health_insurance_address_country or 'CH'  # Default to Switzerland if not specified
+                    country=country
                 )
 
                 organisation_info = ECH0010OrganisationMailAddressInfo(
