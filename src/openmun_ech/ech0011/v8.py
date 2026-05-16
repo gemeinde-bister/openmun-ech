@@ -6,7 +6,7 @@ Version stability: Used in eCH-0020 v3.0, eCH-0099 v2.1
 This component provides person data structures including name, birth,
 religion, marital status, and nationality information.
 
-ARCHITECTURE: Pure Pydantic Model (Layer 1)
+ARCHITECTURE: Declarative ECHModel (Layer 1)
 - NO database coupling
 - NO from_db_fields() method
 - Database mapping logic belongs in: openmun/mappers/person_mapper.py
@@ -15,7 +15,7 @@ ARCHITECTURE: Pure Pydantic Model (Layer 1)
 import xml.etree.ElementTree as ET
 from typing import Optional, List, Dict
 from datetime import date
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import field_validator, model_validator
 
 # Import components we depend on
 from openmun_ech.ech0007 import ECH0007Municipality, CantonAbbreviation
@@ -27,25 +27,20 @@ from openmun_ech.ech0044 import (
 )
 from openmun_ech.ech0010 import ECH0010MailAddress, ECH0010SwissAddressInformation, ECH0010AddressInformation
 from openmun_ech.ech0006 import ResidencePermitType
-from openmun_ech.core import NS
+from openmun_ech.core import ECHModel, NS, xml_field
 
 # Import enums from this package
 from .enums import (
     Sex,
-    ReligionCode,
     MaritalStatus,
     SeparationType,
     CancelationReason,
     NationalityStatus,
-    TypeOfResidence,
     TypeOfHousehold,
 )
 
-# Import ConfigDict for model_config
-from pydantic import ConfigDict
 
-
-class ECH0011SwissMunicipalityWithoutBFS(BaseModel):
+class ECH0011SwissMunicipalityWithoutBFS(ECHModel):
     """eCH-0011 Swiss municipality without mandatory BFS number.
 
     This is a variant of the standard Swiss municipality type where the BFS
@@ -59,27 +54,20 @@ class ECH0011SwissMunicipalityWithoutBFS(BaseModel):
     anywhere. However, it's implemented for 100% XSD parity.
     """
 
-    municipality_id: Optional[str] = Field(
-        None,
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'swissMunicipalityWithoutBFS'
+
+    municipality_id: Optional[str] = xml_field(
+        default=None,
         min_length=1,
         max_length=4,
-        description="BFS municipality number (1-4 digits, optional)"
     )
-    municipality_name: str = Field(
-        ...,
+    municipality_name: str = xml_field(
         min_length=1,
         max_length=40,
-        description="Official municipality name (required)"
     )
-    canton_abbreviation: Optional[CantonAbbreviation] = Field(
-        None,
-        description="Two-letter canton code (optional)"
-    )
-
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False
+    canton_abbreviation: Optional[CantonAbbreviation] = xml_field(
+        default=None,
     )
 
     @field_validator('municipality_id')
@@ -169,7 +157,7 @@ class ECH0011SwissMunicipalityWithoutBFS(BaseModel):
         )
 
 
-class ECH0011ForeignerName(BaseModel):
+class ECH0011ForeignerName(ECHModel):
     """eCH-0011 Foreigner name information.
 
     Used for foreign names on passports or declared foreign names.
@@ -177,71 +165,14 @@ class ECH0011ForeignerName(BaseModel):
     XML Schema: eCH-0011 foreignerNameType
     """
 
-    name: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Foreign last name"
-    )
-    first_name: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Foreign first name"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'nameOnForeignPassport'
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8,
-               element_name: str = 'nameOnForeignPassport') -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-            element_name: Name of container element
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # Name (optional)
-        if self.name:
-            name_elem = ET.SubElement(elem, f'{{{namespace}}}name')
-            name_elem.text = self.name
-
-        # First name (optional)
-        if self.first_name:
-            first_name_elem = ET.SubElement(elem, f'{{{namespace}}}firstName')
-            first_name_elem.text = self.first_name
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ForeignerName':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (foreigner name container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed foreigner name object
-        """
-        ns = {'eCH-0011': namespace}
-
-        name_elem = elem.find('eCH-0011:name', ns)
-        name = name_elem.text.strip() if name_elem is not None and name_elem.text else None
-
-        first_name_elem = elem.find('eCH-0011:firstName', ns)
-        first_name = first_name_elem.text.strip() if first_name_elem is not None and first_name_elem.text else None
-
-        return cls(name=name, first_name=first_name)
+    name: Optional[str] = xml_field(default=None, max_length=100)
+    first_name: Optional[str] = xml_field(default=None, max_length=100)
 
 
-class ECH0011NameData(BaseModel):
+class ECH0011NameData(ECHModel):
     """eCH-0011 Name data.
 
     Contains all name information for a person including official names,
@@ -250,172 +181,23 @@ class ECH0011NameData(BaseModel):
     XML Schema: eCH-0011 nameDataType
     """
 
-    official_name: str = Field(
-        ...,
-        max_length=100,
-        description="Official family name (required)"
-    )
-    first_name: str = Field(
-        ...,
-        max_length=100,
-        description="Official first name (required)"
-    )
-    original_name: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Birth name / maiden name"
-    )
-    alliance_name: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Alliance name (partner's name in double-name situations)"
-    )
-    alias_name: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Alias / künstlername"
-    )
-    other_name: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Other name"
-    )
-    call_name: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Call name / preferred first name"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'nameData'
+
+    official_name: str = xml_field(max_length=100)
+    first_name: str = xml_field(max_length=100)
+    original_name: Optional[str] = xml_field(default=None, max_length=100)
+    alliance_name: Optional[str] = xml_field(default=None, max_length=100)
+    alias_name: Optional[str] = xml_field(default=None, max_length=100)
+    other_name: Optional[str] = xml_field(default=None, max_length=100)
+    call_name: Optional[str] = xml_field(default=None, max_length=100)
 
     # Choice: name on foreign passport OR declared foreign name (optional)
-    name_on_foreign_passport: Optional[ECH0011ForeignerName] = Field(
-        None,
-        description="Name as it appears on foreign passport"
-    )
-    declared_foreign_name: Optional[ECH0011ForeignerName] = Field(
-        None,
-        description="Declared foreign name"
-    )
-
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}nameData')
-        else:
-            elem = ET.Element(f'{{{namespace}}}nameData')
-
-        # Official name (required)
-        official_elem = ET.SubElement(elem, f'{{{namespace}}}officialName')
-        official_elem.text = self.official_name
-
-        # First name (required)
-        first_elem = ET.SubElement(elem, f'{{{namespace}}}firstName')
-        first_elem.text = self.first_name
-
-        # Original name (optional)
-        if self.original_name:
-            original_elem = ET.SubElement(elem, f'{{{namespace}}}originalName')
-            original_elem.text = self.original_name
-
-        # Alliance name (optional)
-        if self.alliance_name:
-            alliance_elem = ET.SubElement(elem, f'{{{namespace}}}allianceName')
-            alliance_elem.text = self.alliance_name
-
-        # Alias name (optional)
-        if self.alias_name:
-            alias_elem = ET.SubElement(elem, f'{{{namespace}}}aliasName')
-            alias_elem.text = self.alias_name
-
-        # Other name (optional)
-        if self.other_name:
-            other_elem = ET.SubElement(elem, f'{{{namespace}}}otherName')
-            other_elem.text = self.other_name
-
-        # Call name (optional)
-        if self.call_name:
-            call_elem = ET.SubElement(elem, f'{{{namespace}}}callName')
-            call_elem.text = self.call_name
-
-        # Foreign passport name (optional, choice with declared foreign name)
-        if self.name_on_foreign_passport:
-            self.name_on_foreign_passport.to_xml(elem, namespace, 'nameOnForeignPassport')
-        elif self.declared_foreign_name:
-            self.declared_foreign_name.to_xml(elem, namespace, 'declaredForeignName')
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011NameData':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (nameData container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed name data object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Required fields
-        official_elem = elem.find('eCH-0011:officialName', ns)
-        if official_elem is None or not official_elem.text:
-            raise ValueError("Missing required field: officialName")
-
-        first_elem = elem.find('eCH-0011:firstName', ns)
-        if first_elem is None or not first_elem.text:
-            raise ValueError("Missing required field: firstName")
-
-        # Optional fields
-        original_elem = elem.find('eCH-0011:originalName', ns)
-        original = original_elem.text.strip() if original_elem is not None and original_elem.text else None
-
-        alliance_elem = elem.find('eCH-0011:allianceName', ns)
-        alliance = alliance_elem.text.strip() if alliance_elem is not None and alliance_elem.text else None
-
-        alias_elem = elem.find('eCH-0011:aliasName', ns)
-        alias = alias_elem.text.strip() if alias_elem is not None and alias_elem.text else None
-
-        other_elem = elem.find('eCH-0011:otherName', ns)
-        other = other_elem.text.strip() if other_elem is not None and other_elem.text else None
-
-        call_elem = elem.find('eCH-0011:callName', ns)
-        call = call_elem.text.strip() if call_elem is not None and call_elem.text else None
-
-        # Foreign names (choice)
-        foreign_passport_elem = elem.find('eCH-0011:nameOnForeignPassport', ns)
-        foreign_passport = ECH0011ForeignerName.from_xml(foreign_passport_elem, namespace) if foreign_passport_elem is not None else None
-
-        declared_foreign_elem = elem.find('eCH-0011:declaredForeignName', ns)
-        declared_foreign = ECH0011ForeignerName.from_xml(declared_foreign_elem, namespace) if declared_foreign_elem is not None else None
-
-        return cls(
-            official_name=official_elem.text.strip(),
-            first_name=first_elem.text.strip(),
-            original_name=original,
-            alliance_name=alliance,
-            alias_name=alias,
-            other_name=other,
-            call_name=call,
-            name_on_foreign_passport=foreign_passport,
-            declared_foreign_name=declared_foreign
-        )
+    name_on_foreign_passport: Optional[ECH0011ForeignerName] = xml_field(default=None)
+    declared_foreign_name: Optional[ECH0011ForeignerName] = xml_field(default=None)
 
 
-class ECH0011GeneralPlace(BaseModel):
+class ECH0011GeneralPlace(ECHModel):
     """eCH-0011 General place (birth/death location).
 
     Represents a place that can be:
@@ -426,23 +208,13 @@ class ECH0011GeneralPlace(BaseModel):
     XML Schema: eCH-0011 generalPlaceType
     """
 
-    unknown: Optional[bool] = Field(
-        None,
-        description="True if place is unknown"
-    )
-    swiss_municipality: Optional[ECH0007Municipality] = Field(
-        None,
-        description="Swiss municipality (if applicable)"
-    )
-    foreign_country: Optional[ECH0008Country] = Field(
-        None,
-        description="Foreign country (if applicable)"
-    )
-    foreign_town: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Town name in foreign country"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'placeOfBirth'
+
+    unknown: Optional[bool] = xml_field(default=None)
+    swiss_municipality: Optional[ECH0007Municipality] = xml_field(default=None)
+    foreign_country: Optional[ECH0008Country] = xml_field(default=None)
+    foreign_town: Optional[str] = xml_field(default=None, max_length=100)
 
     @field_validator('swiss_municipality', 'foreign_country')
     @classmethod
@@ -586,7 +358,7 @@ class ECH0011GeneralPlace(BaseModel):
         )
 
 
-class ECH0011BirthData(BaseModel):
+class ECH0011BirthData(ECHModel):
     """eCH-0011 Birth data.
 
     Contains birth information including date, place, and sex.
@@ -594,18 +366,12 @@ class ECH0011BirthData(BaseModel):
     XML Schema: eCH-0011 birthDataType
     """
 
-    date_of_birth: date = Field(
-        ...,
-        description="Date of birth (required)"
-    )
-    place_of_birth: ECH0011GeneralPlace = Field(
-        ...,
-        description="Place of birth (required)"
-    )
-    sex: Sex = Field(
-        ...,
-        description="Sex: 1=male, 2=female, 3=unknown (required)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'birthData'
+
+    date_of_birth: date = xml_field()
+    place_of_birth: ECH0011GeneralPlace = xml_field()
+    sex: Sex = xml_field()
 
     def to_xml(self, parent: Optional[ET.Element] = None,
                namespace: str = NS.ECH0011_V8) -> ET.Element:
@@ -634,7 +400,7 @@ class ECH0011BirthData(BaseModel):
 
         # Sex (required)
         sex_elem = ET.SubElement(elem, f'{{{namespace}}}sex')
-        sex_elem.text = self.sex.value if hasattr(self.sex, 'value') else str(self.sex)
+        sex_elem.text = self.sex.value
 
         return elem
 
@@ -684,7 +450,7 @@ class ECH0011BirthData(BaseModel):
         )
 
 
-class ECH0011ReligionData(BaseModel):
+class ECH0011ReligionData(ECHModel):
     """eCH-0011 Religion data.
 
     Contains religion code (3-6 digits) and optional validity date.
@@ -692,98 +458,14 @@ class ECH0011ReligionData(BaseModel):
     XML Schema: eCH-0011 religionDataType
     """
 
-    religion: str = Field(
-        ...,
-        min_length=3,
-        max_length=6,
-        pattern=r'^\d{3,6}$',
-        description="Religion code (3-6 digits, required)"
-    )
-    religion_valid_from: Optional[date] = Field(
-        None,
-        description="Date from which religion is valid"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'religionData'
 
-    def to_xml(
-        self,
-        parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0011_V8,
-        element_name: str = 'religionData',
-        wrapper_namespace: Optional[str] = None
-    ) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-            element_name: Name of the element to create
-            wrapper_namespace: Optional wrapper namespace (for cross-schema composition)
-
-        Returns:
-            XML Element
-
-        Note:
-            When wrapper_namespace is provided, creates:
-            <wrapper_namespace:element_name>
-              <namespace:religionData>...</namespace:religionData>
-            </wrapper_namespace:element_name>
-        """
-        # Handle wrapper namespace (for eCH-0020 cross-schema composition)
-        # When wrapper_namespace is provided, create element in wrapper namespace
-        # Content (children) will still use the original namespace
-        if wrapper_namespace is not None and parent is not None:
-            elem = ET.SubElement(parent, f'{{{wrapper_namespace}}}{element_name}')
-        else:
-            # Standard behavior - create in own namespace
-            if parent is not None:
-                elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-            else:
-                elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # Religion code (required)
-        religion_elem = ET.SubElement(elem, f'{{{namespace}}}religion')
-        religion_elem.text = self.religion
-
-        # Valid from date (optional)
-        if self.religion_valid_from:
-            valid_elem = ET.SubElement(elem, f'{{{namespace}}}religionValidFrom')
-            valid_elem.text = self.religion_valid_from.isoformat()
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ReligionData':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (religionData container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed religion data object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Religion code (required)
-        religion_elem = elem.find('eCH-0011:religion', ns)
-        if religion_elem is None or not religion_elem.text:
-            raise ValueError("Missing required field: religion")
-
-        # Valid from date (optional)
-        valid_elem = elem.find('eCH-0011:religionValidFrom', ns)
-        valid_from = date.fromisoformat(valid_elem.text.strip()) if valid_elem is not None and valid_elem.text else None
-
-        return cls(
-            religion=religion_elem.text.strip(),
-            religion_valid_from=valid_from
-        )
+    religion: str = xml_field(min_length=3, max_length=6, pattern=r'^\d{3,6}$')
+    religion_valid_from: Optional[date] = xml_field(default=None)
 
 
-class ECH0011SeparationData(BaseModel):
+class ECH0011SeparationData(ECHModel):
     """eCH-0011 Separation data.
 
     Contains information about marital separation.
@@ -791,86 +473,15 @@ class ECH0011SeparationData(BaseModel):
     XML Schema: eCH-0011 separationDataType
     """
 
-    separation: Optional[SeparationType] = Field(
-        None,
-        description="Separation type: 1=judicial, 2=de facto"
-    )
-    separation_valid_from: Optional[date] = Field(
-        None,
-        description="Separation start date"
-    )
-    separation_valid_till: Optional[date] = Field(
-        None,
-        description="Separation end date"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'separationData'
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}separationData')
-        else:
-            elem = ET.Element(f'{{{namespace}}}separationData')
-
-        # Separation type (optional)
-        if self.separation:
-            sep_elem = ET.SubElement(elem, f'{{{namespace}}}separation')
-            sep_elem.text = self.separation.value if hasattr(self.separation, 'value') else str(self.separation)
-
-        # Valid from (optional)
-        if self.separation_valid_from:
-            from_elem = ET.SubElement(elem, f'{{{namespace}}}separationValidFrom')
-            from_elem.text = self.separation_valid_from.isoformat()
-
-        # Valid till (optional)
-        if self.separation_valid_till:
-            till_elem = ET.SubElement(elem, f'{{{namespace}}}separationValidTill')
-            till_elem.text = self.separation_valid_till.isoformat()
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011SeparationData':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (separationData container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed separation data object
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Separation type (optional)
-        sep_elem = elem.find('eCH-0011:separation', ns)
-        sep = sep_elem.text.strip() if sep_elem is not None and sep_elem.text else None
-
-        # Valid from (optional)
-        from_elem = elem.find('eCH-0011:separationValidFrom', ns)
-        valid_from = date.fromisoformat(from_elem.text.strip()) if from_elem is not None and from_elem.text else None
-
-        # Valid till (optional)
-        till_elem = elem.find('eCH-0011:separationValidTill', ns)
-        valid_till = date.fromisoformat(till_elem.text.strip()) if till_elem is not None and till_elem.text else None
-
-        return cls(
-            separation=sep,
-            separation_valid_from=valid_from,
-            separation_valid_till=valid_till
-        )
+    separation: Optional[SeparationType] = xml_field(default=None)
+    separation_valid_from: Optional[date] = xml_field(default=None)
+    separation_valid_till: Optional[date] = xml_field(default=None)
 
 
-class ECH0011MaritalData(BaseModel):
+class ECH0011MaritalData(ECHModel):
     """eCH-0011 Marital data.
 
     Contains marital status information including status code, date,
@@ -879,144 +490,29 @@ class ECH0011MaritalData(BaseModel):
     XML Schema: eCH-0011 maritalDataType
     """
 
-    marital_status: MaritalStatus = Field(
-        ...,
-        description=(
-            "Marital status (required):\n"
-            "1=single, 2=married, 3=widowed, 4=divorced,\n"
-            "5=unmarried, 6=registered partnership, 7=dissolved partnership,\n"
-            "9=not specified"
-        )
-    )
-    date_of_marital_status: Optional[date] = Field(
-        None,
-        description="Date when marital status became effective"
-    )
-    cancelation_reason: Optional[CancelationReason] = Field(
-        None,
-        description=(
-            "Reason for partnership dissolution:\n"
-            "1=death, 2=declared missing, 3=divorce/dissolution,\n"
-            "4=annulment, 9=other"
-        )
-    )
-    official_proof_of_marital_status_yes_no: Optional[bool] = Field(
-        None,
-        description="Whether official proof of marital status exists"
-    )
-    separation_data: Optional[ECH0011SeparationData] = Field(
-        None,
-        description="Separation information (if applicable)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'maritalData'
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}maritalData')
-        else:
-            elem = ET.Element(f'{{{namespace}}}maritalData')
-
-        # Marital status (required)
-        status_elem = ET.SubElement(elem, f'{{{namespace}}}maritalStatus')
-        status_elem.text = self.marital_status.value if hasattr(self.marital_status, 'value') else str(self.marital_status)
-
-        # Date of marital status (optional)
-        if self.date_of_marital_status:
-            date_elem = ET.SubElement(elem, f'{{{namespace}}}dateOfMaritalStatus')
-            date_elem.text = self.date_of_marital_status.isoformat()
-
-        # Cancelation reason (optional)
-        if self.cancelation_reason:
-            cancel_elem = ET.SubElement(elem, f'{{{namespace}}}cancelationReason')
-            cancel_elem.text = self.cancelation_reason.value if hasattr(self.cancelation_reason, 'value') else str(self.cancelation_reason)
-
-        # Official proof (optional)
-        if self.official_proof_of_marital_status_yes_no is not None:
-            proof_elem = ET.SubElement(elem, f'{{{namespace}}}officialProofOfMaritalStatusYesNo')
-            proof_elem.text = 'true' if self.official_proof_of_marital_status_yes_no else 'false'
-
-        # Separation data (optional)
-        if self.separation_data:
-            self.separation_data.to_xml(elem, namespace)
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011MaritalData':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (maritalData container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed marital data object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Marital status (required)
-        status_elem = elem.find('eCH-0011:maritalStatus', ns)
-        if status_elem is None or not status_elem.text:
-            raise ValueError("Missing required field: maritalStatus")
-
-        # Date (optional)
-        date_elem = elem.find('eCH-0011:dateOfMaritalStatus', ns)
-        status_date = date.fromisoformat(date_elem.text.strip()) if date_elem is not None and date_elem.text else None
-
-        # Cancelation reason (optional)
-        cancel_elem = elem.find('eCH-0011:cancelationReason', ns)
-        cancel = cancel_elem.text.strip() if cancel_elem is not None and cancel_elem.text else None
-
-        # Official proof (optional)
-        proof_elem = elem.find('eCH-0011:officialProofOfMaritalStatusYesNo', ns)
-        proof = proof_elem.text.strip().lower() == 'true' if proof_elem is not None and proof_elem.text else None
-
-        # Separation data (optional)
-        sep_elem = elem.find('eCH-0011:separationData', ns)
-        sep_data = ECH0011SeparationData.from_xml(sep_elem, namespace) if sep_elem is not None else None
-
-        return cls(
-            marital_status=status_elem.text.strip(),
-            date_of_marital_status=status_date,
-            cancelation_reason=cancel,
-            official_proof_of_marital_status_yes_no=proof,
-            separation_data=sep_data
-        )
+    marital_status: MaritalStatus = xml_field()
+    date_of_marital_status: Optional[date] = xml_field(default=None)
+    cancelation_reason: Optional[CancelationReason] = xml_field(default=None)
+    official_proof_of_marital_status_yes_no: Optional[bool] = xml_field(default=None)
+    separation_data: Optional[ECH0011SeparationData] = xml_field(default=None)
 
 
-class ECH0011MaritalDataRestrictedMarriage(BaseModel):
+class ECH0011MaritalDataRestrictedMarriage(ECHModel):
     """eCH-0011 Marital data restricted for marriage events.
 
     Restriction of maritalDataType where maritalStatus is fixed to "2" (MARRIED).
-    Used in specific marriage event contexts.
 
     XML Schema: eCH-0011 maritalDataRestrictedMarriageType
-    XSD Lines: 123-139
     """
 
-    date_of_marital_status: date = Field(..., description="Marriage date (required)")
-    official_proof_of_marital_status_yes_no: bool = Field(
-        ...,
-        description="Official proof exists (required)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'maritalData'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True
-    )
+    date_of_marital_status: date = xml_field()
+    official_proof_of_marital_status_yes_no: bool = xml_field()
 
     @property
     def marital_status(self) -> MaritalStatus:
@@ -1024,26 +520,19 @@ class ECH0011MaritalDataRestrictedMarriage(BaseModel):
         return MaritalStatus.MARRIED
 
 
-class ECH0011MaritalDataRestrictedPartnership(BaseModel):
+class ECH0011MaritalDataRestrictedPartnership(ECHModel):
     """eCH-0011 Marital data restricted for registered partnership events.
 
     Restriction of maritalDataType where maritalStatus is fixed to "6" (REGISTERED_PARTNERSHIP).
-    Used in specific partnership registration contexts.
 
     XML Schema: eCH-0011 maritalDataRestrictedPartnershipType
-    XSD Lines: 140-156
     """
 
-    date_of_marital_status: date = Field(..., description="Partnership registration date (required)")
-    official_proof_of_marital_status_yes_no: bool = Field(
-        ...,
-        description="Official proof exists (required)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'maritalData'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True
-    )
+    date_of_marital_status: date = xml_field()
+    official_proof_of_marital_status_yes_no: bool = xml_field()
 
     @property
     def marital_status(self) -> MaritalStatus:
@@ -1051,22 +540,18 @@ class ECH0011MaritalDataRestrictedPartnership(BaseModel):
         return MaritalStatus.REGISTERED_PARTNERSHIP
 
 
-class ECH0011MaritalDataRestrictedDivorce(BaseModel):
+class ECH0011MaritalDataRestrictedDivorce(ECHModel):
     """eCH-0011 Marital data restricted for divorce events.
 
     Restriction of maritalDataType where maritalStatus is fixed to "4" (DIVORCED).
-    Used in specific divorce event contexts.
 
     XML Schema: eCH-0011 maritalDataRestrictedDivorceType
-    XSD Lines: 157-172
     """
 
-    date_of_marital_status: date = Field(..., description="Divorce date (required)")
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'maritalData'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True
-    )
+    date_of_marital_status: date = xml_field()
 
     @property
     def marital_status(self) -> MaritalStatus:
@@ -1074,22 +559,18 @@ class ECH0011MaritalDataRestrictedDivorce(BaseModel):
         return MaritalStatus.DIVORCED
 
 
-class ECH0011MaritalDataRestrictedUndoMarried(BaseModel):
+class ECH0011MaritalDataRestrictedUndoMarried(ECHModel):
     """eCH-0011 Marital data restricted for marriage annulment events.
 
     Restriction of maritalDataType where maritalStatus is fixed to "5" (UNMARRIED/annulled).
-    Used when a marriage is annulled (never legally valid).
 
     XML Schema: eCH-0011 maritalDataRestrictedUndoMarriedType
-    XSD Lines: 173-188
     """
 
-    date_of_marital_status: date = Field(..., description="Annulment date (required)")
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'maritalData'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True
-    )
+    date_of_marital_status: date = xml_field()
 
     @property
     def marital_status(self) -> MaritalStatus:
@@ -1097,24 +578,19 @@ class ECH0011MaritalDataRestrictedUndoMarried(BaseModel):
         return MaritalStatus.UNMARRIED
 
 
-class ECH0011MaritalDataRestrictedUndoPartnership(BaseModel):
+class ECH0011MaritalDataRestrictedUndoPartnership(ECHModel):
     """eCH-0011 Marital data restricted for partnership dissolution events.
 
     Restriction of maritalDataType where maritalStatus is fixed to "7" (DISSOLVED_PARTNERSHIP).
-    Used when a registered partnership is dissolved.
 
     XML Schema: eCH-0011 maritalDataRestrictedUndoPartnershipType
-    XSD Lines: 189-205
     """
 
-    date_of_marital_status: date = Field(..., description="Dissolution date (required)")
-    cancelation_reason: CancelationReason = Field(..., description="Reason for dissolution (required)")
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'maritalData'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False
-    )
+    date_of_marital_status: date = xml_field()
+    cancelation_reason: CancelationReason = xml_field()
 
     @property
     def marital_status(self) -> MaritalStatus:
@@ -1122,35 +598,21 @@ class ECH0011MaritalDataRestrictedUndoPartnership(BaseModel):
         return MaritalStatus.DISSOLVED_PARTNERSHIP
 
 
-class ECH0011MaritalDataRestrictedMaritalStatusPartner(BaseModel):
+class ECH0011MaritalDataRestrictedMaritalStatusPartner(ECHModel):
     """eCH-0011 Marital data restricted for partner death/dissolution events.
 
     Restriction of maritalDataType where maritalStatus is one of:
-    - "3" (WIDOWED)
-    - "5" (UNMARRIED)
-    - "7" (DISSOLVED_PARTNERSHIP)
-
-    Used for events involving partner death or partnership dissolution.
+    - "3" (WIDOWED), "5" (UNMARRIED), "7" (DISSOLVED_PARTNERSHIP)
 
     XML Schema: eCH-0011 maritalDataRestrictedMaritalStatusPartnerType
-    XSD Lines: 206-224
     """
 
-    marital_status: MaritalStatus = Field(
-        ...,
-        description="Marital status (must be WIDOWED, UNMARRIED, or DISSOLVED_PARTNERSHIP)"
-    )
-    date_of_marital_status: date = Field(..., description="Status change date (required)")
-    cancelation_reason: Optional[CancelationReason] = Field(
-        None,
-        description="Reason for dissolution (optional)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'maritalData'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False
-    )
+    marital_status: MaritalStatus = xml_field()
+    date_of_marital_status: date = xml_field()
+    cancelation_reason: Optional[CancelationReason] = xml_field(default=None)
 
     @field_validator('marital_status')
     @classmethod
@@ -1164,7 +626,7 @@ class ECH0011MaritalDataRestrictedMaritalStatusPartner(BaseModel):
         return v
 
 
-class ECH0011CountryInfo(BaseModel):
+class ECH0011CountryInfo(ECHModel):
     """eCH-0011 Country info for nationality.
 
     Represents a single nationality with country and validity date.
@@ -1172,82 +634,14 @@ class ECH0011CountryInfo(BaseModel):
     XML Schema: Part of eCH-0011 nationalityDataType
     """
 
-    country: ECH0008Country = Field(
-        ...,
-        description="Country of nationality (required)"
-    )
-    nationality_valid_from: Optional[date] = Field(
-        None,
-        description="Date from which nationality is valid"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'countryInfo'
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}countryInfo')
-        else:
-            elem = ET.Element(f'{{{namespace}}}countryInfo')
-
-        # Country (required) - wrapper in eCH-0011, content from eCH-0008
-        country_wrapper = ET.SubElement(elem, f'{{{namespace}}}country')
-        # Add eCH-0008 country content to the wrapper
-        for child in self.country.to_xml(namespace=NS.ECH0008_V3):
-            country_wrapper.append(child)
-
-        # Valid from date (optional)
-        if self.nationality_valid_from:
-            valid_elem = ET.SubElement(elem, f'{{{namespace}}}nationalityValidFrom')
-            valid_elem.text = self.nationality_valid_from.isoformat()
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011CountryInfo':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (countryInfo container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed country info object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {
-            'eCH-0011': namespace,
-            'eCH-0008': NS.ECH0008_V3
-        }
-
-        # Country (required) - wrapper in eCH-0011, content from eCH-0008
-        country_elem = elem.find('eCH-0011:country', ns)
-        if country_elem is None:
-            raise ValueError("Missing required field: country")
-        # Parse eCH-0008 country content from within the eCH-0011 wrapper
-        country = ECH0008Country.from_xml(country_elem, NS.ECH0008_V3)
-
-        # Valid from (optional)
-        valid_elem = elem.find('eCH-0011:nationalityValidFrom', ns)
-        valid_from = date.fromisoformat(valid_elem.text.strip()) if valid_elem is not None and valid_elem.text else None
-
-        return cls(
-            country=country,
-            nationality_valid_from=valid_from
-        )
+    country: ECH0008Country = xml_field('country', wrapper=True, child_ns=NS.ECH0008_V3)
+    nationality_valid_from: Optional[date] = xml_field(default=None)
 
 
-class ECH0011NationalityData(BaseModel):
+class ECH0011NationalityData(ECHModel):
     """eCH-0011 Nationality data.
 
     Contains nationality status and list of nationalities.
@@ -1255,100 +649,14 @@ class ECH0011NationalityData(BaseModel):
     XML Schema: eCH-0011 nationalityDataType
     """
 
-    nationality_status: NationalityStatus = Field(
-        ...,
-        description=(
-            "Nationality status (required):\n"
-            "0=unknown/not specified,\n"
-            "1=Swiss citizen,\n"
-            "2=foreign national"
-        )
-    )
-    country_info: List[ECH0011CountryInfo] = Field(
-        default_factory=list,
-        description="List of nationalities (can be multiple)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'nationalityData'
 
-    def to_xml(
-        self,
-        parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0011_V8,
-        element_name: str = 'nationalityData',
-        wrapper_namespace: Optional[str] = None
-    ) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-            element_name: Name of the element to create
-            wrapper_namespace: Optional wrapper namespace (for cross-schema composition)
-
-        Returns:
-            XML Element
-
-        Note:
-            When wrapper_namespace is provided, creates:
-            <wrapper_namespace:element_name>
-              <namespace:nationalityData>...</namespace:nationalityData>
-            </wrapper_namespace:element_name>
-        """
-        # Handle wrapper namespace (for eCH-0020 cross-schema composition)
-        # When wrapper_namespace is provided, create element in wrapper namespace
-        # Content (children) will still use the original namespace
-        if wrapper_namespace is not None and parent is not None:
-            elem = ET.SubElement(parent, f'{{{wrapper_namespace}}}{element_name}')
-        else:
-            # Standard behavior - create in own namespace
-            if parent is not None:
-                elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-            else:
-                elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # Nationality status (required)
-        status_elem = ET.SubElement(elem, f'{{{namespace}}}nationalityStatus')
-        status_elem.text = self.nationality_status.value if hasattr(self.nationality_status, 'value') else str(self.nationality_status)
-
-        # Country info list (optional, unbounded)
-        for country_info in self.country_info:
-            country_info.to_xml(elem, namespace)
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011NationalityData':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (nationalityData container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed nationality data object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Nationality status (required)
-        status_elem = elem.find('eCH-0011:nationalityStatus', ns)
-        if status_elem is None or not status_elem.text:
-            raise ValueError("Missing required field: nationalityStatus")
-
-        # Country info list (optional, multiple)
-        country_infos = []
-        for country_elem in elem.findall('eCH-0011:countryInfo', ns):
-            country_infos.append(ECH0011CountryInfo.from_xml(country_elem, namespace))
-
-        return cls(
-            nationality_status=status_elem.text.strip(),
-            country_info=country_infos
-        )
+    nationality_status: NationalityStatus = xml_field()
+    country_info: List[ECH0011CountryInfo] = xml_field(is_list=True, default_factory=list)
 
 
-class ECH0011PlaceOfOrigin(BaseModel):
+class ECH0011PlaceOfOrigin(ECHModel):
     """eCH-0011 Place of origin (Heimatort).
 
     Represents a Swiss place of origin (Bürgerort/Heimatort) for Swiss citizens.
@@ -1356,107 +664,16 @@ class ECH0011PlaceOfOrigin(BaseModel):
     XML Schema: eCH-0011 placeOfOriginType
     """
 
-    origin_name: str = Field(
-        ...,
-        max_length=50,
-        description="Name of place of origin (required)"
-    )
-    canton: str = Field(
-        ...,
-        min_length=2,
-        max_length=2,
-        description="Canton abbreviation (required)"
-    )
-    place_of_origin_id: Optional[int] = Field(
-        None,
-        description="BFS place of origin ID (optional)"
-    )
-    history_municipality_id: Optional[str] = Field(
-        None,
-        max_length=12,
-        description="Historical municipality ID (optional)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'placeOfOrigin'
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}placeOfOrigin')
-        else:
-            elem = ET.Element(f'{{{namespace}}}placeOfOrigin')
-
-        # Origin name (required)
-        name_elem = ET.SubElement(elem, f'{{{namespace}}}originName')
-        name_elem.text = self.origin_name
-
-        # Canton (required)
-        canton_elem = ET.SubElement(elem, f'{{{namespace}}}canton')
-        canton_elem.text = self.canton
-
-        # Place of origin ID (optional)
-        if self.place_of_origin_id:
-            id_elem = ET.SubElement(elem, f'{{{namespace}}}placeOfOriginId')
-            id_elem.text = str(self.place_of_origin_id)
-
-        # History municipality ID (optional)
-        if self.history_municipality_id:
-            hist_elem = ET.SubElement(elem, f'{{{namespace}}}historyMunicipalityId')
-            hist_elem.text = self.history_municipality_id
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011PlaceOfOrigin':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (placeOfOrigin container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed place of origin object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Origin name (required)
-        name_elem = elem.find('eCH-0011:originName', ns)
-        if name_elem is None or not name_elem.text:
-            raise ValueError("Missing required field: originName")
-
-        # Canton (required)
-        canton_elem = elem.find('eCH-0011:canton', ns)
-        if canton_elem is None or not canton_elem.text:
-            raise ValueError("Missing required field: canton")
-
-        # Place of origin ID (optional)
-        id_elem = elem.find('eCH-0011:placeOfOriginId', ns)
-        origin_id = int(id_elem.text.strip()) if id_elem is not None and id_elem.text else None
-
-        # History municipality ID (optional)
-        hist_elem = elem.find('eCH-0011:historyMunicipalityId', ns)
-        hist_id = hist_elem.text.strip() if hist_elem is not None and hist_elem.text else None
-
-        return cls(
-            origin_name=name_elem.text.strip(),
-            canton=canton_elem.text.strip(),
-            place_of_origin_id=origin_id,
-            history_municipality_id=hist_id
-        )
+    origin_name: str = xml_field(max_length=50)
+    canton: str = xml_field(min_length=2, max_length=2)
+    place_of_origin_id: Optional[int] = xml_field(default=None)
+    history_municipality_id: Optional[str] = xml_field(default=None, max_length=12)
 
 
-class ECH0011ResidencePermitData(BaseModel):
+class ECH0011ResidencePermitData(ECHModel):
     """eCH-0011 Residence permit data.
 
     Contains residence permit information for foreign nationals.
@@ -1464,123 +681,16 @@ class ECH0011ResidencePermitData(BaseModel):
     XML Schema: eCH-0011 residencePermitDataType
     """
 
-    residence_permit: ResidencePermitType = Field(
-        ...,
-        description="Residence permit type per eCH-0006 (e.g., L='01', B='02', C='03', F='06')"
-    )
-    residence_permit_valid_from: Optional[date] = Field(
-        None,
-        description="Permit valid from date"
-    )
-    residence_permit_valid_till: Optional[date] = Field(
-        None,
-        description="Permit valid until date"
-    )
-    entry_date: Optional[date] = Field(
-        None,
-        description="Date of entry to Switzerland"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'residencePermit'
 
-    def to_xml(
-        self,
-        parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0011_V8,
-        element_name: str = 'residencePermit',
-        wrapper_namespace: Optional[str] = None
-    ) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-            element_name: Name of the element to create
-            wrapper_namespace: Optional wrapper namespace (for cross-schema composition)
-
-        Returns:
-            XML Element
-
-        Note:
-            When wrapper_namespace is provided, creates:
-            <wrapper_namespace:element_name>
-              <namespace:residencePermit>...</namespace:residencePermit>
-            </wrapper_namespace:element_name>
-        """
-        # Handle wrapper namespace (for eCH-0020 cross-schema composition)
-        # When wrapper_namespace is provided, create element in wrapper namespace
-        # Content (children) will still use the original namespace
-        if wrapper_namespace is not None and parent is not None:
-            elem = ET.SubElement(parent, f'{{{wrapper_namespace}}}{element_name}')
-        else:
-            # Standard behavior - create in own namespace
-            if parent is not None:
-                elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-            else:
-                elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # Residence permit (required)
-        permit_elem = ET.SubElement(elem, f'{{{namespace}}}residencePermit')
-        permit_elem.text = self.residence_permit.value if hasattr(self.residence_permit, 'value') else str(self.residence_permit)
-
-        # Valid from (optional)
-        if self.residence_permit_valid_from:
-            from_elem = ET.SubElement(elem, f'{{{namespace}}}residencePermitValidFrom')
-            from_elem.text = self.residence_permit_valid_from.isoformat()
-
-        # Valid till (optional)
-        if self.residence_permit_valid_till:
-            till_elem = ET.SubElement(elem, f'{{{namespace}}}residencePermitValidTill')
-            till_elem.text = self.residence_permit_valid_till.isoformat()
-
-        # Entry date (optional)
-        if self.entry_date:
-            entry_elem = ET.SubElement(elem, f'{{{namespace}}}entryDate')
-            entry_elem.text = self.entry_date.isoformat()
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011ResidencePermitData':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (residencePermit container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed residence permit data object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Residence permit (required)
-        permit_elem = elem.find('eCH-0011:residencePermit', ns)
-        if permit_elem is None or not permit_elem.text:
-            raise ValueError("Missing required field: residencePermit")
-
-        # Valid from (optional)
-        from_elem = elem.find('eCH-0011:residencePermitValidFrom', ns)
-        valid_from = date.fromisoformat(from_elem.text.strip()) if from_elem is not None and from_elem.text else None
-
-        # Valid till (optional)
-        till_elem = elem.find('eCH-0011:residencePermitValidTill', ns)
-        valid_till = date.fromisoformat(till_elem.text.strip()) if till_elem is not None and till_elem.text else None
-
-        # Entry date (optional)
-        entry_elem = elem.find('eCH-0011:entryDate', ns)
-        entry = date.fromisoformat(entry_elem.text.strip()) if entry_elem is not None and entry_elem.text else None
-
-        return cls(
-            residence_permit=permit_elem.text.strip(),
-            residence_permit_valid_from=valid_from,
-            residence_permit_valid_till=valid_till,
-            entry_date=entry
-        )
+    residence_permit: ResidencePermitType = xml_field()
+    residence_permit_valid_from: Optional[date] = xml_field(default=None)
+    residence_permit_valid_till: Optional[date] = xml_field(default=None)
+    entry_date: Optional[date] = xml_field(default=None)
 
 
-class ECH0011DeathPeriod(BaseModel):
+class ECH0011DeathPeriod(ECHModel):
     """eCH-0011 Death period.
 
     Represents the period of death (from date, optionally to date).
@@ -1588,76 +698,14 @@ class ECH0011DeathPeriod(BaseModel):
     XML Schema: eCH-0011 deathPeriodType
     """
 
-    date_from: date = Field(
-        ...,
-        description="Death date or start of death period (required)"
-    )
-    date_to: Optional[date] = Field(
-        None,
-        description="End of death period (optional)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'deathPeriod'
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}deathPeriod')
-        else:
-            elem = ET.Element(f'{{{namespace}}}deathPeriod')
-
-        # Date from (required)
-        from_elem = ET.SubElement(elem, f'{{{namespace}}}dateFrom')
-        from_elem.text = self.date_from.isoformat()
-
-        # Date to (optional)
-        if self.date_to:
-            to_elem = ET.SubElement(elem, f'{{{namespace}}}dateTo')
-            to_elem.text = self.date_to.isoformat()
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011DeathPeriod':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (deathPeriod container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed death period object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Date from (required)
-        from_elem = elem.find('eCH-0011:dateFrom', ns)
-        if from_elem is None or not from_elem.text:
-            raise ValueError("Missing required field: dateFrom")
-        date_from = date.fromisoformat(from_elem.text.strip())
-
-        # Date to (optional)
-        to_elem = elem.find('eCH-0011:dateTo', ns)
-        date_to = date.fromisoformat(to_elem.text.strip()) if to_elem is not None and to_elem.text else None
-
-        return cls(
-            date_from=date_from,
-            date_to=date_to
-        )
+    date_from: date = xml_field()
+    date_to: Optional[date] = xml_field(default=None)
 
 
-class ECH0011DeathData(BaseModel):
+class ECH0011DeathData(ECHModel):
     """eCH-0011 Death data.
 
     Contains death information including period and optional place.
@@ -1665,81 +713,14 @@ class ECH0011DeathData(BaseModel):
     XML Schema: eCH-0011 deathDataType
     """
 
-    death_period: ECH0011DeathPeriod = Field(
-        ...,
-        description="Death period (required)"
-    )
-    place_of_death: Optional[ECH0011GeneralPlace] = Field(
-        None,
-        description="Place of death (optional)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'deathData'
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0011_V8,
-               element_name: str = 'deathData',
-               wrapper_namespace: Optional[str] = None) -> ET.Element:
-        """Export to eCH-0011 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace for content elements
-            element_name: Name of wrapper element (default: 'deathData')
-            wrapper_namespace: Namespace for wrapper element (defaults to namespace if not specified)
-
-        Returns:
-            XML Element
-        """
-        # Use wrapper_namespace for wrapper element, namespace for content
-        wrapper_ns = wrapper_namespace if wrapper_namespace is not None else namespace
-
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{wrapper_ns}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{wrapper_ns}}}{element_name}')
-
-        # Death period (required)
-        self.death_period.to_xml(elem, namespace)
-
-        # Place of death (optional)
-        if self.place_of_death:
-            self.place_of_death.to_xml(elem, namespace, 'placeOfDeath')
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0011_V8) -> 'ECH0011DeathData':
-        """Import from eCH-0011 XML.
-
-        Args:
-            elem: XML element (deathData container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed death data object
-
-        Raises:
-            ValueError: If required fields missing
-        """
-        ns = {'eCH-0011': namespace}
-
-        # Death period (required)
-        period_elem = elem.find('eCH-0011:deathPeriod', ns)
-        if period_elem is None:
-            raise ValueError("Missing required field: deathPeriod")
-        death_period = ECH0011DeathPeriod.from_xml(period_elem, namespace)
-
-        # Place of death (optional)
-        place_elem = elem.find('eCH-0011:placeOfDeath', ns)
-        place = ECH0011GeneralPlace.from_xml(place_elem, namespace) if place_elem is not None else None
-
-        return cls(
-            death_period=death_period,
-            place_of_death=place
-        )
+    death_period: ECH0011DeathPeriod = xml_field()
+    place_of_death: Optional[ECH0011GeneralPlace] = xml_field(default=None)
 
 
-class ECH0011PartnerIdOrganisation(BaseModel):
+class ECH0011PartnerIdOrganisation(ECHModel):
     """eCH-0011 Partner ID organization.
 
     Used in contactDataType as one of the choice options for representing
@@ -1749,21 +730,11 @@ class ECH0011PartnerIdOrganisation(BaseModel):
     XSD Lines: 438-443
     """
 
-    local_person_id: ECH0044NamedPersonId = Field(
-        ...,
-        description="Local person ID (required)"
-    )
-    other_person_id: List[ECH0044NamedPersonId] = Field(
-        default_factory=list,
-        description="Other person IDs (optional, unbounded)"
-    )
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'partnerIdOrganisation'
 
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False,
-        arbitrary_types_allowed=True
-    )
+    local_person_id: ECH0044NamedPersonId = xml_field()
+    other_person_id: List[ECH0044NamedPersonId] = xml_field(is_list=True, default_factory=list)
 
     def to_xml(self, parent: ET.Element, tag: str = "partnerIdOrganisation",
                nsmap: Optional[Dict[str, str]] = None,
@@ -1866,7 +837,7 @@ class ECH0011PartnerIdOrganisation(BaseModel):
         )
 
 
-class ECH0011ContactData(BaseModel):
+class ECH0011ContactData(ECHModel):
     """eCH-0011 Contact data.
 
     Represents contact information for a person, including optional contact
@@ -1883,42 +854,20 @@ class ECH0011ContactData(BaseModel):
     XSD Lines: 262-272
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'contactData'
+
     # Optional choice: contact person OR partner OR organization (at most one)
-    contact_person: Optional[ECH0044PersonIdentification] = Field(
-        None,
-        description="Contact person identification (full) - choice 1 of 3"
-    )
-    contact_person_partner: Optional[ECH0044PersonIdentificationLight] = Field(
-        None,
-        description="Contact person partner (light) - choice 2 of 3"
-    )
-    contact_organization: Optional[ECH0011PartnerIdOrganisation] = Field(
-        None,
-        description="Contact organization - choice 3 of 3"
-    )
+    contact_person: Optional[ECH0044PersonIdentification] = xml_field(default=None)
+    contact_person_partner: Optional[ECH0044PersonIdentificationLight] = xml_field(default=None)
+    contact_organization: Optional[ECH0011PartnerIdOrganisation] = xml_field(default=None)
 
     # Required contact address
-    contact_address: ECH0010MailAddress = Field(
-        ...,
-        description="Contact mailing address (required)"
-    )
+    contact_address: ECH0010MailAddress = xml_field()
 
     # Optional validity dates
-    contact_valid_from: Optional[date] = Field(
-        None,
-        description="Contact valid from date"
-    )
-    contact_valid_till: Optional[date] = Field(
-        None,
-        description="Contact valid until date"
-    )
-
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False,
-        arbitrary_types_allowed=True
-    )
+    contact_valid_from: Optional[date] = xml_field(default=None)
+    contact_valid_till: Optional[date] = xml_field(default=None)
 
     @model_validator(mode='after')
     def validate_contact_choice(self) -> 'ECH0011ContactData':
@@ -2082,7 +1031,7 @@ class ECH0011ContactData(BaseModel):
         )
 
 
-class ECH0011DestinationType(BaseModel):
+class ECH0011DestinationType(ECHModel):
     """eCH-0011 Destination (arrival/departure location).
 
     Extension of generalPlaceType with optional mail address.
@@ -2091,30 +1040,17 @@ class ECH0011DestinationType(BaseModel):
     XML Schema: eCH-0011 destinationType
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'comesFrom'
+
     # Inherits generalPlaceType fields (choice)
-    unknown: Optional[bool] = Field(
-        None,
-        description="True if destination is unknown"
-    )
-    swiss_municipality: Optional[ECH0007Municipality] = Field(
-        None,
-        description="Swiss municipality (if applicable)"
-    )
-    foreign_country: Optional[ECH0008Country] = Field(
-        None,
-        description="Foreign country (if applicable)"
-    )
-    foreign_town: Optional[str] = Field(
-        None,
-        max_length=100,
-        description="Town name in foreign country"
-    )
+    unknown: Optional[bool] = xml_field(default=None)
+    swiss_municipality: Optional[ECH0007Municipality] = xml_field(default=None)
+    foreign_country: Optional[ECH0008Country] = xml_field(default=None)
+    foreign_town: Optional[str] = xml_field(default=None, max_length=100)
 
     # Extension: optional mail address (addressInformationType per XSD line 330)
-    mail_address: Optional[ECH0010AddressInformation] = Field(
-        None,
-        description="Mail address at destination (addressInformationType, not mailAddressType - just address fields, no person/org wrapper)"
-    )
+    mail_address: Optional[ECH0010AddressInformation] = xml_field(default=None)
 
     def to_xml(
         self,
@@ -2280,7 +1216,7 @@ class ECH0011DestinationType(BaseModel):
         )
 
 
-class ECH0011DwellingAddress(BaseModel):
+class ECH0011DwellingAddress(ECHModel):
     """eCH-0011 Dwelling address.
 
     Represents a dwelling address with building/dwelling IDs, household info,
@@ -2290,41 +1226,22 @@ class ECH0011DwellingAddress(BaseModel):
     XSD Lines: 371-380
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'dwellingAddress'
+
     # Building and dwelling identifiers (optional)
-    egid: Optional[int] = Field(
-        None,
-        ge=1,
-        le=999999999,
-        description="Federal Building ID (Eidgenössischer Gebäudeidentifikator)"
-    )
-    ewid: Optional[int] = Field(
-        None,
-        ge=1,
-        le=999,
-        description="Federal Dwelling ID (Eidgenössischer Wohnungsidentifikator)"
-    )
-    household_id: Optional[str] = Field(
-        None,
-        description="Household identifier (token)"
-    )
+    egid: Optional[int] = xml_field(default=None, ge=1, le=999999999)
+    ewid: Optional[int] = xml_field(default=None, ge=1, le=999)
+    household_id: Optional[str] = xml_field(default=None)
 
     # Address (required) - uses eCH-0010 swissAddressInformationType
-    address: 'ECH0010SwissAddressInformation' = Field(
-        ...,
-        description="Swiss address information (required)"
-    )
+    address: 'ECH0010SwissAddressInformation' = xml_field()
 
     # Household type (required)
-    type_of_household: TypeOfHousehold = Field(
-        ...,
-        description="Type of household: 0=unknown, 1=single, 2=family, 3=non-family (required)"
-    )
+    type_of_household: TypeOfHousehold = xml_field()
 
     # Moving date (optional)
-    moving_date: Optional[date] = Field(
-        None,
-        description="Date of moving into dwelling"
-    )
+    moving_date: Optional[date] = xml_field(default=None)
 
     def to_xml(
         self,
@@ -2386,7 +1303,7 @@ class ECH0011DwellingAddress(BaseModel):
 
         # Type of household (required)
         type_elem = ET.SubElement(elem, f'{{{namespace}}}typeOfHousehold')
-        type_elem.text = str(self.type_of_household.value if hasattr(self.type_of_household, 'value') else self.type_of_household)
+        type_elem.text = str(self.type_of_household.value)
 
         # Moving date (optional)
         if self.moving_date:
@@ -2443,7 +1360,7 @@ class ECH0011DwellingAddress(BaseModel):
         )
 
 
-class ECH0011ResidenceData(BaseModel):
+class ECH0011ResidenceData(ECHModel):
     """eCH-0011 Residence data.
 
     Represents residence information including municipality, dates, origin,
@@ -2453,41 +1370,26 @@ class ECH0011ResidenceData(BaseModel):
     XSD Lines: 381-390
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'mainResidence'
+
     # Reporting municipality (required)
-    reporting_municipality: ECH0007Municipality = Field(
-        ...,
-        description="Municipality where person is registered (required)"
-    )
+    reporting_municipality: ECH0007Municipality = xml_field()
 
     # Arrival date (required)
-    arrival_date: date = Field(
-        ...,
-        description="Date of arrival in municipality (required)"
-    )
+    arrival_date: date = xml_field()
 
     # Comes from (optional)
-    comes_from: Optional[ECH0011DestinationType] = Field(
-        None,
-        description="Origin/previous location (optional)"
-    )
+    comes_from: Optional[ECH0011DestinationType] = xml_field(default=None)
 
     # Dwelling address (required)
-    dwelling_address: ECH0011DwellingAddress = Field(
-        ...,
-        description="Dwelling address information (required)"
-    )
+    dwelling_address: ECH0011DwellingAddress = xml_field()
 
     # Departure date (optional)
-    departure_date: Optional[date] = Field(
-        None,
-        description="Date of departure from municipality (optional)"
-    )
+    departure_date: Optional[date] = xml_field(default=None)
 
     # Goes to (optional)
-    goes_to: Optional[ECH0011DestinationType] = Field(
-        None,
-        description="Destination/next location (optional)"
-    )
+    goes_to: Optional[ECH0011DestinationType] = xml_field(default=None)
 
     def to_xml(self, parent: Optional[ET.Element] = None,
                namespace: str = NS.ECH0011_V8,
@@ -2610,7 +1512,7 @@ class ECH0011ResidenceData(BaseModel):
         )
 
 
-class ECH0011MainResidence(BaseModel):
+class ECH0011MainResidence(ECHModel):
     """eCH-0011 Main residence.
 
     Represents a person's main residence with optional secondary residences.
@@ -2619,17 +1521,14 @@ class ECH0011MainResidence(BaseModel):
     XSD Lines: 391-396
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'hasMainResidence'
+
     # Main residence (required)
-    main_residence: ECH0011ResidenceData = Field(
-        ...,
-        description="Main residence data (required)"
-    )
+    main_residence: ECH0011ResidenceData = xml_field()
 
     # Secondary residences (optional, unbounded)
-    secondary_residence: List[ECH0007Municipality] = Field(
-        default_factory=list,
-        description="List of secondary residence municipalities (optional)"
-    )
+    secondary_residence: List[ECH0007Municipality] = xml_field(is_list=True, default_factory=list)
 
     def to_xml(self, parent: Optional[ET.Element] = None,
                namespace: str = NS.ECH0011_V8,
@@ -2714,7 +1613,7 @@ class ECH0011MainResidence(BaseModel):
         )
 
 
-class ECH0011SecondaryResidence(BaseModel):
+class ECH0011SecondaryResidence(ECHModel):
     """eCH-0011 Secondary residence.
 
     Represents a person's secondary residence with reference to main residence municipality.
@@ -2724,38 +1623,20 @@ class ECH0011SecondaryResidence(BaseModel):
     XSD Lines: 397-417
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'hasSecondaryResidence'
+
     # Main residence municipality reference (required)
-    main_residence: ECH0007Municipality = Field(
-        ...,
-        description="Municipality where person has main residence (required)"
-    )
+    main_residence: ECH0007Municipality = xml_field()
 
     # Secondary residence data (required) - restricted residenceDataType
     # Note: comesFrom is REQUIRED (not optional like in base residenceDataType)
-    reporting_municipality: ECH0007Municipality = Field(
-        ...,
-        description="Municipality where secondary residence is registered (required)"
-    )
-    arrival_date: date = Field(
-        ...,
-        description="Date of arrival at secondary residence (required)"
-    )
-    comes_from: ECH0011DestinationType = Field(
-        ...,
-        description="Origin/previous location (REQUIRED for secondary residence)"
-    )
-    dwelling_address: ECH0011DwellingAddress = Field(
-        ...,
-        description="Dwelling address at secondary residence (required)"
-    )
-    departure_date: Optional[date] = Field(
-        None,
-        description="Date of departure from secondary residence (optional)"
-    )
-    goes_to: Optional[ECH0011DestinationType] = Field(
-        None,
-        description="Destination/next location (optional)"
-    )
+    reporting_municipality: ECH0007Municipality = xml_field()
+    arrival_date: date = xml_field()
+    comes_from: ECH0011DestinationType = xml_field()
+    dwelling_address: ECH0011DwellingAddress = xml_field()
+    departure_date: Optional[date] = xml_field(default=None)
+    goes_to: Optional[ECH0011DestinationType] = xml_field(default=None)
 
     def to_xml(self, parent: Optional[ET.Element] = None,
                namespace: str = NS.ECH0011_V8,
@@ -2886,7 +1767,7 @@ class ECH0011SecondaryResidence(BaseModel):
         )
 
 
-class ECH0011OtherResidence(BaseModel):
+class ECH0011OtherResidence(ECHModel):
     """eCH-0011 Other residence.
 
     Represents a person's other type of residence (neither main nor secondary).
@@ -2899,39 +1780,17 @@ class ECH0011OtherResidence(BaseModel):
     XSD Lines: 418-437
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'hasOtherResidence'
+
     # Other residence data (restricted residenceDataType)
     # Note: comesFrom is REQUIRED (not optional like base residenceDataType)
-    reporting_municipality: ECH0007Municipality = Field(
-        ...,
-        description="Municipality where residence is registered"
-    )
-    arrival_date: date = Field(
-        ...,
-        description="Date of arrival at this residence"
-    )
-    comes_from: ECH0011DestinationType = Field(
-        ...,
-        description="Origin location (required for other residence)"
-    )
-    dwelling_address: ECH0011DwellingAddress = Field(
-        ...,
-        description="Dwelling address at this residence"
-    )
-    departure_date: Optional[date] = Field(
-        None,
-        description="Date of departure from this residence"
-    )
-    goes_to: Optional[ECH0011DestinationType] = Field(
-        None,
-        description="Destination location (if departed)"
-    )
-
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False,
-        arbitrary_types_allowed=True
-    )
+    reporting_municipality: ECH0007Municipality = xml_field()
+    arrival_date: date = xml_field()
+    comes_from: ECH0011DestinationType = xml_field()
+    dwelling_address: ECH0011DwellingAddress = xml_field()
+    departure_date: Optional[date] = xml_field(default=None)
+    goes_to: Optional[ECH0011DestinationType] = xml_field(default=None)
 
     def to_xml(self, parent: Optional[ET.Element] = None,
                namespace: str = NS.ECH0011_V8,
@@ -3063,7 +1922,7 @@ class ECH0011OtherResidence(BaseModel):
         )
 
 
-class ECH0011Person(BaseModel):
+class ECH0011Person(ECHModel):
     """eCH-0011 Complete person model (personType).
 
     Combines all person data components into a complete person record.
@@ -3072,60 +1931,26 @@ class ECH0011Person(BaseModel):
     XML Schema: eCH-0011 personType
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'person'
+
     # Required fields
-    person_identification: ECH0044PersonIdentification = Field(
-        ...,
-        description="Person identification (eCH-0044, required)"
-    )
-    name_data: ECH0011NameData = Field(
-        ...,
-        description="Name data (required)"
-    )
-    birth_data: ECH0011BirthData = Field(
-        ...,
-        description="Birth data (required)"
-    )
-    religion_data: ECH0011ReligionData = Field(
-        ...,
-        description="Religion data (required)"
-    )
-    marital_data: ECH0011MaritalData = Field(
-        ...,
-        description="Marital data (required)"
-    )
-    nationality_data: ECH0011NationalityData = Field(
-        ...,
-        description="Nationality data (required)"
-    )
+    person_identification: ECH0044PersonIdentification = xml_field()
+    name_data: ECH0011NameData = xml_field()
+    birth_data: ECH0011BirthData = xml_field()
+    religion_data: ECH0011ReligionData = xml_field()
+    marital_data: ECH0011MaritalData = xml_field()
+    nationality_data: ECH0011NationalityData = xml_field()
 
     # Optional fields
-    death_data: Optional[ECH0011DeathData] = Field(
-        None,
-        description="Death data (optional)"
-    )
-    contact_data: Optional[ECH0011ContactData] = Field(
-        None,
-        description="Contact data (optional)"
-    )
-    language_of_correspondance: Optional[str] = Field(
-        None,
-        max_length=2,
-        description="Language of correspondence (ISO 639-1 code, optional)"
-    )
-    restricted_voting_and_election_right_federation: Optional[bool] = Field(
-        None,
-        description="Restricted voting/election rights (optional)"
-    )
+    death_data: Optional[ECH0011DeathData] = xml_field(default=None)
+    contact_data: Optional[ECH0011ContactData] = xml_field(default=None)
+    language_of_correspondance: Optional[str] = xml_field(default=None, max_length=2)
+    restricted_voting_and_election_right_federation: Optional[bool] = xml_field(default=None)
 
     # Choice: Swiss person has placeOfOrigin, foreigner has residencePermit
-    place_of_origin: List[ECH0011PlaceOfOrigin] = Field(
-        default_factory=list,
-        description="Places of origin (for Swiss citizens)"
-    )
-    residence_permit: Optional[ECH0011ResidencePermitData] = Field(
-        None,
-        description="Residence permit (for foreign nationals)"
-    )
+    place_of_origin: List[ECH0011PlaceOfOrigin] = xml_field(is_list=True, default_factory=list)
+    residence_permit: Optional[ECH0011ResidencePermitData] = xml_field(default=None)
 
     @field_validator('place_of_origin', 'residence_permit')
     @classmethod
@@ -3179,7 +2004,7 @@ class ECH0011Person(BaseModel):
 
         # Sex (required)
         sex_elem = ET.SubElement(elem, f'{{{ech0044_ns}}}sex')
-        sex_elem.text = person_id.sex.value if hasattr(person_id.sex, 'value') else str(person_id.sex)
+        sex_elem.text = person_id.sex.value
 
         # Date of birth (required)
         person_id.date_of_birth.to_xml(elem, ech0044_ns, 'dateOfBirth')
@@ -3362,7 +2187,7 @@ class ECH0011Person(BaseModel):
         )
 
 
-class ECH0011ReportedPerson(BaseModel):
+class ECH0011ReportedPerson(ECHModel):
     """eCH-0011 Reported person (reportedPersonType).
 
     Combines a person with exactly one type of residence information.
@@ -3379,32 +2204,16 @@ class ECH0011ReportedPerson(BaseModel):
     XSD Lines: 22-31
     """
 
+    __xml_ns__ = NS.ECH0011_V8
+    __xml_element__ = 'reportedPerson'
+
     # Required person data
-    person: ECH0011Person = Field(
-        ...,
-        description="Complete person data (required)"
-    )
+    person: ECH0011Person = xml_field()
 
     # Exactly one of these residence types must be set (XSD choice)
-    has_main_residence: Optional[ECH0011MainResidence] = Field(
-        None,
-        description="Main residence data (choice 1 of 3)"
-    )
-    has_secondary_residence: Optional[ECH0011SecondaryResidence] = Field(
-        None,
-        description="Secondary residence data (choice 2 of 3)"
-    )
-    has_other_residence: Optional[ECH0011OtherResidence] = Field(
-        None,
-        description="Other residence data (choice 3 of 3)"
-    )
-
-    model_config = ConfigDict(
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=False,
-        arbitrary_types_allowed=True
-    )
+    has_main_residence: Optional[ECH0011MainResidence] = xml_field(default=None)
+    has_secondary_residence: Optional[ECH0011SecondaryResidence] = xml_field(default=None)
+    has_other_residence: Optional[ECH0011OtherResidence] = xml_field(default=None)
 
     @model_validator(mode='after')
     def validate_residence_choice(self) -> 'ECH0011ReportedPerson':
