@@ -50,7 +50,7 @@ See Also:
 from openmun_ech.version_router import VersionRouter, ECH0020Version
 
 # Import component models (latest versions)
-from openmun_ech.ech0007.v5 import ECH0007SwissMunicipality as ECH0007Municipality
+from openmun_ech.ech0007.v5 import ECH0007Municipality
 from openmun_ech.ech0008.v3 import ECH0008Country
 from openmun_ech.ech0010.v5 import ECH0010MailAddress
 from openmun_ech.ech0011.v8 import ECH0011Person

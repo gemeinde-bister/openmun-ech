@@ -9,13 +9,12 @@ ARCHITECTURE: Pure Pydantic Model (Layer 1)
 - Database mapping logic belongs in: openmun/mappers/municipality_mapper.py
 """
 
-import xml.etree.ElementTree as ET
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import field_validator
 
-from openmun_ech.core import NS
+from openmun_ech.core import ECHModel, NS, xml_field
 
 
 class CantonAbbreviation(str, Enum):
@@ -90,32 +89,31 @@ class CantonFLAbbreviation(str, Enum):
     FL = "FL"  # Fürstentum Liechtenstein (Principality of Liechtenstein)
 
 
-class ECH0007SwissMunicipality(BaseModel):
+class ECH0007SwissMunicipality(ECHModel):
     """eCH-0007 Swiss Municipality.
 
     Represents a Swiss municipality with BFS number and canton.
 
     XML Schema: eCH-0007 swissMunicipalityType
     """
-    municipality_id: Optional[str] = Field(
-        None,
-        min_length=1,
-        max_length=4,
+
+    __xml_ns__ = NS.ECH0007_V5
+    __xml_element__ = 'swissMunicipality'
+
+    municipality_id: Optional[str] = xml_field(
+        'municipalityId', default=None, min_length=1, max_length=4,
         description="BFS municipality number (1-4 digits, optional per XSD)"
     )
-    municipality_name: str = Field(
-        ...,
-        min_length=1,
-        max_length=40,
+    municipality_name: str = xml_field(
+        'municipalityName', min_length=1, max_length=40,
         description="Official municipality name (required)"
     )
-    canton_abbreviation: Optional[CantonAbbreviation] = Field(
-        None,
+    canton_abbreviation: Optional[CantonAbbreviation] = xml_field(
+        'cantonAbbreviation', default=None,
         description="Two-letter canton code (optional per XSD)"
     )
-    history_municipality_id: Optional[str] = Field(
-        None,
-        max_length=12,
+    history_municipality_id: Optional[str] = xml_field(
+        'historyMunicipalityId', default=None, max_length=12,
         description="Historical BFS number for merged municipalities"
     )
 
@@ -143,84 +141,8 @@ class ECH0007SwissMunicipality(BaseModel):
             raise ValueError(f"History municipality ID max 12 digits, got: {v}")
         return v
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0007_V5) -> ET.Element:
-        """Export to XML element.
 
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}swissMunicipality')
-        else:
-            elem = ET.Element(f'{{{namespace}}}swissMunicipality')
-
-        # Municipality ID (optional)
-        if self.municipality_id:
-            mun_id = ET.SubElement(elem, f'{{{namespace}}}municipalityId')
-            mun_id.text = self.municipality_id
-
-        # Municipality name (required)
-        mun_name = ET.SubElement(elem, f'{{{namespace}}}municipalityName')
-        mun_name.text = self.municipality_name
-
-        # Canton abbreviation (optional)
-        if self.canton_abbreviation:
-            canton = ET.SubElement(elem, f'{{{namespace}}}cantonAbbreviation')
-            canton.text = self.canton_abbreviation.value
-
-        # History municipality ID (optional)
-        if self.history_municipality_id:
-            hist_id = ET.SubElement(elem, f'{{{namespace}}}historyMunicipalityId')
-            hist_id.text = self.history_municipality_id
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0007_V5) -> 'ECH0007SwissMunicipality':
-        """Import from XML element.
-
-        Args:
-            elem: XML element (swissMunicipality)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed municipality object
-
-        Raises:
-            ValueError: If required fields missing or invalid
-        """
-        ns = {'eCH-0007': namespace}
-
-        # Extract municipality name (required)
-        mun_name_elem = elem.find('eCH-0007:municipalityName', ns)
-        if mun_name_elem is None or not mun_name_elem.text:
-            raise ValueError("Missing required field: municipalityName")
-
-        # Extract optional fields
-        mun_id_elem = elem.find('eCH-0007:municipalityId', ns)
-        mun_id = mun_id_elem.text.strip() if mun_id_elem is not None and mun_id_elem.text else None
-
-        canton_elem = elem.find('eCH-0007:cantonAbbreviation', ns)
-        canton = CantonAbbreviation(canton_elem.text.strip()) if canton_elem is not None and canton_elem.text else None
-
-        hist_elem = elem.find('eCH-0007:historyMunicipalityId', ns)
-        hist_id = hist_elem.text.strip() if hist_elem is not None and hist_elem.text else None
-
-        return cls(
-            municipality_id=mun_id,
-            municipality_name=mun_name_elem.text.strip(),
-            canton_abbreviation=canton,
-            history_municipality_id=hist_id
-        )
-
-
-class ECH0007SwissAndFLMunicipality(BaseModel):
+class ECH0007SwissAndFLMunicipality(ECHModel):
     """eCH-0007 Swiss + FL Municipality (swissAndFlMunicipalityType).
 
     Represents a Swiss or Liechtenstein municipality with REQUIRED fields.
@@ -236,25 +158,24 @@ class ECH0007SwissAndFLMunicipality(BaseModel):
 
     XML Schema: eCH-0007 swissAndFlMunicipalityType (XSD lines 95-102)
     """
-    municipality_id: str = Field(
-        ...,
-        min_length=1,
-        max_length=4,
+
+    __xml_ns__ = NS.ECH0007_V5
+    __xml_element__ = 'swissAndFlMunicipality'
+
+    municipality_id: str = xml_field(
+        'municipalityId', min_length=1, max_length=4,
         description="BFS municipality number (1-4 digits, REQUIRED)"
     )
-    municipality_name: str = Field(
-        ...,
-        min_length=1,
-        max_length=40,
+    municipality_name: str = xml_field(
+        'municipalityName', min_length=1, max_length=40,
         description="Official municipality name (REQUIRED)"
     )
-    canton_fl_abbreviation: CantonFLAbbreviation = Field(
-        ...,
+    canton_fl_abbreviation: CantonFLAbbreviation = xml_field(
+        'cantonFlAbbreviation',
         description="Two-letter canton code including FL (REQUIRED)"
     )
-    history_municipality_id: Optional[str] = Field(
-        None,
-        max_length=12,
+    history_municipality_id: Optional[str] = xml_field(
+        'historyMunicipalityId', default=None, max_length=12,
         description="Historical BFS number for merged municipalities (optional)"
     )
 
@@ -280,86 +201,8 @@ class ECH0007SwissAndFLMunicipality(BaseModel):
             raise ValueError(f"History municipality ID max 12 digits, got: {v}")
         return v
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0007_V5) -> ET.Element:
-        """Export to XML element.
 
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}swissAndFlMunicipality')
-        else:
-            elem = ET.Element(f'{{{namespace}}}swissAndFlMunicipality')
-
-        # Municipality ID (REQUIRED)
-        mun_id = ET.SubElement(elem, f'{{{namespace}}}municipalityId')
-        mun_id.text = self.municipality_id
-
-        # Municipality name (REQUIRED)
-        mun_name = ET.SubElement(elem, f'{{{namespace}}}municipalityName')
-        mun_name.text = self.municipality_name
-
-        # Canton FL abbreviation (REQUIRED)
-        canton = ET.SubElement(elem, f'{{{namespace}}}cantonFlAbbreviation')
-        canton.text = self.canton_fl_abbreviation.value
-
-        # History municipality ID (optional)
-        if self.history_municipality_id:
-            hist_id = ET.SubElement(elem, f'{{{namespace}}}historyMunicipalityId')
-            hist_id.text = self.history_municipality_id
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0007_V5) -> 'ECH0007SwissAndFLMunicipality':
-        """Import from XML element.
-
-        Args:
-            elem: XML element (swissAndFlMunicipality)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed municipality object
-
-        Raises:
-            ValueError: If required fields missing or invalid
-        """
-        ns = {'eCH-0007': namespace}
-
-        # Extract municipality ID (REQUIRED)
-        mun_id_elem = elem.find('eCH-0007:municipalityId', ns)
-        if mun_id_elem is None or not mun_id_elem.text:
-            raise ValueError("Missing required field: municipalityId")
-
-        # Extract municipality name (REQUIRED)
-        mun_name_elem = elem.find('eCH-0007:municipalityName', ns)
-        if mun_name_elem is None or not mun_name_elem.text:
-            raise ValueError("Missing required field: municipalityName")
-
-        # Extract canton FL abbreviation (REQUIRED)
-        canton_elem = elem.find('eCH-0007:cantonFlAbbreviation', ns)
-        if canton_elem is None or not canton_elem.text:
-            raise ValueError("Missing required field: cantonFlAbbreviation")
-
-        # Extract optional history ID
-        hist_elem = elem.find('eCH-0007:historyMunicipalityId', ns)
-        hist_id = hist_elem.text.strip() if hist_elem is not None and hist_elem.text else None
-
-        return cls(
-            municipality_id=mun_id_elem.text.strip(),
-            municipality_name=mun_name_elem.text.strip(),
-            canton_fl_abbreviation=CantonFLAbbreviation(canton_elem.text.strip()),
-            history_municipality_id=hist_id
-        )
-
-
-class ECH0007Municipality(BaseModel):
+class ECH0007Municipality(ECHModel):
     """eCH-0007 Municipality (Swiss).
 
     Wrapper for Swiss municipality data with BFS number and canton.
@@ -370,7 +213,11 @@ class ECH0007Municipality(BaseModel):
     Note: history_municipality_id is part of ECH0007SwissMunicipality
     per XSD specification.
     """
-    swiss_municipality: ECH0007SwissMunicipality
+
+    __xml_ns__ = NS.ECH0007_V5
+    __xml_element__ = 'placeOfOrigin'
+
+    swiss_municipality: ECH0007SwissMunicipality = xml_field('swissMunicipality')
 
     @property
     def name(self) -> str:
@@ -405,52 +252,3 @@ class ECH0007Municipality(BaseModel):
                 history_municipality_id=history_id
             )
         )
-
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0007_V5,
-               element_name: str = 'placeOfOrigin') -> ET.Element:
-        """Export to XML element.
-
-        Args:
-            parent: Parent element to attach to
-            namespace: XML namespace URI
-            element_name: Name of container element (varies by context)
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            container = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            container = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # Export Swiss municipality
-        self.swiss_municipality.to_xml(container, namespace)
-
-        return container
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0007_V5) -> 'ECH0007Municipality':
-        """Import from XML element.
-
-        Args:
-            elem: XML container element (e.g., placeOfOrigin, placeOfBirth)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed municipality object
-
-        Note: history_municipality_id is parsed inside ECH0007SwissMunicipality
-        per XSD specification.
-        """
-        ns = {'eCH-0007': namespace}
-
-        # Check for Swiss municipality
-        swiss_elem = elem.find('eCH-0007:swissMunicipality', ns)
-        if swiss_elem is None:
-            raise ValueError("Missing required element: swissMunicipality")
-
-        swiss_mun = ECH0007SwissMunicipality.from_xml(swiss_elem, namespace)
-
-        return cls(swiss_municipality=swiss_mun)
