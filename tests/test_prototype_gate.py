@@ -1,11 +1,11 @@
-"""Phase 2 Prototype Gate: ECHModel structural XML comparison.
+"""Phase 2/3 Prototype Gate: ECHModel structural XML comparison.
 
 Tests that ECHModel-based classes produce structurally identical XML to the
-existing handwritten implementations. This is the pass/fail gate for the
-declarative framework approach.
+existing handwritten implementations. After Phase 3 migration, the real classes
+ARE ECHModel-based — tests validate roundtrip and structural correctness.
 
 Pass criteria:
-    1. ECH0008CountryProto produces identical XML to ECH0008Country
+    1. ECH0008Country (now ECHModel) produces correct XML
     2. ECH0020NameInfoProto produces identical XML to ECH0020NameInfo
     3. from_xml() roundtrip works for both
     4. Pydantic validation (Field constraints) still works
@@ -24,28 +24,8 @@ from openmun_ech.ech0020.v3 import ECH0020NameInfo
 
 
 # ---------------------------------------------------------------------------
-# Prototype models (ECHModel-based reimplementations)
+# Prototype models (not yet migrated — kept for cross-namespace wrapper test)
 # ---------------------------------------------------------------------------
-
-class ECH0008CountryProto(ECHModel):
-    """ECHModel-based eCH-0008 Country (prototype)."""
-
-    __xml_ns__ = NS.ECH0008_V3
-    __xml_element__ = 'country'
-
-    country_id: Optional[str] = xml_field('countryId', default=None, min_length=4, max_length=4)
-    country_id_iso2: Optional[str] = xml_field('countryIdISO2', default=None, min_length=2, max_length=2)
-    country_name_short: str = xml_field('countryNameShort', min_length=1, max_length=50)
-
-
-class ECH0008CountryShortProto(ECHModel):
-    """ECHModel-based eCH-0008 CountryShort (prototype)."""
-
-    __xml_ns__ = NS.ECH0008_V3
-    __xml_element__ = 'country'  # Original uses 'country' as default element name
-
-    country_name_short: str = xml_field('countryNameShort', min_length=1, max_length=50)
-
 
 class ECH0020NameInfoProto(ECHModel):
     """ECHModel-based ECH0020NameInfo (prototype).
@@ -126,89 +106,85 @@ def assert_xml_equal(a: ET.Element, b: ET.Element) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Test Case 1: eCH-0008 Country (all fields populated)
+# Test Case 1: eCH-0008 Country (now ECHModel-based, validates real classes)
 # ---------------------------------------------------------------------------
 
-class TestECH0008Prototype:
-    """Verify ECH0008CountryProto produces identical XML to ECH0008Country."""
+class TestECH0008:
+    """Verify ECH0008Country (ECHModel) produces correct XML and roundtrips."""
 
     def test_country_all_fields(self):
-        """All three fields populated."""
-        old = ECH0008Country(
+        """All three fields populated — correct XML structure."""
+        country = ECH0008Country(
             country_id='8100',
             country_id_iso2='CH',
             country_name_short='Schweiz'
         )
-        new = ECH0008CountryProto(
-            country_id='8100',
-            country_id_iso2='CH',
-            country_name_short='Schweiz'
-        )
+        xml = country.to_xml()
 
-        old_xml = old.to_xml()
-        new_xml = new.to_xml()
-        assert_xml_equal(old_xml, new_xml)
+        assert xml.tag == f'{{{NS.ECH0008_V3}}}country'
+        children = list(xml)
+        assert len(children) == 3
+        assert children[0].tag == f'{{{NS.ECH0008_V3}}}countryId'
+        assert children[0].text == '8100'
+        assert children[1].tag == f'{{{NS.ECH0008_V3}}}countryIdISO2'
+        assert children[1].text == 'CH'
+        assert children[2].tag == f'{{{NS.ECH0008_V3}}}countryNameShort'
+        assert children[2].text == 'Schweiz'
 
     def test_country_required_only(self):
-        """Only required field (country_name_short) set."""
-        old = ECH0008Country(country_name_short='Deutschland')
-        new = ECH0008CountryProto(country_name_short='Deutschland')
+        """Only required field — optional fields omitted from XML."""
+        country = ECH0008Country(country_name_short='Deutschland')
+        xml = country.to_xml()
 
-        old_xml = old.to_xml()
-        new_xml = new.to_xml()
-        assert_xml_equal(old_xml, new_xml)
+        children = list(xml)
+        assert len(children) == 1
+        assert children[0].tag == f'{{{NS.ECH0008_V3}}}countryNameShort'
+        assert children[0].text == 'Deutschland'
 
     def test_country_partial_optional(self):
         """One optional field set, one None."""
-        old = ECH0008Country(
+        country = ECH0008Country(
             country_id='8207',
             country_name_short='Frankreich'
         )
-        new = ECH0008CountryProto(
-            country_id='8207',
-            country_name_short='Frankreich'
-        )
+        xml = country.to_xml()
 
-        old_xml = old.to_xml()
-        new_xml = new.to_xml()
-        assert_xml_equal(old_xml, new_xml)
+        children = list(xml)
+        assert len(children) == 2
+        assert children[0].tag == f'{{{NS.ECH0008_V3}}}countryId'
+        assert children[1].tag == f'{{{NS.ECH0008_V3}}}countryNameShort'
 
     def test_country_custom_element_name(self):
         """Custom element_name parameter."""
-        old = ECH0008Country(
+        country = ECH0008Country(
             country_id='8100',
             country_id_iso2='CH',
             country_name_short='Schweiz'
         )
-        new = ECH0008CountryProto(
-            country_id='8100',
-            country_id_iso2='CH',
-            country_name_short='Schweiz'
-        )
-
-        old_xml = old.to_xml(element_name='placeOfBirthCountry')
-        new_xml = new.to_xml(element_name='placeOfBirthCountry')
-        assert_xml_equal(old_xml, new_xml)
+        xml = country.to_xml(element_name='placeOfBirthCountry')
+        assert xml.tag == f'{{{NS.ECH0008_V3}}}placeOfBirthCountry'
 
     def test_country_short(self):
         """ECH0008CountryShort — single field."""
-        old = ECH0008CountryShort(country_name_short='Schweiz')
-        new = ECH0008CountryShortProto(country_name_short='Schweiz')
+        short = ECH0008CountryShort(country_name_short='Schweiz')
+        xml = short.to_xml()
 
-        old_xml = old.to_xml()
-        new_xml = new.to_xml()
-        assert_xml_equal(old_xml, new_xml)
+        assert xml.tag == f'{{{NS.ECH0008_V3}}}country'
+        children = list(xml)
+        assert len(children) == 1
+        assert children[0].tag == f'{{{NS.ECH0008_V3}}}countryNameShort'
+        assert children[0].text == 'Schweiz'
 
     def test_country_roundtrip(self):
         """from_xml(to_xml(data)) produces same model data."""
-        original = ECH0008CountryProto(
+        original = ECH0008Country(
             country_id='8100',
             country_id_iso2='CH',
             country_name_short='Schweiz'
         )
 
         xml = original.to_xml()
-        restored = ECH0008CountryProto.from_xml(xml)
+        restored = ECH0008Country.from_xml(xml)
 
         assert restored.country_id == original.country_id
         assert restored.country_id_iso2 == original.country_id_iso2
@@ -216,10 +192,10 @@ class TestECH0008Prototype:
 
     def test_country_roundtrip_optional_none(self):
         """Roundtrip with optional fields as None."""
-        original = ECH0008CountryProto(country_name_short='Italien')
+        original = ECH0008Country(country_name_short='Italien')
 
         xml = original.to_xml()
-        restored = ECH0008CountryProto.from_xml(xml)
+        restored = ECH0008Country.from_xml(xml)
 
         assert restored.country_id is None
         assert restored.country_id_iso2 is None
@@ -228,12 +204,12 @@ class TestECH0008Prototype:
     def test_pydantic_validation_min_length(self):
         """Pydantic Field constraints still enforced."""
         with pytest.raises(Exception):  # ValidationError
-            ECH0008CountryProto(country_name_short='')
+            ECH0008Country(country_name_short='')
 
     def test_pydantic_validation_max_length(self):
         """Pydantic max_length constraint."""
         with pytest.raises(Exception):  # ValidationError
-            ECH0008CountryProto(country_id='12345')  # max 4 chars
+            ECH0008Country(country_id='12345')  # max 4 chars
 
 
 # ---------------------------------------------------------------------------

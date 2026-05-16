@@ -12,16 +12,15 @@ ARCHITECTURE: Pure Pydantic Model (Layer 1)
 - Database mapping logic belongs in: openmun/mappers/country_mapper.py
 """
 
-import xml.etree.ElementTree as ET
-from typing import Optional, Dict
+from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import field_validator
 
-from openmun_ech.core import NS
+from openmun_ech.core import ECHModel, NS, xml_field
 from openmun_opendata.countries import get_country, get_country_by_bfs
 
 
-class ECH0008Country(BaseModel):
+class ECH0008Country(ECHModel):
     """eCH-0008 Country.
 
     Represents a country with BFS code, ISO code, and multilingual names.
@@ -29,24 +28,12 @@ class ECH0008Country(BaseModel):
     XML Schema: eCH-0008 v3.0 countryType
     """
 
-    country_id: Optional[str] = Field(
-        None,
-        min_length=4,
-        max_length=4,
-        description="BFS country code (4 digits, e.g., '8100' for Switzerland, optional per XSD)"
-    )
-    country_id_iso2: Optional[str] = Field(
-        None,
-        min_length=2,
-        max_length=2,
-        description="ISO 3166-1 alpha-2 country code (e.g., 'CH')"
-    )
-    country_name_short: str = Field(
-        ...,
-        min_length=1,
-        max_length=50,
-        description="Short country name (language-specific, max 50 chars per eCH-0008 XSD, required)"
-    )
+    __xml_ns__ = NS.ECH0008_V3
+    __xml_element__ = 'country'
+
+    country_id: Optional[str] = xml_field('countryId', default=None, min_length=4, max_length=4)
+    country_id_iso2: Optional[str] = xml_field('countryIdISO2', default=None, min_length=2, max_length=2)
+    country_name_short: str = xml_field('countryNameShort', min_length=1, max_length=50)
 
     @field_validator('country_id')
     @classmethod
@@ -119,82 +106,7 @@ class ECH0008Country(BaseModel):
         )
 
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0008_V3,
-               element_name: str = 'country',
-               wrapper_namespace: Optional[str] = None) -> ET.Element:
-        """Export to XML element.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI for content elements (countryId, countryIdISO2, countryNameShort)
-            element_name: Name of container element (usually 'country')
-            wrapper_namespace: Namespace for wrapper element (defaults to namespace if not specified)
-
-        Returns:
-            XML Element
-        """
-        # Use wrapper_namespace for the wrapper element, namespace for content
-        wrapper_ns = wrapper_namespace if wrapper_namespace is not None else namespace
-
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{wrapper_ns}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{wrapper_ns}}}{element_name}')
-
-        # Country ID (BFS code) - optional per XSD - always in eCH-0008 namespace
-        if self.country_id:
-            country_id_elem = ET.SubElement(elem, f'{{{namespace}}}countryId')
-            country_id_elem.text = self.country_id
-
-        # Country ISO2 code - optional - always in eCH-0008 namespace
-        if self.country_id_iso2:
-            iso2_elem = ET.SubElement(elem, f'{{{namespace}}}countryIdISO2')
-            iso2_elem.text = self.country_id_iso2
-
-        # Country name short - required - always in eCH-0008 namespace
-        name_elem = ET.SubElement(elem, f'{{{namespace}}}countryNameShort')
-        name_elem.text = self.country_name_short
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0008_V3) -> 'ECH0008Country':
-        """Import from XML element.
-
-        Args:
-            elem: XML element (country container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed country object
-
-        Raises:
-            ValueError: If required fields missing or invalid
-        """
-        ns = {'eCH-0008': namespace}
-
-        # Extract required field (countryNameShort)
-        country_name_elem = elem.find('eCH-0008:countryNameShort', ns)
-        if country_name_elem is None or not country_name_elem.text:
-            raise ValueError("Missing required field: countryNameShort")
-
-        # Extract optional fields
-        country_id_elem = elem.find('eCH-0008:countryId', ns)
-        country_id = country_id_elem.text.strip() if country_id_elem is not None and country_id_elem.text else None
-
-        iso2_elem = elem.find('eCH-0008:countryIdISO2', ns)
-        iso2 = iso2_elem.text.strip() if iso2_elem is not None and iso2_elem.text else None
-
-        return cls(
-            country_id=country_id,
-            country_id_iso2=iso2,
-            country_name_short=country_name_elem.text.strip()
-        )
-
-
-class ECH0008CountryShort(BaseModel):
+class ECH0008CountryShort(ECHModel):
     """eCH-0008 Country Short Form.
 
     Simpler alternative to ECH0008Country when only the country name is needed,
@@ -208,12 +120,10 @@ class ECH0008CountryShort(BaseModel):
     importieren, den countryType oder den countryShortType verwenden."
     """
 
-    country_name_short: str = Field(
-        ...,
-        min_length=1,
-        max_length=50,
-        description="Short country name (language-specific, max 50 chars per eCH-0008 XSD, required)"
-    )
+    __xml_ns__ = NS.ECH0008_V3
+    __xml_element__ = 'country'
+
+    country_name_short: str = xml_field('countryNameShort', min_length=1, max_length=50)
 
     @classmethod
     def from_country_name(cls, country_name: str) -> 'ECH0008CountryShort':
@@ -234,51 +144,3 @@ class ECH0008CountryShort(BaseModel):
             raise ValueError(f"Country name too long (max 50 chars): {country_name}")
 
         return cls(country_name_short=country_name.strip())
-
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0008_V3,
-               element_name: str = 'country') -> ET.Element:
-        """Export to XML element.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-            element_name: Name of container element (usually 'country')
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # Country name short - required (only field)
-        name_elem = ET.SubElement(elem, f'{{{namespace}}}countryNameShort')
-        name_elem.text = self.country_name_short
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0008_V3) -> 'ECH0008CountryShort':
-        """Import from XML element.
-
-        Args:
-            elem: XML element (country container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed country short object
-
-        Raises:
-            ValueError: If required field missing or invalid
-        """
-        ns = {'eCH-0008': namespace}
-
-        # Extract required field (countryNameShort) - only field for countryShortType
-        country_name_elem = elem.find('eCH-0008:countryNameShort', ns)
-        if country_name_elem is None or not country_name_elem.text:
-            raise ValueError("Missing required field: countryNameShort")
-
-        return cls(country_name_short=country_name_elem.text.strip())

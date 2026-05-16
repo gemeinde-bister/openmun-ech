@@ -17,6 +17,7 @@ Usage:
 
 import xml.etree.ElementTree as ET
 from datetime import date
+from enum import Enum
 from typing import Any, ClassVar, Optional, Self, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict
@@ -155,6 +156,12 @@ def _serialize_value(parent_elem: ET.Element, parent_ns: str, meta: XmlMeta, val
         sub = ET.SubElement(parent_elem, f'{{{field_ns}}}{meta.xml_name}')
         sub.text = value.isoformat()
 
+    elif isinstance(value, Enum):
+        # Enum before str/int — (str, Enum) passes isinstance(v, str) but
+        # str() gives "EnumClass.MEMBER" in Python 3.11+, not the value.
+        sub = ET.SubElement(parent_elem, f'{{{field_ns}}}{meta.xml_name}')
+        sub.text = str(value.value)
+
     elif isinstance(value, bool):
         sub = ET.SubElement(parent_elem, f'{{{field_ns}}}{meta.xml_name}')
         sub.text = 'true' if value else 'false'
@@ -186,6 +193,12 @@ def _deserialize_value(elem: ET.Element, meta: XmlMeta, field_type: type, parent
         if not text:
             raise ValueError(f"Empty text for date field: {meta.xml_name}")
         return date.fromisoformat(text.strip())
+
+    elif isinstance(field_type, type) and issubclass(field_type, Enum):
+        text = elem.text
+        if not text:
+            raise ValueError(f"Empty text for enum field: {meta.xml_name}")
+        return field_type(text.strip())
 
     elif field_type is bool:
         text = elem.text
