@@ -190,9 +190,7 @@ field_coverage_analysis.txt
 demo_*.py
 *_production_roundtrip*.py
 
-# Internal documentation (hg-only)
-docs/eCH/
-docs/archive/
+docs/
 archive/
 tools/
 SENSITIVE.md
