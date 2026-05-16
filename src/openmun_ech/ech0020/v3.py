@@ -11444,7 +11444,7 @@ class ECH0020Delivery(BaseModel):
 
         # Pretty print if requested
         if pretty_print:
-            self._indent_xml(root)
+            ET.indent(root, space='  ')
 
         # Create ElementTree and write to file
         tree = ET.ElementTree(root)
@@ -11454,27 +11454,3 @@ class ECH0020Delivery(BaseModel):
             xml_declaration=xml_declaration,
             method='xml'
         )
-
-    @staticmethod
-    def _indent_xml(elem: ET.Element, level: int = 0) -> None:
-        """Add whitespace for pretty-printing XML.
-
-        Modifies element tree in-place to add newlines and indentation.
-
-        Args:
-            elem: Element to indent
-            level: Current indentation level
-        """
-        indent = "\n" + "  " * level
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = indent + "  "
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = indent
-            for child in elem:
-                ECH0020Delivery._indent_xml(child, level + 1)
-            if not child.tail or not child.tail.strip():
-                child.tail = indent
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = indent

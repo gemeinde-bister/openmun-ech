@@ -8,6 +8,7 @@ This module provides fixtures for testing eCH standards with production data.
 - NEVER bypass Pydantic validation
 """
 
+import os
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -15,7 +16,17 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from openmun_ech.config import get_primary_production_data_path
+
+def _get_production_data_path() -> Optional[Path]:
+    """Resolve production data path from OPENMUN_PRODUCTION_DATA env var."""
+    raw = os.environ.get('OPENMUN_PRODUCTION_DATA')
+    if not raw:
+        return None
+    first_path = raw.split(',')[0].strip()
+    if not first_path:
+        return None
+    path = Path(first_path)
+    return path if path.is_dir() else None
 
 
 @pytest.fixture(scope="session")
@@ -26,10 +37,11 @@ def production_data_path() -> Optional[Path]:
         Path to production data, or None if not available
 
     Configuration:
-        See config.yaml.sample for configuration options.
-        Supports both environment variables and config.yaml file.
+        Set OPENMUN_PRODUCTION_DATA environment variable to the sedex
+        processed directory path. Comma-separated for multiple paths
+        (first is used).
     """
-    return get_primary_production_data_path()
+    return _get_production_data_path()
 
 
 @pytest.fixture(scope="session")

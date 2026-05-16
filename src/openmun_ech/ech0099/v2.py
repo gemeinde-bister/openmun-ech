@@ -28,6 +28,7 @@ from pydantic import BaseModel, Field, field_validator
 from openmun_ech.ech0011 import ECH0011Person, ECH0011ReportedPerson
 from openmun_ech.ech0044 import ECH0044PersonIdentification
 from openmun_ech.ech0058.v4 import ECH0058Header
+from openmun_ech.utils.schema_cache import validate_xml_cached
 
 
 # ============================================================================
@@ -346,6 +347,10 @@ class ECH0099Delivery(BaseModel):
                 element_name='generalData'
             )
 
+        # Zero-Tolerance Policy: No Schema Violations
+        # Always validate exported XML against official eCH XSD schemas
+        validate_xml_cached(root, schema_name='eCH-0099-2-1.xsd', raise_on_error=True)
+
         return root
 
     @classmethod
@@ -456,7 +461,7 @@ class ECH0099Delivery(BaseModel):
 
         # Pretty print if requested
         if pretty_print:
-            self._indent_xml(root)
+            ET.indent(root, space='  ')
 
         # Create ElementTree and write to file
         tree = ET.ElementTree(root)
@@ -466,30 +471,6 @@ class ECH0099Delivery(BaseModel):
             xml_declaration=xml_declaration,
             method='xml'
         )
-
-    @staticmethod
-    def _indent_xml(elem: ET.Element, level: int = 0) -> None:
-        """Add whitespace for pretty-printing XML.
-
-        Modifies element tree in-place to add newlines and indentation.
-
-        Args:
-            elem: Element to indent
-            level: Current indentation level
-        """
-        indent = "\n" + "  " * level
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = indent + "  "
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = indent
-            for child in elem:
-                ECH0099Delivery._indent_xml(child, level + 1)
-            if not child.tail or not child.tail.strip():
-                child.tail = indent
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = indent
 
 
 # ============================================================================

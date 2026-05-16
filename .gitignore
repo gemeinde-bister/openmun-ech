@@ -190,10 +190,12 @@ field_coverage_analysis.txt
 demo_*.py
 *_production_roundtrip*.py
 
-# Internal documentation (not for public)
-docs/
+# Internal documentation (hg-only)
+docs/eCH/
+docs/archive/
 archive/
 tools/
+SENSITIVE.md
 ECH*.md
 ECH*.txt
 ENUM*.md
@@ -213,3 +215,4 @@ tests/ECH0020_EVENT_COVERAGE.md
 .hg/
 .hgignore
 .jj/
+uv.lock
