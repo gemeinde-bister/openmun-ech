@@ -1,8 +1,9 @@
 """Tests for eCH-0044 Person Identification Pydantic models."""
 
 import xml.etree.ElementTree as ET
-import pytest
 from datetime import date
+
+import pytest
 from pydantic import ValidationError
 
 from openmun_ech.ech0044 import (
@@ -86,20 +87,18 @@ class TestECH0044DatePartiallyKnown:
         assert y_elem is not None
         assert y_elem.text == "1990"
 
-    def test_to_xml_fails_with_no_date(self):
-        """Test XML export fails if no date set."""
-        d = ECH0044DatePartiallyKnown()
-        with pytest.raises(ValueError, match="Must specify one of"):
-            d.to_xml()
+    def test_construction_fails_with_no_date(self):
+        """Test construction fails if no date set."""
+        with pytest.raises(ValidationError, match="Must specify one of"):
+            ECH0044DatePartiallyKnown()
 
-    def test_to_xml_fails_with_multiple_dates(self):
-        """Test XML export fails if multiple dates set."""
-        d = ECH0044DatePartiallyKnown(
-            year_month_day=date(1990, 5, 15),
-            year_month="1990-05"
-        )
-        with pytest.raises(ValueError, match="Can only specify one of"):
-            d.to_xml()
+    def test_construction_fails_with_multiple_dates(self):
+        """Test construction fails if multiple dates set."""
+        with pytest.raises(ValidationError, match="Can only specify one of"):
+            ECH0044DatePartiallyKnown(
+                year_month_day=date(1990, 5, 15),
+                year_month="1990-05"
+            )
 
     def test_roundtrip_full_date(self):
         """Test XML roundtrip for full date."""
