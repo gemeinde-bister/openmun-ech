@@ -12,7 +12,7 @@ Use cases:
 - Receipt handling: Process BFS acknowledgments
 - Error reports: Handle BFS validation results
 
-ARCHITECTURE: Pure Pydantic Model (Layer 1)
+ARCHITECTURE: Declarative ECHModel (Layer 1)
 - NO database coupling
 - NO from_db_fields() method
 - Database mapping logic belongs in: openmun/mappers/
@@ -22,257 +22,62 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional, List, Union
 from datetime import date
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 
-# Import components we depend on
-from openmun_ech.ech0011 import ECH0011Person, ECH0011ReportedPerson
+from openmun_ech.core import ECHModel, xml_field, NS
+from openmun_ech.ech0011 import ECH0011ReportedPerson
 from openmun_ech.ech0044 import ECH0044PersonIdentification
 from openmun_ech.ech0058.v4 import ECH0058Header
-from openmun_ech.core import NS
 
 
 # ============================================================================
 # Generic Field/Value Data Structure
 # ============================================================================
 
-class ECH0099DataType(BaseModel):
+class ECH0099DataType(ECHModel):
     """eCH-0099 Generic field/value data pair.
 
-    Used for:
-    - personExtendedData: Additional person-specific data
-    - generalData: Municipality-wide or delivery-wide data
-
+    Used for personExtendedData and generalData elements.
     XML Schema: eCH-0099 dataType
     """
 
-    field: str = Field(
-        ...,
-        min_length=1,
-        max_length=100,
-        description="Field name (e.g., 'housing_type', 'income_category')"
-    )
+    __xml_ns__ = NS.ECH0099_V2
+    __xml_element__ = 'data'
 
-    value: str = Field(
-        ...,
-        min_length=1,
-        max_length=1000,
-        description="Field value (free text)"
-    )
-
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0099_V2,
-               element_name: str = 'data') -> ET.Element:
-        """Export to eCH-0099 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-            element_name: Name of container element (personExtendedData or generalData)
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # Field (required)
-        field_elem = ET.SubElement(elem, f'{{{namespace}}}field')
-        field_elem.text = self.field
-
-        # Value (required)
-        value_elem = ET.SubElement(elem, f'{{{namespace}}}value')
-        value_elem.text = self.value
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0099_V2) -> 'ECH0099DataType':
-        """Import from eCH-0099 XML.
-
-        Args:
-            elem: XML element (data container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed data object
-        """
-        ns = {'eCH-0099': namespace}
-
-        field = elem.find('eCH-0099:field', ns)
-        value = elem.find('eCH-0099:value', ns)
-
-        if field is None or field.text is None:
-            raise ValueError("Missing required field element")
-        if value is None or value.text is None:
-            raise ValueError("Missing required value element")
-
-        return cls(
-            field=field.text,
-            value=value.text
-        )
+    field: str = xml_field(min_length=1, max_length=100)
+    value: str = xml_field(min_length=1, max_length=1000)
 
 
 # ============================================================================
 # Reported Person (Person + Extended Data)
 # ============================================================================
 
-class ECH0099ReportedPerson(BaseModel):
+class ECH0099ReportedPerson(ECHModel):
     """eCH-0099 Reported person.
 
-    Contains base person data (eCH-0011 reportedPersonType) plus optional extended
-    data fields for statistics-specific information.
+    Contains base person data (eCH-0011 reportedPersonType) plus optional
+    extended data fields for statistics-specific information.
 
     XML Schema: eCH-0099 reportedPersonType
     XSD: baseData uses eCH-0011:reportedPersonType (person + residence)
     """
 
-    base_data: ECH0011ReportedPerson = Field(
-        ...,
-        description="Person base data from eCH-0011 (reportedPersonType: person + residence)"
+    __xml_ns__ = NS.ECH0099_V2
+    __xml_element__ = 'reportedPerson'
+
+    base_data: ECH0011ReportedPerson = xml_field(
+        'baseData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
-
-    person_extended_data: List[ECH0099DataType] = Field(
-        default_factory=list,
-        description="Optional person-specific extended data (field/value pairs)"
+    person_extended_data: List[ECH0099DataType] = xml_field(
+        'personExtendedData', is_list=True, default_factory=list,
     )
-
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0099_V2) -> ET.Element:
-        """Export to eCH-0099 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}reportedPerson')
-        else:
-            elem = ET.Element(f'{{{namespace}}}reportedPerson')
-
-        # baseData (required) - eCH-0099 wrapper containing eCH-0011:reportedPersonType content
-        # XSD: <xs:element name="baseData" type="eCH-0011:reportedPersonType"/>
-        base_data_wrapper = ET.SubElement(elem, f'{{{namespace}}}baseData')
-
-        # Add person and residence elements (from eCH-0011:reportedPersonType)
-        ech0011_ns = NS.ECH0011_V8
-
-        # Person (required)
-        self.base_data.person.to_xml(
-            parent=base_data_wrapper,
-            namespace=ech0011_ns,
-            element_name='person'
-        )
-
-        # Residence (exactly one of three types - XSD choice)
-        if self.base_data.has_main_residence is not None:
-            self.base_data.has_main_residence.to_xml(
-                parent=base_data_wrapper,
-                namespace=ech0011_ns
-            )
-        elif self.base_data.has_secondary_residence is not None:
-            self.base_data.has_secondary_residence.to_xml(
-                parent=base_data_wrapper,
-                namespace=ech0011_ns
-            )
-        elif self.base_data.has_other_residence is not None:
-            self.base_data.has_other_residence.to_xml(
-                parent=base_data_wrapper,
-                namespace=ech0011_ns
-            )
-
-        # personExtendedData[] (optional)
-        for extended_data in self.person_extended_data:
-            extended_data.to_xml(
-                parent=elem,
-                namespace=namespace,
-                element_name='personExtendedData'
-            )
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0099_V2) -> 'ECH0099ReportedPerson':
-        """Import from eCH-0099 XML.
-
-        Args:
-            elem: XML element (reportedPerson container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed reported person object
-        """
-        ns_0099 = {'eCH-0099': namespace}
-        ns_0011 = {'eCH-0011': NS.ECH0011_V8}
-
-        # baseData (required) - in eCH-0099 namespace, contains eCH-0011:reportedPersonType
-        base_data_elem = elem.find('eCH-0099:baseData', ns_0099)
-        if base_data_elem is None:
-            raise ValueError("Missing required baseData element")
-
-        # Parse baseData as eCH-0011:reportedPersonType (person + residence)
-        # The baseData element itself doesn't have a namespace in eCH-0011, so we parse its children
-        from openmun_ech.ech0011 import (
-            ECH0011MainResidence,
-            ECH0011SecondaryResidence,
-            ECH0011OtherResidence,
-        )
-
-        # Person (required)
-        person_elem = base_data_elem.find('eCH-0011:person', ns_0011)
-        if person_elem is None:
-            raise ValueError("Missing required person element in baseData")
-        person = ECH0011Person.from_xml(person_elem, NS.ECH0011_V8)
-
-        # Residence (exactly one of three - XSD choice)
-        has_main_residence = None
-        has_secondary_residence = None
-        has_other_residence = None
-
-        main_res_elem = base_data_elem.find('eCH-0011:hasMainResidence', ns_0011)
-        if main_res_elem is not None:
-            has_main_residence = ECH0011MainResidence.from_xml(main_res_elem, NS.ECH0011_V8)
-
-        sec_res_elem = base_data_elem.find('eCH-0011:hasSecondaryResidence', ns_0011)
-        if sec_res_elem is not None:
-            has_secondary_residence = ECH0011SecondaryResidence.from_xml(sec_res_elem, NS.ECH0011_V8)
-
-        other_res_elem = base_data_elem.find('eCH-0011:hasOtherResidence', ns_0011)
-        if other_res_elem is not None:
-            has_other_residence = ECH0011OtherResidence.from_xml(other_res_elem, NS.ECH0011_V8)
-
-        # Create the ECH0011ReportedPerson from the parsed components
-        base_data = ECH0011ReportedPerson(
-            person=person,
-            has_main_residence=has_main_residence,
-            has_secondary_residence=has_secondary_residence,
-            has_other_residence=has_other_residence
-        )
-
-        # personExtendedData[] (optional)
-        person_extended_data = []
-        for extended_elem in elem.findall('eCH-0099:personExtendedData', ns_0099):
-            person_extended_data.append(
-                ECH0099DataType.from_xml(extended_elem, namespace=namespace)
-            )
-
-        return cls(
-            base_data=base_data,
-            person_extended_data=person_extended_data
-        )
 
 
 # ============================================================================
 # Delivery (Top-Level Container for Statistics Submission)
 # ============================================================================
 
-class ECH0099Delivery(BaseModel):
+class ECH0099Delivery(ECHModel):
     """eCH-0099 Statistics delivery.
 
     Top-level container for sending person data to BFS for validation or
@@ -280,7 +85,12 @@ class ECH0099Delivery(BaseModel):
 
     XML Schema: eCH-0099 deliveryType
     Root Element: <delivery version="2.1">
+
+    Custom override: version attribute + skip_wrapper for eCH-0058 header.
     """
+
+    __xml_ns__ = NS.ECH0099_V2
+    __xml_element__ = 'delivery'
 
     delivery_header: ECH0058Header = Field(
         ...,
@@ -311,23 +121,25 @@ class ECH0099Delivery(BaseModel):
             raise ValueError(f"Version must be '2.1', got: {v}")
         return v
 
-    def to_xml(self, namespace: str = NS.ECH0099_V2) -> ET.Element:
+    def to_xml(
+        self,
+        parent: Optional[ET.Element] = None,
+        namespace: str = NS.ECH0099_V2,
+        element_name: str = 'delivery',
+        **_kw,
+    ) -> ET.Element:
         """Export to eCH-0099 XML.
 
-        Creates the root <delivery> element with version attribute.
-
-        Args:
-            namespace: XML namespace URI
-
-        Returns:
-            Root XML Element
+        Custom override: version attribute + skip_wrapper for eCH-0058 header.
         """
-        # Create root element with version attribute
-        root = ET.Element(f'{{{namespace}}}delivery')
+        if parent is not None:
+            root = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
+        else:
+            root = ET.Element(f'{{{namespace}}}{element_name}')
+
         root.set('version', self.version)
 
-        # deliveryHeader (required) - wrapper in eCH-0099 namespace, content in eCH-0058/4
-        # Create wrapper element manually, then use skip_wrapper to flatten eCH-0058 fields into it
+        # deliveryHeader — wrapper in eCH-0099, content flattened from eCH-0058
         header_wrapper = ET.SubElement(root, f'{{{namespace}}}deliveryHeader')
         self.delivery_header.to_xml(
             parent=header_wrapper,
@@ -340,60 +152,41 @@ class ECH0099Delivery(BaseModel):
             person.to_xml(parent=root, namespace=namespace)
 
         # generalData[] (optional)
-        for general_data in self.general_data:
-            general_data.to_xml(
-                parent=root,
-                namespace=namespace,
-                element_name='generalData'
-            )
+        for data in self.general_data:
+            data.to_xml(parent=root, namespace=namespace, element_name='generalData')
 
         return root
 
     @classmethod
     def from_xml(cls, elem: ET.Element,
                  namespace: str = NS.ECH0099_V2) -> 'ECH0099Delivery':
-        """Import from eCH-0099 XML.
-
-        Args:
-            elem: XML root element (<delivery>)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed delivery object
-        """
-        ns_0099 = {'eCH-0099': namespace}
-
+        """Import from eCH-0099 XML."""
         # Version attribute (required)
         version = elem.get('version')
         if version is None:
             raise ValueError("Missing required version attribute")
 
-        # deliveryHeader (required) - in eCH-0099 namespace
-        delivery_header_elem = elem.find('eCH-0099:deliveryHeader', ns_0099)
+        # deliveryHeader (required)
+        delivery_header_elem = elem.find(f'{{{namespace}}}deliveryHeader')
         if delivery_header_elem is None:
             raise ValueError("Missing required deliveryHeader element")
-
         delivery_header = ECH0058Header.from_xml(
-            delivery_header_elem,
-            namespace=NS.ECH0058_V4
+            delivery_header_elem, namespace=NS.ECH0058_V4
         )
 
         # reportedPerson[] (required, at least one)
-        reported_person = []
-        for person_elem in elem.findall('eCH-0099:reportedPerson', ns_0099):
-            reported_person.append(
-                ECH0099ReportedPerson.from_xml(person_elem, namespace=namespace)
-            )
-
+        reported_person = [
+            ECH0099ReportedPerson.from_xml(pe, namespace=namespace)
+            for pe in elem.findall(f'{{{namespace}}}reportedPerson')
+        ]
         if not reported_person:
             raise ValueError("At least one reportedPerson is required")
 
         # generalData[] (optional)
-        general_data = []
-        for data_elem in elem.findall('eCH-0099:generalData', ns_0099):
-            general_data.append(
-                ECH0099DataType.from_xml(data_elem, namespace=namespace)
-            )
+        general_data = [
+            ECH0099DataType.from_xml(de, namespace=namespace)
+            for de in elem.findall(f'{{{namespace}}}generalData')
+        ]
 
         return cls(
             delivery_header=delivery_header,
@@ -404,25 +197,7 @@ class ECH0099Delivery(BaseModel):
 
     @classmethod
     def from_file(cls, file_path: Union[str, Path]) -> 'ECH0099Delivery':
-        """Parse eCH-0099 delivery from XML file.
-
-        Convenience method that handles file I/O and delegates to from_xml().
-
-        Args:
-            file_path: Path to XML file (str or Path object)
-
-        Returns:
-            Parsed ECH0099Delivery model
-
-        Raises:
-            FileNotFoundError: If file doesn't exist
-            ET.ParseError: If XML is malformed
-            ValueError: If delivery structure is invalid
-
-        Example:
-            >>> delivery = ECH0099Delivery.from_file("statpop.xml")
-            >>> delivery = ECH0099Delivery.from_file(Path("/path/to/file.xml"))
-        """
+        """Parse eCH-0099 delivery from XML file."""
         tree = ET.parse(file_path)
         root = tree.getroot()
         return cls.from_xml(root)
@@ -434,46 +209,20 @@ class ECH0099Delivery(BaseModel):
         xml_declaration: bool = True,
         pretty_print: bool = True
     ) -> None:
-        """Write eCH-0099 delivery to XML file.
-
-        Convenience method that handles XML serialization and file I/O.
-
-        Args:
-            file_path: Path to output XML file (str or Path object)
-            encoding: XML encoding (default 'utf-8')
-            xml_declaration: Include <?xml version="1.0"?> declaration (default True)
-            pretty_print: Format with indentation for readability (default True)
-
-        Example:
-            >>> delivery = ECH0099Delivery(...)
-            >>> delivery.to_file("statpop.xml")
-            >>> delivery.to_file(Path("/path/to/file.xml"))
-        """
-        # Convert to Path object for consistency
+        """Write eCH-0099 delivery to XML file."""
         path = Path(file_path) if isinstance(file_path, str) else file_path
-
-        # Serialize to XML element
         root = self.to_xml()
-
-        # Pretty print if requested
         if pretty_print:
             ET.indent(root, space='  ')
-
-        # Create ElementTree and write to file
         tree = ET.ElementTree(root)
-        tree.write(
-            path,
-            encoding=encoding,
-            xml_declaration=xml_declaration,
-            method='xml'
-        )
+        tree.write(path, encoding=encoding, xml_declaration=xml_declaration, method='xml')
 
 
 # ============================================================================
-# BFS Response Types (Optional - for receiving responses)
+# BFS Response Types
 # ============================================================================
 
-class ECH0099ErrorInfo(BaseModel):
+class ECH0099ErrorInfo(ECHModel):
     """eCH-0099 Error information.
 
     Returned by BFS in validation reports to indicate errors found
@@ -482,73 +231,14 @@ class ECH0099ErrorInfo(BaseModel):
     XML Schema: eCH-0099 errorInfoType
     """
 
-    code: str = Field(
-        ...,
-        description="Numeric error code (range and meaning defined by BFS)"
-    )
+    __xml_ns__ = NS.ECH0099_V2
+    __xml_element__ = 'errorInfo'
 
-    text: str = Field(
-        ...,
-        description="Textual error description (meaning defined by BFS)"
-    )
-
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0099_V2,
-               element_name: str = 'errorInfo') -> ET.Element:
-        """Export to eCH-0099 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-            element_name: Name of container element
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # code (required)
-        code_elem = ET.SubElement(elem, f'{{{namespace}}}code')
-        code_elem.text = self.code
-
-        # text (required)
-        text_elem = ET.SubElement(elem, f'{{{namespace}}}text')
-        text_elem.text = self.text
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0099_V2) -> 'ECH0099ErrorInfo':
-        """Import from eCH-0099 XML.
-
-        Args:
-            elem: XML element (errorInfo container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed error info object
-        """
-        ns = {'eCH-0099': namespace}
-
-        code = elem.find('eCH-0099:code', ns)
-        text = elem.find('eCH-0099:text', ns)
-
-        if code is None or code.text is None:
-            raise ValueError("Missing required code element")
-        if text is None or text.text is None:
-            raise ValueError("Missing required text element")
-
-        return cls(
-            code=code.text,
-            text=text.text
-        )
+    code: str = xml_field()
+    text: str = xml_field()
 
 
-class ECH0099PersonError(BaseModel):
+class ECH0099PersonError(ECHModel):
     """eCH-0099 Person-specific error.
 
     Links a person (by identification) to one or more errors found
@@ -557,96 +247,30 @@ class ECH0099PersonError(BaseModel):
     XML Schema: eCH-0099 validationReportType/personError
     """
 
-    person_identification: ECH0044PersonIdentification = Field(
-        ...,
-        description="Person this error relates to"
+    __xml_ns__ = NS.ECH0099_V2
+    __xml_element__ = 'personError'
+
+    person_identification: ECH0044PersonIdentification = xml_field(
+        'personIdentification', wrapper=True, child_ns=NS.ECH0044_V4,
+    )
+    error_info: List[ECH0099ErrorInfo] = xml_field(
+        'errorInfo', is_list=True, min_length=1,
     )
 
-    error_info: List[ECH0099ErrorInfo] = Field(
-        ...,
-        min_length=1,
-        description="List of errors for this person (at least one required)"
-    )
 
-    def to_xml(self, parent: Optional[ET.Element] = None,
-               namespace: str = NS.ECH0099_V2) -> ET.Element:
-        """Export to eCH-0099 XML.
-
-        Args:
-            parent: Parent element to attach to (if None, creates standalone)
-            namespace: XML namespace URI
-
-        Returns:
-            XML Element
-        """
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}personError')
-        else:
-            elem = ET.Element(f'{{{namespace}}}personError')
-
-        # personIdentification (required) - wrapper in eCH-0099, content from eCH-0044
-        self.person_identification.to_xml(
-            parent=elem,
-            namespace=NS.ECH0044_V4,
-            element_name='personIdentification',
-            wrapper_namespace=namespace
-        )
-
-        # errorInfo[] (required, at least one)
-        for error in self.error_info:
-            error.to_xml(parent=elem, namespace=namespace, element_name='errorInfo')
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, elem: ET.Element,
-                 namespace: str = NS.ECH0099_V2) -> 'ECH0099PersonError':
-        """Import from eCH-0099 XML.
-
-        Args:
-            elem: XML element (personError container)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed person error object
-        """
-        ns_0099 = {'eCH-0099': namespace}
-
-        # personIdentification (required) - in eCH-0099 namespace
-        person_id_elem = elem.find('eCH-0099:personIdentification', ns_0099)
-        if person_id_elem is None:
-            raise ValueError("Missing required personIdentification element")
-
-        person_identification = ECH0044PersonIdentification.from_xml(
-            person_id_elem,
-            namespace=NS.ECH0044_V4
-        )
-
-        # errorInfo[] (required, at least one)
-        error_info = []
-        for error_elem in elem.findall('eCH-0099:errorInfo', ns_0099):
-            error_info.append(
-                ECH0099ErrorInfo.from_xml(error_elem, namespace=namespace)
-            )
-
-        if not error_info:
-            raise ValueError("At least one errorInfo is required")
-
-        return cls(
-            person_identification=person_identification,
-            error_info=error_info
-        )
-
-
-class ECH0099ValidationReport(BaseModel):
+class ECH0099ValidationReport(ECHModel):
     """eCH-0099 Validation report.
 
     BFS response containing validation results for a submitted delivery.
-    Includes general errors (delivery-wide) and person-specific errors.
 
     XML Schema: eCH-0099 validationReportType
     Root Element: <validationReport version="2.1">
+
+    Custom override: version attribute + skip_wrapper for eCH-0058 header.
     """
+
+    __xml_ns__ = NS.ECH0099_V2
+    __xml_element__ = 'validationReport'
 
     validation_report_header: ECH0058Header = Field(
         ...,
@@ -681,23 +305,25 @@ class ECH0099ValidationReport(BaseModel):
             raise ValueError(f"Version must be '2.1', got: {v}")
         return v
 
-    def to_xml(self, namespace: str = NS.ECH0099_V2) -> ET.Element:
+    def to_xml(
+        self,
+        parent: Optional[ET.Element] = None,
+        namespace: str = NS.ECH0099_V2,
+        element_name: str = 'validationReport',
+        **_kw,
+    ) -> ET.Element:
         """Export to eCH-0099 XML.
 
-        Creates the root <validationReport> element with version attribute.
-
-        Args:
-            namespace: XML namespace URI
-
-        Returns:
-            Root XML Element
+        Custom override: version attribute + skip_wrapper for eCH-0058 header.
         """
-        # Create root element with version attribute
-        root = ET.Element(f'{{{namespace}}}validationReport')
+        if parent is not None:
+            root = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
+        else:
+            root = ET.Element(f'{{{namespace}}}{element_name}')
+
         root.set('version', self.version)
 
-        # validationReportHeader (required) - wrapper in eCH-0099 namespace, content in eCH-0058/4
-        # Create wrapper element manually, then use skip_wrapper to flatten eCH-0058 fields into it
+        # validationReportHeader — wrapper in eCH-0099, content flattened from eCH-0058
         header_wrapper = ET.SubElement(root, f'{{{namespace}}}validationReportHeader')
         self.validation_report_header.to_xml(
             parent=header_wrapper,
@@ -722,52 +348,37 @@ class ECH0099ValidationReport(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element,
                  namespace: str = NS.ECH0099_V2) -> 'ECH0099ValidationReport':
-        """Import from eCH-0099 XML.
-
-        Args:
-            elem: XML root element (<validationReport>)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed validation report object
-        """
-        ns_0099 = {'eCH-0099': namespace}
-
+        """Import from eCH-0099 XML."""
         # Version attribute (required)
         version = elem.get('version')
         if version is None:
             raise ValueError("Missing required version attribute")
 
-        # validationReportHeader (required) - in eCH-0099 namespace
-        header_elem = elem.find('eCH-0099:validationReportHeader', ns_0099)
+        # validationReportHeader (required)
+        header_elem = elem.find(f'{{{namespace}}}validationReportHeader')
         if header_elem is None:
             raise ValueError("Missing required validationReportHeader element")
-
         validation_report_header = ECH0058Header.from_xml(
-            header_elem,
-            namespace=NS.ECH0058_V4
+            header_elem, namespace=NS.ECH0058_V4
         )
 
         # generalError[] (optional)
-        general_error = []
-        for error_elem in elem.findall('eCH-0099:generalError', ns_0099):
-            general_error.append(
-                ECH0099ErrorInfo.from_xml(error_elem, namespace=namespace)
-            )
+        general_error = [
+            ECH0099ErrorInfo.from_xml(e, namespace=namespace)
+            for e in elem.findall(f'{{{namespace}}}generalError')
+        ]
 
         # personError[] (optional)
-        person_error = []
-        for person_error_elem in elem.findall('eCH-0099:personError', ns_0099):
-            person_error.append(
-                ECH0099PersonError.from_xml(person_error_elem, namespace=namespace)
-            )
+        person_error = [
+            ECH0099PersonError.from_xml(e, namespace=namespace)
+            for e in elem.findall(f'{{{namespace}}}personError')
+        ]
 
         # generalData[] (optional)
-        general_data = []
-        for data_elem in elem.findall('eCH-0099:generalData', ns_0099):
-            general_data.append(
-                ECH0099DataType.from_xml(data_elem, namespace=namespace)
-            )
+        general_data = [
+            ECH0099DataType.from_xml(e, namespace=namespace)
+            for e in elem.findall(f'{{{namespace}}}generalData')
+        ]
 
         return cls(
             validation_report_header=validation_report_header,
@@ -778,7 +389,7 @@ class ECH0099ValidationReport(BaseModel):
         )
 
 
-class ECH0099Receipt(BaseModel):
+class ECH0099Receipt(ECHModel):
     """eCH-0099 Receipt.
 
     BFS acknowledgment that a delivery was received and passed to the
@@ -786,7 +397,12 @@ class ECH0099Receipt(BaseModel):
 
     XML Schema: eCH-0099 receiptType
     Root Element: <receipt version="2.1">
+
+    Custom override: version attribute + skip_wrapper for eCH-0058 header.
     """
+
+    __xml_ns__ = NS.ECH0099_V2
+    __xml_element__ = 'receipt'
 
     receipt_header: ECH0058Header = Field(
         ...,
@@ -811,23 +427,25 @@ class ECH0099Receipt(BaseModel):
             raise ValueError(f"Version must be '2.1', got: {v}")
         return v
 
-    def to_xml(self, namespace: str = NS.ECH0099_V2) -> ET.Element:
+    def to_xml(
+        self,
+        parent: Optional[ET.Element] = None,
+        namespace: str = NS.ECH0099_V2,
+        element_name: str = 'receipt',
+        **_kw,
+    ) -> ET.Element:
         """Export to eCH-0099 XML.
 
-        Creates the root <receipt> element with version attribute.
-
-        Args:
-            namespace: XML namespace URI
-
-        Returns:
-            Root XML Element
+        Custom override: version attribute + skip_wrapper for eCH-0058 header.
         """
-        # Create root element with version attribute
-        root = ET.Element(f'{{{namespace}}}receipt')
+        if parent is not None:
+            root = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
+        else:
+            root = ET.Element(f'{{{namespace}}}{element_name}')
+
         root.set('version', self.version)
 
-        # receiptHeader (required) - wrapper in eCH-0099 namespace, content in eCH-0058/4
-        # Create wrapper element manually, then use skip_wrapper to flatten eCH-0058 fields into it
+        # receiptHeader — wrapper in eCH-0099, content flattened from eCH-0058
         header_wrapper = ET.SubElement(root, f'{{{namespace}}}receiptHeader')
         self.receipt_header.to_xml(
             parent=header_wrapper,
@@ -844,37 +462,24 @@ class ECH0099Receipt(BaseModel):
     @classmethod
     def from_xml(cls, elem: ET.Element,
                  namespace: str = NS.ECH0099_V2) -> 'ECH0099Receipt':
-        """Import from eCH-0099 XML.
-
-        Args:
-            elem: XML root element (<receipt>)
-            namespace: XML namespace URI
-
-        Returns:
-            Parsed receipt object
-        """
-        ns_0099 = {'eCH-0099': namespace}
-
+        """Import from eCH-0099 XML."""
         # Version attribute (required)
         version = elem.get('version')
         if version is None:
             raise ValueError("Missing required version attribute")
 
-        # receiptHeader (required) - in eCH-0099 namespace
-        header_elem = elem.find('eCH-0099:receiptHeader', ns_0099)
+        # receiptHeader (required)
+        header_elem = elem.find(f'{{{namespace}}}receiptHeader')
         if header_elem is None:
             raise ValueError("Missing required receiptHeader element")
-
         receipt_header = ECH0058Header.from_xml(
-            header_elem,
-            namespace=NS.ECH0058_V4
+            header_elem, namespace=NS.ECH0058_V4
         )
 
         # eventTime (required)
-        event_time_elem = elem.find('eCH-0099:eventTime', ns_0099)
+        event_time_elem = elem.find(f'{{{namespace}}}eventTime')
         if event_time_elem is None or event_time_elem.text is None:
             raise ValueError("Missing required eventTime element")
-
         event_time = date.fromisoformat(event_time_elem.text)
 
         return cls(
