@@ -507,3 +507,275 @@ def test_xsd_matrimonial_inheritance_arrangement_data():
     )
     xml = data.to_xml()
     validate_fragment(xml, 'matrimonialInheritanceArrangementDataType')
+
+
+# ============================================================================
+# Roundtrip Tests (to_xml → from_xml → verify fields)
+# Verifies that namespace-correct serialization roundtrips properly.
+# ============================================================================
+
+from openmun_ech.core import NS
+from openmun_ech.ech0010 import ECH0010AddressInformation, ECH0010MailAddress, ECH0010PersonMailAddressInfo
+
+
+def test_roundtrip_marital_data_addon_with_swiss_place():
+    """Roundtrip: MaritalDataAddon with Swiss municipality."""
+    municipality = ECH0007Municipality.from_swiss(
+        municipality_name="Bern",
+        municipality_id="351",
+        canton=CantonAbbreviation.BE
+    )
+    place = ECH0011GeneralPlace(swiss_municipality=municipality)
+    original = ECH0021MaritalDataAddon(place_of_marriage=place)
+
+    xml = original.to_xml()
+    restored = ECH0021MaritalDataAddon.from_xml(xml)
+
+    assert restored.place_of_marriage is not None
+    assert restored.place_of_marriage.swiss_municipality is not None
+    assert restored.place_of_marriage.swiss_municipality.name == "Bern"
+    assert restored.place_of_marriage.swiss_municipality.swiss_municipality.municipality_id == "351"
+
+
+def test_roundtrip_marital_data_addon_namespace_correct():
+    """Verify MaritalDataAddon wrapper is in eCH-0021/8 namespace."""
+    municipality = ECH0007Municipality.from_swiss(
+        municipality_name="Zürich",
+        municipality_id="261",
+        canton=CantonAbbreviation.ZH
+    )
+    place = ECH0011GeneralPlace(swiss_municipality=municipality)
+    data = ECH0021MaritalDataAddon(place_of_marriage=place)
+
+    xml = data.to_xml()
+
+    # The placeOfMarriage wrapper MUST be in eCH-0021/8 namespace
+    place_wrapper = xml.find(f'{{{NS.ECH0021_V8}}}placeOfMarriage')
+    assert place_wrapper is not None, "placeOfMarriage wrapper must be in eCH-0021/8 namespace"
+
+    # Content children must be in eCH-0011/9 namespace
+    swiss_town = place_wrapper.find(f'{{{NS.ECH0011_V9}}}swissTown')
+    assert swiss_town is not None, "swissTown must be in eCH-0011/9 namespace"
+
+
+def test_roundtrip_occupation_data_with_place_of_work():
+    """Roundtrip: OccupationData with place_of_work."""
+    addr = ECH0010AddressInformation(
+        street="Bundesplatz",
+        house_number="1",
+        town="Bern",
+        swiss_zip_code=3003,
+        country="CH"
+    )
+    original = ECH0021OccupationData(
+        employer="Bundesamt für Statistik",
+        place_of_work=addr,
+        occupation_valid_from=date(2020, 1, 1)
+    )
+
+    xml = original.to_xml()
+    restored = ECH0021OccupationData.from_xml(xml)
+
+    assert restored.employer == "Bundesamt für Statistik"
+    assert restored.place_of_work is not None
+    assert restored.place_of_work.street == "Bundesplatz"
+    assert restored.place_of_work.town == "Bern"
+    assert restored.place_of_work.swiss_zip_code == 3003
+    assert restored.occupation_valid_from == date(2020, 1, 1)
+
+
+def test_roundtrip_occupation_data_namespace_correct():
+    """Verify OccupationData wrapper elements are in eCH-0021/8 namespace."""
+    addr = ECH0010AddressInformation(
+        street="Hauptstrasse",
+        house_number="10",
+        town="Zürich",
+        swiss_zip_code=8001,
+        country="CH"
+    )
+    data = ECH0021OccupationData(place_of_work=addr)
+
+    xml = data.to_xml()
+
+    # placeOfWork wrapper MUST be in eCH-0021/8 namespace
+    pow_elem = xml.find(f'{{{NS.ECH0021_V8}}}placeOfWork')
+    assert pow_elem is not None, "placeOfWork wrapper must be in eCH-0021/8 namespace"
+
+    # Content (addressInformation children) must be in eCH-0010/8 namespace
+    street_elem = pow_elem.find(f'{{{NS.ECH0010_V8}}}street')
+    assert street_elem is not None, "street must be in eCH-0010/8 namespace"
+    assert street_elem.text == "Hauptstrasse"
+
+
+def test_roundtrip_partner_with_address():
+    """Roundtrip: Partner with person identification and address."""
+    local_id = ECH0044NamedPersonId(person_id_category="MU.6172", person_id="300")
+    dob = ECH0044DatePartiallyKnown.from_date(date(1990, 7, 20))
+    person_id = ECH0044PersonIdentification(
+        local_person_id=local_id,
+        official_name="Meier",
+        first_name="Thomas",
+        sex="1",
+        date_of_birth=dob
+    )
+    address = ECH0010MailAddress(
+        person=ECH0010PersonMailAddressInfo(
+            first_name="Thomas",
+            last_name="Meier"
+        ),
+        address_information=ECH0010AddressInformation(
+            street="Bahnhofstrasse",
+            house_number="5",
+            town="Bern",
+            swiss_zip_code=3001,
+            country="CH"
+        )
+    )
+    original = ECH0021Partner(
+        person_identification=person_id,
+        address=address
+    )
+
+    xml = original.to_xml()
+    restored = ECH0021Partner.from_xml(xml)
+
+    assert restored.person_identification.official_name == "Meier"
+    assert restored.person_identification.first_name == "Thomas"
+    assert restored.address is not None
+    assert restored.address.address_information.street == "Bahnhofstrasse"
+    assert restored.address.address_information.town == "Bern"
+
+
+def test_roundtrip_partner_namespace_correct():
+    """Verify Partner wrapper elements are in eCH-0021/8 namespace."""
+    local_id = ECH0044NamedPersonId(person_id_category="MU.6172", person_id="301")
+    dob = ECH0044DatePartiallyKnown.from_date(date(1985, 1, 1))
+    person_id = ECH0044PersonIdentification(
+        local_person_id=local_id,
+        official_name="Test",
+        first_name="User",
+        sex="1",
+        date_of_birth=dob
+    )
+    address = ECH0010MailAddress(
+        person=ECH0010PersonMailAddressInfo(last_name="Test"),
+        address_information=ECH0010AddressInformation(
+            town="Bern", swiss_zip_code=3000, country="CH"
+        )
+    )
+    partner = ECH0021Partner(person_identification=person_id, address=address)
+
+    xml = partner.to_xml()
+
+    # personIdentification wrapper MUST be in eCH-0021/8 namespace
+    pi_elem = xml.find(f'{{{NS.ECH0021_V8}}}personIdentification')
+    assert pi_elem is not None, "personIdentification wrapper must be in eCH-0021/8 namespace"
+
+    # address wrapper MUST be in eCH-0021/8 namespace
+    addr_elem = xml.find(f'{{{NS.ECH0021_V8}}}address')
+    assert addr_elem is not None, "address wrapper must be in eCH-0021/8 namespace"
+
+    # Content inside address should be in eCH-0010/8 namespace
+    person_elem = addr_elem.find(f'{{{NS.ECH0010_V8}}}person')
+    assert person_elem is not None, "person element must be in eCH-0010/8 namespace"
+
+
+def test_roundtrip_guardian_relationship_with_person():
+    """Roundtrip: GuardianRelationship with person identification."""
+    from openmun_ech.ech0021 import ECH0021GuardianMeasureInfo, ECH0021GuardianRelationship
+
+    local_id = ECH0044NamedPersonId(person_id_category="MU.6172", person_id="400")
+    dob = ECH0044DatePartiallyKnown.from_date(date(1970, 3, 10))
+    person_id = ECH0044PersonIdentification(
+        local_person_id=local_id,
+        official_name="Keller",
+        first_name="Ruth",
+        sex="2",
+        date_of_birth=dob
+    )
+    measure_info = ECH0021GuardianMeasureInfo(
+        based_on_law=["393"],
+        guardian_measure_valid_from=date(2023, 6, 1)
+    )
+
+    original = ECH0021GuardianRelationship(
+        guardian_relationship_id="GR-001",
+        person_identification=person_id,
+        type_of_relationship=TypeOfRelationship.GUARDIAN,
+        guardian_measure_info=measure_info,
+        care=CareType.JOINT_PARENTAL_AUTHORITY
+    )
+
+    xml = original.to_xml()
+    restored = ECH0021GuardianRelationship.from_xml(xml)
+
+    assert restored.guardian_relationship_id == "GR-001"
+    assert restored.person_identification is not None
+    assert restored.person_identification.official_name == "Keller"
+    assert restored.type_of_relationship == TypeOfRelationship.GUARDIAN
+    assert restored.guardian_measure_info.based_on_law == ["393"]
+    assert restored.care == CareType.JOINT_PARENTAL_AUTHORITY
+
+
+def test_roundtrip_guardian_relationship_namespace_correct():
+    """Verify GuardianRelationship wrapper elements are in eCH-0021/8 namespace."""
+    from openmun_ech.ech0021 import ECH0021GuardianMeasureInfo, ECH0021GuardianRelationship
+
+    local_id = ECH0044NamedPersonId(person_id_category="MU.6172", person_id="401")
+    dob = ECH0044DatePartiallyKnown.from_date(date(1975, 5, 5))
+    person_id = ECH0044PersonIdentification(
+        local_person_id=local_id,
+        official_name="Bauer",
+        first_name="Fritz",
+        sex="1",
+        date_of_birth=dob
+    )
+    measure_info = ECH0021GuardianMeasureInfo(
+        guardian_measure_valid_from=date(2024, 1, 1)
+    )
+
+    data = ECH0021GuardianRelationship(
+        guardian_relationship_id="GR-002",
+        person_identification=person_id,
+        type_of_relationship=TypeOfRelationship.LEGAL_ASSISTANT,
+        guardian_measure_info=measure_info
+    )
+
+    xml = data.to_xml()
+
+    # partner element in eCH-0021/8
+    partner_elem = xml.find(f'{{{NS.ECH0021_V8}}}partner')
+    assert partner_elem is not None
+
+    # personIdentification wrapper inside partner MUST be in eCH-0021/8
+    pi_elem = partner_elem.find(f'{{{NS.ECH0021_V8}}}personIdentification')
+    assert pi_elem is not None, "personIdentification wrapper must be in eCH-0021/8 namespace"
+
+
+def test_roundtrip_marital_relationship_wrapper_namespace():
+    """Verify MaritalRelationship respects wrapper_namespace parameter."""
+    local_id = ECH0044NamedPersonId(person_id_category="MU.6172", person_id="500")
+    dob = ECH0044DatePartiallyKnown.from_date(date(1988, 12, 1))
+    person_id = ECH0044PersonIdentification(
+        local_person_id=local_id,
+        official_name="Huber",
+        first_name="Eva",
+        sex="2",
+        date_of_birth=dob
+    )
+    partner = ECH0021Partner(person_identification=person_id)
+    relationship = ECH0021MaritalRelationship(
+        partner=partner,
+        type_of_relationship=TypeOfRelationship.SPOUSE
+    )
+
+    # Simulate how eCH-0020 wraps this (wrapper in a different namespace)
+    FAKE_PARENT_NS = "http://example.com/test"
+    xml = relationship.to_xml(wrapper_namespace=FAKE_PARENT_NS)
+
+    # Root element should use wrapper_namespace
+    assert xml.tag == f'{{{FAKE_PARENT_NS}}}maritalRelationship'
+
+    # Content (partner, typeOfRelationship) should use eCH-0021/8
+    partner_elem = xml.find(f'{{{NS.ECH0021_V8}}}partner')
+    assert partner_elem is not None, "partner content must be in eCH-0021/8 namespace"

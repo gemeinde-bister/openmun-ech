@@ -296,24 +296,26 @@ class ECH0021MaritalDataAddon(BaseModel):
             elem = ET.Element(f'{{{namespace}}}{element_name}')
 
         if self.place_of_marriage:
-            # Use eCH-0011 namespace for generalPlace
-            self.place_of_marriage.to_xml(
-                parent=elem,
-                namespace=NS.ECH0011_V8,
-                element_name='placeOfMarriage'
-            )
+            # Create wrapper in eCH-0021 namespace
+            place_wrapper = ET.SubElement(elem, f'{{{namespace}}}placeOfMarriage')
+            # Generate eCH-0011 content
+            place_content = self.place_of_marriage.to_xml(namespace=NS.ECH0011_V9)
+            # Move children to wrapper
+            for child in place_content:
+                place_wrapper.append(child)
 
         return elem
 
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0021MaritalDataAddon':
         """Import from eCH-0021 XML."""
-        ns = {'eCH-0011': NS.ECH0011_V8}
+        ns = {'eCH-0021': NS.ECH0021_V8}
 
-        place_elem = element.find('eCH-0011:placeOfMarriage', ns)
+        # Look for wrapper in eCH-0021 namespace
+        place_elem = element.find('eCH-0021:placeOfMarriage', ns)
 
         return cls(
-            place_of_marriage=ECH0011GeneralPlace.from_xml(place_elem) if place_elem is not None else None
+            place_of_marriage=ECH0011GeneralPlace.from_xml(place_elem, namespace=NS.ECH0011_V9) if place_elem is not None else None
         )
 
 
@@ -531,17 +533,21 @@ class ECH0021OccupationData(BaseModel):
             emp_elem.text = self.employer
 
         if self.place_of_work:
+            # Wrapper element placeOfWork in eCH-0021/8 namespace, content in eCH-0010/8
             self.place_of_work.to_xml(
                 parent=elem,
                 namespace=NS.ECH0010_V8,
-                element_name='placeOfWork'
+                element_name='placeOfWork',
+                wrapper_namespace=namespace
             )
 
         if self.place_of_employer:
+            # Wrapper element placeOfEmployer in eCH-0021/8 namespace, content in eCH-0010/8
             self.place_of_employer.to_xml(
                 parent=elem,
                 namespace=NS.ECH0010_V8,
-                element_name='placeOfEmployer'
+                element_name='placeOfEmployer',
+                wrapper_namespace=namespace
             )
 
         if self.occupation_valid_from:
@@ -558,20 +564,23 @@ class ECH0021OccupationData(BaseModel):
     def from_xml(cls, element: ET.Element) -> 'ECH0021OccupationData':
         """Import from eCH-0021 XML."""
         ns_0021 = {'eCH-0021': NS.ECH0021_V8}
-        ns_0010 = {'eCH-0010': NS.ECH0010_V8}
 
         uid_elem = element.find('eCH-0021:UID', ns_0021)
         emp_elem = element.find('eCH-0021:employer', ns_0021)
-        pow_elem = element.find('eCH-0010:placeOfWork', ns_0010)
-        poe_elem = element.find('eCH-0010:placeOfEmployer', ns_0010)
+
+        # placeOfWork and placeOfEmployer are wrappers in eCH-0021/8 namespace
+        # containing eCH-0010/8 address data
+        pow_elem = element.find('eCH-0021:placeOfWork', ns_0021)
+        poe_elem = element.find('eCH-0021:placeOfEmployer', ns_0021)
+
         from_elem = element.find('eCH-0021:occupationValidFrom', ns_0021)
         till_elem = element.find('eCH-0021:occupationValidTill', ns_0021)
 
         return cls(
             uid=ECH0021UIDStructure.from_xml(uid_elem) if uid_elem is not None else None,
             employer=emp_elem.text if emp_elem is not None else None,
-            place_of_work=ECH0010AddressInformation.from_xml(pow_elem) if pow_elem is not None else None,
-            place_of_employer=ECH0010AddressInformation.from_xml(poe_elem) if poe_elem is not None else None,
+            place_of_work=ECH0010AddressInformation.from_xml(pow_elem, namespace=NS.ECH0010_V8) if pow_elem is not None else None,
+            place_of_employer=ECH0010AddressInformation.from_xml(poe_elem, namespace=NS.ECH0010_V8) if poe_elem is not None else None,
             occupation_valid_from=date.fromisoformat(from_elem.text) if from_elem is not None else None,
             occupation_valid_till=date.fromisoformat(till_elem.text) if till_elem is not None else None
         )
@@ -664,21 +673,24 @@ class ECH0021Partner(BaseModel):
             self.person_identification.to_xml(
                 parent=elem,
                 namespace=NS.ECH0044_V4,
-                element_name='personIdentificationPartner'
+                element_name='personIdentificationPartner',
+                wrapper_namespace=namespace
             )
         else:
             self.person_identification.to_xml(
                 parent=elem,
                 namespace=NS.ECH0044_V4,
-                element_name='personIdentification'
+                element_name='personIdentification',
+                wrapper_namespace=namespace
             )
 
         # Optional address
         if self.address:
             self.address.to_xml(
                 parent=elem,
-                namespace=NS.ECH0010_V5,
-                element_name='address'
+                namespace=NS.ECH0010_V8,
+                element_name='address',
+                wrapper_namespace=namespace
             )
 
         return elem
@@ -686,26 +698,26 @@ class ECH0021Partner(BaseModel):
     @classmethod
     def from_xml(cls, element: ET.Element) -> 'ECH0021Partner':
         """Import from eCH-0021 XML."""
-        ns_0044 = {'eCH-0044': NS.ECH0044_V4}
-        ns_0010 = {'eCH-0010': NS.ECH0010_V5}
+        ns_0021 = {'eCH-0021': NS.ECH0021_V8}
 
-        # Try full person identification first
-        pers_elem = element.find('eCH-0044:personIdentification', ns_0044)
+        # Try full person identification first (wrapper in eCH-0021, content in eCH-0044)
+        pers_elem = element.find('eCH-0021:personIdentification', ns_0021)
         if pers_elem is not None:
             person_id = ECH0044PersonIdentification.from_xml(pers_elem)
         else:
-            # Try light person identification
-            pers_light_elem = element.find('eCH-0044:personIdentificationPartner', ns_0044)
+            # Try light person identification (wrapper in eCH-0021, content in eCH-0044)
+            pers_light_elem = element.find('eCH-0021:personIdentificationPartner', ns_0021)
             if pers_light_elem is not None:
                 person_id = ECH0044PersonIdentificationLight.from_xml(pers_light_elem)
             else:
                 raise ValueError("Missing required field: personIdentification or personIdentificationPartner")
 
-        addr_elem = element.find('eCH-0010:address', ns_0010)
+        # Address (wrapper in eCH-0021, content in eCH-0010)
+        addr_elem = element.find('eCH-0021:address', ns_0021)
 
         return cls(
             person_identification=person_id,
-            address=ECH0010MailAddress.from_xml(addr_elem) if addr_elem is not None else None
+            address=ECH0010MailAddress.from_xml(addr_elem, namespace=NS.ECH0010_V8) if addr_elem is not None else None
         )
 
 
@@ -735,12 +747,23 @@ class ECH0021MaritalRelationship(BaseModel):
 
     def to_xml(self, parent: Optional[ET.Element] = None,
                namespace: str = NS.ECH0021_V8,
-               element_name: str = 'maritalRelationship') -> ET.Element:
-        """Export to eCH-0021 XML."""
+               element_name: str = 'maritalRelationship',
+               wrapper_namespace: Optional[str] = None) -> ET.Element:
+        """Export to eCH-0021 XML.
+
+        Args:
+            parent: Parent element to attach to
+            namespace: XML namespace for content elements
+            element_name: Name of wrapper element (default: 'maritalRelationship')
+            wrapper_namespace: Namespace for wrapper element (defaults to namespace if not specified)
+        """
+        # Use wrapper_namespace for wrapper element, namespace for content
+        wrapper_ns = wrapper_namespace if wrapper_namespace is not None else namespace
+
         if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
+            elem = ET.SubElement(parent, f'{{{wrapper_ns}}}{element_name}')
         else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
+            elem = ET.Element(f'{{{wrapper_ns}}}{element_name}')
 
         self.partner.to_xml(parent=elem, namespace=namespace)
 
@@ -1043,23 +1066,33 @@ class ECH0021GuardianRelationship(BaseModel):
             if self.person_identification:
                 self.person_identification.to_xml(
                     parent=partner_elem,
-                    element_name='personIdentification'
+                    element_name='personIdentification',
+                    wrapper_namespace=namespace
                 )
             elif self.person_identification_partner:
                 self.person_identification_partner.to_xml(
                     parent=partner_elem,
-                    element_name='personIdentificationPartner'
+                    element_name='personIdentificationPartner',
+                    wrapper_namespace=namespace
                 )
             elif self.partner_id_organisation:
-                # ECH0011PartnerIdOrganisation uses different signature
+                # ECH0011PartnerIdOrganisation uses wrapper_namespace parameter
+                # Wrapper element uses eCH-0021, content uses eCH-0011
                 self.partner_id_organisation.to_xml(
                     parent=partner_elem,
-                    tag='partnerIdOrganisation'
+                    tag='partnerIdOrganisation',
+                    wrapper_namespace=namespace
                 )
 
             # address (optional, inside partner)
             if self.partner_address:
-                self.partner_address.to_xml(parent=partner_elem, namespace=namespace)
+                # Wrapper element in eCH-0021 namespace, content in eCH-0010/8
+                self.partner_address.to_xml(
+                    parent=partner_elem,
+                    namespace=NS.ECH0010_V8,
+                    element_name='address',
+                    wrapper_namespace=namespace
+                )
 
         # typeOfRelationship (required)
         rel_elem = ET.SubElement(elem, f'{{{namespace}}}typeOfRelationship')
@@ -1081,7 +1114,7 @@ class ECH0021GuardianRelationship(BaseModel):
         ns = {
             'eCH-0021': NS.ECH0021_V8,
             'eCH-0044': NS.ECH0044_V4,
-            'eCH-0011': NS.ECH0011_V8,
+            'eCH-0011': NS.ECH0011_V9,
         }
 
         # guardianRelationshipId (required)
@@ -1097,24 +1130,27 @@ class ECH0021GuardianRelationship(BaseModel):
 
         if partner_elem is not None:
             # Try to find person identification (full)
-            person_id_elem = partner_elem.find('eCH-0044:personIdentification', ns)
+            # Note: wrapper element is in eCH-0021 namespace, content in eCH-0044
+            person_id_elem = partner_elem.find('eCH-0021:personIdentification', ns)
             if person_id_elem is not None:
                 person_identification = ECH0044PersonIdentification.from_xml(person_id_elem)
 
             # Try to find person identification (light/partner)
-            person_partner_elem = partner_elem.find('eCH-0044:personIdentificationPartner', ns)
+            person_partner_elem = partner_elem.find('eCH-0021:personIdentificationPartner', ns)
             if person_partner_elem is not None:
                 person_identification_partner = ECH0044PersonIdentificationLight.from_xml(person_partner_elem)
 
             # Try to find organization
-            org_elem = partner_elem.find('eCH-0011:partnerIdOrganisation', ns)
+            # Note: wrapper element is in eCH-0021 namespace, content in eCH-0011
+            org_elem = partner_elem.find('eCH-0021:partnerIdOrganisation', ns)
             if org_elem is not None:
                 partner_id_organisation = ECH0011PartnerIdOrganisation.from_xml(org_elem)
 
             # Try to find address (inside partner)
-            addr_elem = partner_elem.find('eCH-0010:address', {'eCH-0010': NS.ECH0010_V6})
+            # Note: wrapper element 'address' is in eCH-0021 namespace, content in eCH-0010/8
+            addr_elem = partner_elem.find('eCH-0021:address', ns)
             if addr_elem is not None:
-                partner_address = ECH0010MailAddress.from_xml(addr_elem)
+                partner_address = ECH0010MailAddress.from_xml(addr_elem, namespace=NS.ECH0010_V8)
 
         # typeOfRelationship (required)
         rel_elem = element.find('eCH-0021:typeOfRelationship', ns)
@@ -1329,7 +1365,7 @@ class ECH0021HealthInsuranceData(BaseModel):
                 addr_wrapper = ET.SubElement(ins_elem, f'{{{namespace}}}insuranceAddress')
                 self.insurance_address.to_xml(
                     parent=addr_wrapper,
-                    namespace=NS.ECH0010_V5
+                    namespace=NS.ECH0010_V8
                 )
 
         if self.health_insurance_valid_from:
@@ -1342,7 +1378,7 @@ class ECH0021HealthInsuranceData(BaseModel):
     def from_xml(cls, element: ET.Element) -> 'ECH0021HealthInsuranceData':
         """Import from eCH-0021 XML."""
         ns_0021 = {'eCH-0021': NS.ECH0021_V8}
-        ns_0010 = {'eCH-0010': NS.ECH0010_V5}
+        ns_0010 = {'eCH-0010': NS.ECH0010_V8}
 
         hi_elem = element.find('eCH-0021:healthInsured', ns_0021)
         ins_elem = element.find('eCH-0021:insurance', ns_0021)
@@ -1360,7 +1396,7 @@ class ECH0021HealthInsuranceData(BaseModel):
                 if addr_elem is not None:
                     insurance_address = ECH0010OrganisationMailAddress.from_xml(
                         addr_elem,
-                        namespace=NS.ECH0010_V5
+                        namespace=NS.ECH0010_V8
                     )
 
         from_elem = element.find('eCH-0021:healthInsuranceValidFrom', ns_0021)
