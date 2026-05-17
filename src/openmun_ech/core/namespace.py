@@ -23,6 +23,7 @@ class NS:
 
     # eCH-0006: Residence permit codes
     ECH0006_V2 = 'http://www.ech.ch/xmlns/eCH-0006/2'
+    ECH0006_V3 = 'http://www.ech.ch/xmlns/eCH-0006/3'
 
     # eCH-0007: Municipalities and cantons
     ECH0007_V5 = 'http://www.ech.ch/xmlns/eCH-0007/5'
@@ -38,6 +39,7 @@ class NS:
 
     # eCH-0011: Person data
     ECH0011_V8 = 'http://www.ech.ch/xmlns/eCH-0011/8'
+    ECH0011_V9 = 'http://www.ech.ch/xmlns/eCH-0011/9'
 
     # eCH-0020: Population delivery
     ECH0020_V3 = 'http://www.ech.ch/xmlns/eCH-0020/3'
@@ -87,9 +89,11 @@ def _register_prefixes() -> None:
     for prefix, uri in NS.PREFIXES.items():
         ET.register_namespace(prefix, uri)
     # Also register versioned variants not in PREFIXES
+    ET.register_namespace('eCH-0006-v3', NS.ECH0006_V3)
     ET.register_namespace('eCH-0007-v5', NS.ECH0007_V5)
     ET.register_namespace('eCH-0010-v6', NS.ECH0010_V6)
     ET.register_namespace('eCH-0010-v8', NS.ECH0010_V8)
+    ET.register_namespace('eCH-0011-v9', NS.ECH0011_V9)
     ET.register_namespace('eCH-0021-v7', NS.ECH0021_V7)
     ET.register_namespace('eCH-0058-v4', NS.ECH0058_V4)
 

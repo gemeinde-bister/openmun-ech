@@ -1,12 +1,11 @@
-"""eCH-0021 v8 Standard Code Enumerations.
+"""eCH-0021 Standard Code Enumerations (shared across v7 and v8).
 
-Official codes defined in eCH-0021-8-0.xsd for person additional data,
-relationships, and employment information.
+Official codes for person additional data, relationships, and employment.
+Some enums are version-specific (noted in docstrings).
 
-Standard: eCH-0021 v8.0
-XSD: eCH-0021-8-0.xsd
-Namespace: http://www.ech.ch/xmlns/eCH-0021/8
-Source: https://www.ech.ch/de/standards/60022
+Standards: eCH-0021 v7.0 (XSD eCH-0021-7-0), eCH-0021 v8.0 (XSD eCH-0021-8-0)
+PDF: eCH-0021 v8.1.0 (covers both XSD versions)
+Source: https://www.ech.ch/de/ech/ech-0021
 """
 
 from enum import Enum

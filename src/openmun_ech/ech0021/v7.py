@@ -44,6 +44,7 @@ from openmun_ech.core import NS
 
 # Import enums from this package
 from .enums import (
+    DataLockType,
     MrMrs,
     TypeOfRelationship,
     CareType,
@@ -126,12 +127,15 @@ class ECH0021LockData(BaseModel):
     """eCH-0021 v7 Lock data.
 
     Contains flags and validity dates for data and paper locks.
-    NOTE: addressLock was added in v8 (not in v7).
+
+    v7 dataLockType has 3 values (0=no lock, 1=address lock, 2=information lock).
+    In v8 this was split: addressLock became its own field, dataLock simplified to yesNo.
+    See RFC 2021-41, PDF v8.1.0 Anhang D.
 
     XML Schema: eCH-0021-7-0 lockDataType
     """
 
-    data_lock: YesNo = Field(..., description="Data lock (required: yes/no)")
+    data_lock: DataLockType = Field(..., description="Data lock (0=none, 1=address, 2=information)")
     data_lock_valid_from: Optional[date] = None
     data_lock_valid_till: Optional[date] = None
 
@@ -188,7 +192,7 @@ class ECH0021LockData(BaseModel):
             return date.fromisoformat(text) if text else None
 
         return cls(
-            data_lock=YesNo(get_text('eCH-0021:dataLock')),
+            data_lock=DataLockType(get_text('eCH-0021:dataLock')),
             data_lock_valid_from=get_date('eCH-0021:dataLockValidFrom'),
             data_lock_valid_till=get_date('eCH-0021:dataLockValidTill'),
             paper_lock=YesNo(get_text('eCH-0021:paperLock')),
