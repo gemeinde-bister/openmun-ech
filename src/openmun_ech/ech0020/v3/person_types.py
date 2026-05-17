@@ -1140,7 +1140,7 @@ class ECH0020BaseDeliveryRestrictedMoveInPerson(BaseModel):
         return elem
 
     @classmethod
-    def from_xml(cls, element: ET.Element) -> 'ECH0020BaseDeliveryRestrictedMoveInPerson':
+    def from_xml(cls, element: ET.Element, **kwargs) -> 'ECH0020BaseDeliveryRestrictedMoveInPerson':
         """Parse from XML element.
 
         Args:

@@ -1,11 +1,10 @@
 """eCH-0020 v3.0 — Info Types."""
 
 import xml.etree.ElementTree as ET
-from typing import Optional
+from typing import Optional, Self
 from datetime import date
-from pydantic import BaseModel, Field, ConfigDict
 
-from openmun_ech.core import NS
+from openmun_ech.core import ECHModel, NS, xml_field
 from openmun_ech.ech0011 import (
     ECH0011NameData,
     ECH0011BirthData,
@@ -24,297 +23,106 @@ from openmun_ech.ech0021.v7 import (
 # INFO/WRAPPER TYPES (Wrapper types for validation dates and additional data)
 # ============================================================================
 
-class ECH0020NameInfo(BaseModel):
+class ECH0020NameInfo(ECHModel):
     """Name data with optional validation date.
 
-    Wrapper around eCH-0011 nameData adding an optional nameValidFrom field.
-
     XSD: nameInfoType (eCH-0020-3-0.xsd lines 31-36)
-    PDF: N/A (simple wrapper type, not documented separately)
     """
 
-    name_data: ECH0011NameData = Field(
-        ...,
-        description="Name data per eCH-0011"
+    __xml_ns__ = NS.ECH0020_V3
+    __xml_element__ = 'nameInfo'
+
+    name_data: ECH0011NameData = xml_field(
+        'nameData', wrapper=True, child_ns=NS.ECH0011_V8,
+    )
+    name_valid_from: Optional[date] = xml_field(
+        'nameValidFrom', default=None,
     )
 
-    name_valid_from: Optional[date] = Field(
-        None,
-        alias='nameValidFrom',
-        description="Date from which name is valid"
-    )
 
-    model_config = ConfigDict(populate_by_name=True)
-
-    def to_xml(
-        self,
-        parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0020_V3,
-        element_name: str = 'nameInfo'
-    ) -> ET.Element:
-        """Export to eCH-0020 v3 XML."""
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # nameData (required) - wrapper in eCH-0020, content from eCH-0011
-        # Create wrapper element in eCH-0020 namespace
-        name_wrapper = ET.SubElement(elem, f'{{{namespace}}}nameData')
-        # Generate eCH-0011 content and move children to wrapper
-        name_content = self.name_data.to_xml(namespace=NS.ECH0011_V8)
-        for child in name_content:
-            name_wrapper.append(child)
-
-        # nameValidFrom (optional)
-        if self.name_valid_from:
-            valid_from_elem = ET.SubElement(elem, f'{{{namespace}}}nameValidFrom')
-            valid_from_elem.text = self.name_valid_from.isoformat()
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, element: ET.Element) -> 'ECH0020NameInfo':
-        """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
-        ns_0011 = {'eCH-0011': NS.ECH0011_V8}
-
-        # nameData (required, wrapper in eCH-0020, content in eCH-0011)
-        name_data_elem = element.find('eCH-0020:nameData', ns_0020)
-        if name_data_elem is None:
-            raise ValueError("nameData is required in nameInfoType")
-        name_data = ECH0011NameData.from_xml(name_data_elem)
-
-        # nameValidFrom (optional)
-        valid_from_elem = element.find('eCH-0020:nameValidFrom', ns_0020)
-        name_valid_from = None
-        if valid_from_elem is not None and valid_from_elem.text:
-            name_valid_from = date.fromisoformat(valid_from_elem.text)
-
-        return cls(
-            name_data=name_data,
-            name_valid_from=name_valid_from
-        )
-
-
-class ECH0020BirthInfo(BaseModel):
+class ECH0020BirthInfo(ECHModel):
     """Birth data with optional addon data.
 
-    Wrapper around eCH-0011 birthData with optional eCH-0021 birthAddonData
-    (contains names of parents).
-
     XSD: birthInfoType (eCH-0020-3-0.xsd lines 43-48)
-    PDF: N/A (simple wrapper type)
     """
 
-    birth_data: ECH0011BirthData = Field(
-        ...,
-        description="Birth data per eCH-0011"
+    __xml_ns__ = NS.ECH0020_V3
+    __xml_element__ = 'birthInfo'
+
+    birth_data: ECH0011BirthData = xml_field(
+        'birthData', wrapper=True, child_ns=NS.ECH0011_V8,
+    )
+    birth_addon_data: Optional[ECH0021BirthAddonData] = xml_field(
+        'birthAddonData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
-    birth_addon_data: Optional[ECH0021BirthAddonData] = Field(
-        None,
-        alias='birthAddonData',
-        description="Birth addon data per eCH-0021 v7 (parent names)"
-    )
 
-    model_config = ConfigDict(populate_by_name=True)
-
-    def to_xml(
-        self,
-        parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0020_V3,
-        element_name: str = 'birthInfo'
-    ) -> ET.Element:
-        """Export to eCH-0020 v3 XML."""
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # birthData (required) - wrapper in eCH-0020, content from eCH-0011
-        # Create wrapper element in eCH-0020 namespace
-        birth_wrapper = ET.SubElement(elem, f'{{{namespace}}}birthData')
-        # Generate eCH-0011 content and move children to wrapper
-        birth_content = self.birth_data.to_xml(namespace=NS.ECH0011_V8)
-        for child in birth_content:
-            birth_wrapper.append(child)
-
-        # birthAddonData (optional) - wrapper in eCH-0020, content from eCH-0021
-        if self.birth_addon_data:
-            # Create wrapper element in eCH-0020 namespace
-            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}birthAddonData')
-            # Generate eCH-0021 content and move children to wrapper
-            addon_content = self.birth_addon_data.to_xml(namespace=NS.ECH0021_V7)
-            for child in addon_content:
-                addon_wrapper.append(child)
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, element: ET.Element) -> 'ECH0020BirthInfo':
-        """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
-        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
-
-        # birthData (required, wrapper element in eCH-0020 namespace, content in eCH-0011)
-        birth_data_elem = element.find('eCH-0020:birthData', ns_0020)
-        if birth_data_elem is None:
-            raise ValueError("birthData is required in birthInfoType")
-        birth_data = ECH0011BirthData.from_xml(birth_data_elem)
-
-        # birthAddonData (optional, wrapper in eCH-0020, content in eCH-0021)
-        birth_addon_elem = element.find('eCH-0020:birthAddonData', ns_0020)
-        birth_addon_data = None
-        if birth_addon_elem is not None:
-            birth_addon_data = ECH0021BirthAddonData.from_xml(birth_addon_elem)
-
-        return cls(
-            birth_data=birth_data,
-            birth_addon_data=birth_addon_data
-        )
-
-
-class ECH0020MaritalInfo(BaseModel):
+class ECH0020MaritalInfo(ECHModel):
     """Marital data with optional addon data.
 
-    Wrapper around eCH-0011 maritalData with optional eCH-0021 maritalDataAddon
-    (contains place of marriage and other details).
-
     XSD: maritalInfoType (eCH-0020-3-0.xsd lines 49-54)
-    PDF: N/A (simple wrapper type)
     """
 
-    marital_data: ECH0011MaritalData = Field(
-        ...,
-        description="Marital data per eCH-0011"
+    __xml_ns__ = NS.ECH0020_V3
+    __xml_element__ = 'maritalInfo'
+
+    marital_data: ECH0011MaritalData = xml_field(
+        'maritalData', wrapper=True, child_ns=NS.ECH0011_V8,
+    )
+    marital_data_addon: Optional[ECH0021MaritalDataAddon] = xml_field(
+        'maritalDataAddon', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
-    marital_data_addon: Optional[ECH0021MaritalDataAddon] = Field(
-        None,
-        alias='maritalDataAddon',
-        description="Marital data addon per eCH-0021 v7 (place of marriage)"
-    )
 
-    model_config = ConfigDict(populate_by_name=True)
-
-    def to_xml(
-        self,
-        parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0020_V3,
-        element_name: str = 'maritalInfo'
-    ) -> ET.Element:
-        """Export to eCH-0020 v3 XML."""
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # maritalData (required) - wrapper in eCH-0020, content from eCH-0011
-        # Create wrapper element in eCH-0020 namespace
-        marital_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalData')
-        # Generate eCH-0011 content and move children to wrapper
-        marital_content = self.marital_data.to_xml(namespace=NS.ECH0011_V8)
-        for child in marital_content:
-            marital_wrapper.append(child)
-
-        # maritalDataAddon (optional) - wrapper in eCH-0020, content from eCH-0021
-        if self.marital_data_addon:
-            # Create wrapper element in eCH-0020 namespace
-            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalDataAddon')
-            # Generate eCH-0021 content and move children to wrapper
-            addon_content = self.marital_data_addon.to_xml(namespace=NS.ECH0021_V7)
-            for child in addon_content:
-                addon_wrapper.append(child)
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, element: ET.Element) -> 'ECH0020MaritalInfo':
-        """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
-        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
-
-        # maritalData (required, wrapper element in eCH-0020 namespace, content in eCH-0011)
-        marital_data_elem = element.find('eCH-0020:maritalData', ns_0020)
-        if marital_data_elem is None:
-            raise ValueError("maritalData is required in maritalInfoType")
-        marital_data = ECH0011MaritalData.from_xml(marital_data_elem)
-
-        # maritalDataAddon (optional, wrapper in eCH-0020, content in eCH-0021)
-        marital_addon_elem = element.find('eCH-0020:maritalDataAddon', ns_0020)
-        marital_data_addon = None
-        if marital_addon_elem is not None:
-            marital_data_addon = ECH0021MaritalDataAddon.from_xml(marital_addon_elem)
-
-        return cls(
-            marital_data=marital_data,
-            marital_data_addon=marital_data_addon
-        )
-
-
-class ECH0020MaritalInfoRestrictedMarriage(BaseModel):
-    """Restricted marital info (for marriage/partnership data).
+class ECH0020MaritalInfoRestrictedMarriage(ECHModel):
+    """Restricted marital info (for marriage/partnership events).
 
     Contains a restricted inline maritalData structure (status + date only)
     plus optional maritalDataAddon from eCH-0021 v7.
 
     XSD: maritalInfoRestrictedMarriageType (eCH-0020-3-0.xsd lines 55-67)
-    PDF: N/A (inline type definition)
 
-    Note: This differs from maritalInfoType by using a restricted inline
-    maritalData structure instead of the full eCH-0011 maritalDataType.
+    Note: Custom to_xml/from_xml because maritalData is an inline anonymous
+    complexType wrapping two scalar fields — not a separate model.
     """
 
-    marital_status: MaritalStatus = Field(
-        ...,
-        alias='maritalStatus',
-        description="Marital status code per eCH-0011"
-    )
+    __xml_ns__ = NS.ECH0020_V3
+    __xml_element__ = 'maritalInfo'
 
-    date_of_marital_status: Optional[date] = Field(
-        None,
-        alias='dateOfMaritalStatus',
-        description="Date when marital status became effective"
+    marital_status: MaritalStatus = xml_field('maritalStatus')
+    date_of_marital_status: Optional[date] = xml_field(
+        'dateOfMaritalStatus', default=None,
     )
-
-    marital_data_addon: Optional[ECH0021MaritalDataAddon] = Field(
-        None,
-        alias='maritalDataAddon',
-        description="Marital data addon per eCH-0021 v7 (place of marriage)"
+    marital_data_addon: Optional[ECH0021MaritalDataAddon] = xml_field(
+        'maritalDataAddon', default=None,
     )
-
-    model_config = ConfigDict(populate_by_name=True)
 
     def to_xml(
         self,
         parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0020_V3,
-        element_name: str = 'maritalInfo'
+        namespace: str | None = None,
+        element_name: str | None = None,
+        wrapper_namespace: str | None = None,
     ) -> ET.Element:
-        """Export to eCH-0020 v3 XML."""
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
+        """Custom: inline maritalData sub-element wrapping two scalars."""
+        ns = namespace or self.__xml_ns__
+        el_name = element_name or self.__xml_element__
+        root_ns = wrapper_namespace or ns
 
-        # maritalData (inline complexType, required)
-        marital_data_elem = ET.SubElement(elem, f'{{{namespace}}}maritalData')
+        tag = f'{{{root_ns}}}{el_name}'
+        elem = ET.SubElement(parent, tag) if parent is not None else ET.Element(tag)
 
-        # maritalStatus (required)
-        status_elem = ET.SubElement(marital_data_elem, f'{{{namespace}}}maritalStatus')
-        status_elem.text = self.marital_status.value
-
-        # dateOfMaritalStatus (optional)
+        # maritalData (inline complexType)
+        marital_data_elem = ET.SubElement(elem, f'{{{ns}}}maritalData')
+        status_elem = ET.SubElement(marital_data_elem, f'{{{ns}}}maritalStatus')
+        status_elem.text = str(self.marital_status.value)
         if self.date_of_marital_status:
-            date_elem = ET.SubElement(marital_data_elem, f'{{{namespace}}}dateOfMaritalStatus')
+            date_elem = ET.SubElement(marital_data_elem, f'{{{ns}}}dateOfMaritalStatus')
             date_elem.text = self.date_of_marital_status.isoformat()
 
-        # maritalDataAddon (optional) - wrapper in eCH-0020, content from eCH-0021
+        # maritalDataAddon (wrapper in eCH-0020, content from eCH-0021)
         if self.marital_data_addon:
-            # Create wrapper element in eCH-0020 namespace
-            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}maritalDataAddon')
-            # Generate eCH-0021 content and move children to wrapper
+            addon_wrapper = ET.SubElement(elem, f'{{{ns}}}maritalDataAddon')
             addon_content = self.marital_data_addon.to_xml(namespace=NS.ECH0021_V7)
             for child in addon_content:
                 addon_wrapper.append(child)
@@ -322,118 +130,53 @@ class ECH0020MaritalInfoRestrictedMarriage(BaseModel):
         return elem
 
     @classmethod
-    def from_xml(cls, element: ET.Element) -> 'ECH0020MaritalInfoRestrictedMarriage':
-        """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
-        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
+    def from_xml(cls, elem: ET.Element, namespace: str | None = None) -> Self:
+        """Custom: inline maritalData sub-element wrapping two scalars."""
+        ns = namespace or cls.__xml_ns__
 
-        # maritalData (inline complexType, required)
-        marital_data_elem = element.find('eCH-0020:maritalData', ns_0020)
+        # maritalData (inline complexType)
+        marital_data_elem = elem.find(f'{{{ns}}}maritalData')
         if marital_data_elem is None:
             raise ValueError("maritalData is required in maritalInfoRestrictedMarriageType")
 
-        # maritalStatus (required)
-        status_elem = marital_data_elem.find('eCH-0020:maritalStatus', ns_0020)
+        status_elem = marital_data_elem.find(f'{{{ns}}}maritalStatus')
         if status_elem is None:
             raise ValueError("maritalStatus is required in maritalData")
         marital_status = MaritalStatus(status_elem.text)
 
-        # dateOfMaritalStatus (optional)
-        date_elem = marital_data_elem.find('eCH-0020:dateOfMaritalStatus', ns_0020)
         date_of_marital_status = None
+        date_elem = marital_data_elem.find(f'{{{ns}}}dateOfMaritalStatus')
         if date_elem is not None and date_elem.text:
             date_of_marital_status = date.fromisoformat(date_elem.text)
 
-        # maritalDataAddon (optional, wrapper in eCH-0020, content in eCH-0021)
-        marital_addon_elem = element.find('eCH-0020:maritalDataAddon', ns_0020)
+        # maritalDataAddon (wrapper in eCH-0020, content in eCH-0021)
         marital_data_addon = None
-        if marital_addon_elem is not None:
-            marital_data_addon = ECH0021MaritalDataAddon.from_xml(marital_addon_elem)
+        addon_elem = elem.find(f'{{{ns}}}maritalDataAddon')
+        if addon_elem is not None:
+            marital_data_addon = ECH0021MaritalDataAddon.from_xml(addon_elem)
 
         return cls(
             marital_status=marital_status,
             date_of_marital_status=date_of_marital_status,
-            marital_data_addon=marital_data_addon
+            marital_data_addon=marital_data_addon,
         )
 
 
-class ECH0020PlaceOfOriginInfo(BaseModel):
+class ECH0020PlaceOfOriginInfo(ECHModel):
     """Place of origin data with optional addon data.
 
-    Wrapper around eCH-0011 placeOfOrigin with optional eCH-0021 placeOfOriginAddonData
-    (contains naturalization and expatriation dates).
-
     XSD: placeOfOriginInfoType (eCH-0020-3-0.xsd lines 68-73)
-    PDF: N/A (simple wrapper type)
     """
 
-    place_of_origin: ECH0011PlaceOfOrigin = Field(
-        ...,
-        alias='placeOfOrigin',
-        description="Place of origin per eCH-0011"
+    __xml_ns__ = NS.ECH0020_V3
+    __xml_element__ = 'placeOfOriginInfo'
+
+    place_of_origin: ECH0011PlaceOfOrigin = xml_field(
+        'placeOfOrigin', wrapper=True, child_ns=NS.ECH0011_V8,
     )
-
-    place_of_origin_addon_data: Optional[ECH0021PlaceOfOriginAddonData] = Field(
-        None,
-        alias='placeOfOriginAddonData',
-        description="Place of origin addon per eCH-0021 v7 (naturalization/expatriation dates)"
+    place_of_origin_addon_data: Optional[ECH0021PlaceOfOriginAddonData] = xml_field(
+        'placeOfOriginAddonData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    def to_xml(
-        self,
-        parent: Optional[ET.Element] = None,
-        namespace: str = NS.ECH0020_V3,
-        element_name: str = 'placeOfOriginInfo'
-    ) -> ET.Element:
-        """Export to eCH-0020 v3 XML."""
-        if parent is not None:
-            elem = ET.SubElement(parent, f'{{{namespace}}}{element_name}')
-        else:
-            elem = ET.Element(f'{{{namespace}}}{element_name}')
-
-        # placeOfOrigin (required) - wrapper in eCH-0020, content from eCH-0011
-        # Create wrapper element in eCH-0020 namespace
-        origin_wrapper = ET.SubElement(elem, f'{{{namespace}}}placeOfOrigin')
-        # Generate eCH-0011 content and move children to wrapper
-        origin_content = self.place_of_origin.to_xml(namespace=NS.ECH0011_V8)
-        for child in origin_content:
-            origin_wrapper.append(child)
-
-        # placeOfOriginAddonData (optional) - wrapper in eCH-0020, content from eCH-0021
-        if self.place_of_origin_addon_data:
-            # Create wrapper element in eCH-0020 namespace
-            addon_wrapper = ET.SubElement(elem, f'{{{namespace}}}placeOfOriginAddonData')
-            # Generate eCH-0021 content and move children to wrapper
-            addon_content = self.place_of_origin_addon_data.to_xml(namespace=NS.ECH0021_V7)
-            for child in addon_content:
-                addon_wrapper.append(child)
-
-        return elem
-
-    @classmethod
-    def from_xml(cls, element: ET.Element) -> 'ECH0020PlaceOfOriginInfo':
-        """Import from eCH-0020 v3 XML."""
-        ns_0020 = {'eCH-0020': NS.ECH0020_V3}
-        ns_0021 = {'eCH-0021': NS.ECH0021_V7}
-
-        # placeOfOrigin (required, wrapper element in eCH-0020 namespace, content in eCH-0011)
-        place_of_origin_elem = element.find('eCH-0020:placeOfOrigin', ns_0020)
-        if place_of_origin_elem is None:
-            raise ValueError("placeOfOrigin is required in placeOfOriginInfoType")
-        place_of_origin = ECH0011PlaceOfOrigin.from_xml(place_of_origin_elem)
-
-        # placeOfOriginAddonData (optional, wrapper in eCH-0020, content in eCH-0021)
-        place_addon_elem = element.find('eCH-0020:placeOfOriginAddonData', ns_0020)
-        place_of_origin_addon_data = None
-        if place_addon_elem is not None:
-            place_of_origin_addon_data = ECH0021PlaceOfOriginAddonData.from_xml(place_addon_elem)
-
-        return cls(
-            place_of_origin=place_of_origin,
-            place_of_origin_addon_data=place_of_origin_addon_data
-        )
 
 
 # ============================================================================

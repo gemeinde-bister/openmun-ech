@@ -1751,9 +1751,9 @@ class BaseDeliveryPerson(BaseModel):
 
                 parental_rel = ECH0021ParentalRelationship(
                     partner=parent_partner,
-                    relationshipValidFrom=parent_info.relationship_valid_from,  # Use alias name
+                    relationship_valid_from=parent_info.relationship_valid_from,
                     type_of_relationship=parent_info.relationship_type,
-                    care=parent_info.care
+                    care=parent_info.care,
                 )
                 parental_relationship.append(parental_rel)
 
