@@ -10,33 +10,38 @@ The library offers two APIs:
 - **Layer 2** (Simplified): For creating new eCH-0020 deliveries from application data
 - **Layer 1** (XSD-compliant): For parsing and processing production XML files
 
+All Layer 1 models use a declarative `ECHModel` base class that derives XML serialization from field metadata, eliminating handwritten `to_xml()`/`from_xml()` boilerplate.
+
 ## Implemented Standards
 
-- **eCH-0006 v2** - Residence Permits (105 enums)
-- **eCH-0007 v5** - Municipality (30 models + 13 XSD tests)
-- **eCH-0008 v3** - Country (26 models + 17 XSD tests)
-- **eCH-0010 v5** - Address (37 models + 17 XSD tests)
-- **eCH-0011 v8** - Person Data (77 models + 20 XSD tests)
-- **eCH-0020 v3** - Population Registry Events (89 types, 11,220+ lines)
-- **eCH-0021 v7** - Person Additional Data (26 models + 32 XSD tests)
-- **eCH-0044 v4** - Person Identification (32 models + 10 XSD tests)
-- **eCH-0058 v4+v5** - Message Headers (65 models + 13 XSD tests)
-- **eCH-0099 v2.1** - Statistics Delivery (33 tests + production roundtrip)
+- **eCH-0006 v2** - Residence Permits
+- **eCH-0007 v5** - Municipality
+- **eCH-0008 v3** - Country
+- **eCH-0010 v5** - Postal Address
+- **eCH-0011 v8** - Person Data
+- **eCH-0020 v3** - Population Registry Events (96 classes)
+- **eCH-0021 v7+v8** - Person Additional Data (deduplicated via shared base)
+- **eCH-0044 v4** - Person Identification
+- **eCH-0058 v4+v5** - Message Headers (deduplicated via shared base)
+- **eCH-0099 v2** - Statistics Delivery
+
+824 tests, including production data roundtrip validation.
 
 ## Features
 
+- **Declarative XML Framework**: `ECHModel` base class with `xml_field()` metadata — field declarations drive serialization
 - **Two-Layer API**: Simplified Layer 2 for creating deliveries, XSD-compliant Layer 1 for parsing
-- **Pydantic Validation**: Type-safe serialization and deserialization
-- **Zero Data Loss**: Production-tested with real government XML files
-- **XSD Compliance**: Full compliance with official eCH XSD schemas
-- **Comprehensive Testing**: 700+ tests including production data roundtrip validation
-- **Namespace Handling**: Proper cross-schema composition with namespace management
- - **Optional Swiss Data Validation (warnings-only)**: Postal code ↔ town, municipality BFS, canton code, street name, cross-field checks, and religion code audit
+- **Pydantic Validation**: Type-safe models with constraints from XSD and PDF specifications
+- **Zero Data Invention**: Missing government data fails with actionable errors, never defaults
+- **XSD Compliance**: Verified against official eCH XSD schemas and PDF specifications
+- **Multi-Version Support**: eCH-0021 v7/v8 and eCH-0058 v4/v5 share common code via `_shared.py`
+- **Namespace Management**: Centralized `NS` constants, human-readable prefixes (`eCH-0011:` not `ns1:`)
+- **Optional Swiss Data Validation**: Postal code, municipality BFS, canton, street name checks (warnings-only)
 
 ## Installation
 
 ```bash
-pip install -e .
+pip install openmun-ech
 ```
 
 ## Quick Start (Layer 2)
@@ -118,11 +123,7 @@ delivery = finalize_0099([rp1, rp2], config)
 delivery.to_file("statpop.xml")
 ```
 
-See `docs/QUICKSTART.md` for detailed examples and configuration management.
-
 ### Optional Swiss Data Validation (warnings-only)
-
-You can request non-blocking validation against Swiss open data and standard code lists:
 
 ```python
 ctx = person.validate_swiss_data()
@@ -132,16 +133,12 @@ if ctx.has_warnings():
 ```
 
 Included checks (no exceptions are raised):
-- Postal code ↔ town consistency (Swiss postal database)
+- Postal code / town consistency (Swiss postal database)
 - Municipality BFS existence
 - Canton code validity
 - Street name lookup and suggestions (Swiss street directory)
 - Cross-field checks (e.g., postal code vs municipality, street vs postal)
 - Religion code audit (warns if value not in eCH-0011 code list)
-
-Notes:
-- Validation uses in-memory caches and is fast after first load.
-- Works even if you pass strings for Layer 2 enum fields; models accept both strings and enum instances.
 
 ## Production XML Parsing (Layer 1)
 
@@ -161,11 +158,10 @@ print(f"Message Type: {delivery.delivery_header.message_type}")
 if isinstance(delivery.event, list):
     # baseDelivery or keyExchange (list of events)
     for event in delivery.event:
-        if hasattr(event, 'base_delivery_person'):
-            person = event.base_delivery_person
-            if person.person_identification:
-                print(f"Name: {person.person_identification.official_name}")
-                print(f"VN: {person.person_identification.vn}")
+        person = event.base_delivery_person
+        if person.person_identification:
+            print(f"Name: {person.person_identification.official_name}")
+            print(f"VN: {person.person_identification.vn}")
 else:
     # Other event types (single event)
     print(f"Event type: {type(delivery.event).__name__}")
@@ -179,7 +175,6 @@ delivery.to_file("output.xml")
 **Use Layer 2 when:**
 - Creating new eCH deliveries from application data
 - Constructing events from database records or user input
-- Simplifying integration with LLM-based data processing
 - Reducing code complexity (1-2 nesting levels vs 7 levels)
 
 **Use Layer 1 when:**
@@ -189,6 +184,40 @@ delivery.to_file("output.xml")
 - Accessing all XSD elements including rarely-used fields
 
 Both layers maintain zero data loss and full XSD compliance.
+
+## Architecture
+
+### Core Framework (`openmun_ech.core`)
+
+The library uses a declarative XML framework where field metadata drives serialization:
+
+```python
+from openmun_ech.core import ECHModel, xml_field, NS
+
+class ECH0008Country(ECHModel):
+    __xml_ns__ = NS.ECH0008_V3
+    __xml_element__ = 'country'
+
+    country_id: Optional[str] = xml_field('countryId', default=None)
+    country_name_short: str = xml_field('countryNameShort')
+```
+
+`ECHModel` provides generic `to_xml()` and `from_xml()` derived from field declarations. Classes only override these for complex patterns (choice types, cross-namespace wrappers).
+
+Key components:
+- **`NS`** — centralized namespace URI constants for all standards and versions
+- **`xml_field()`** — Pydantic Field with XML metadata (element name, namespace, wrapper pattern)
+- **`ECHModel`** — base class with declarative serialization/deserialization
+
+### Multi-Version Deduplication
+
+Standards with multiple versions (eCH-0021 v7/v8, eCH-0058 v4/v5) use a `_shared.py` module containing factory functions for structurally identical classes. Version-specific files define only the deltas.
+
+### Design Principles
+
+1. **Zero tolerance for defaults** — Missing government data must fail with actionable errors, never use fallbacks
+2. **Serialization purity** — `to_xml()` is a pure function: no I/O, no XSD validation, no side effects
+3. **PDF is authoritative** — The PDF specification defines the standard; the XSD is a technical aide
 
 ## Testing
 
@@ -201,9 +230,9 @@ pytest tests/ -v
 Test specific standards:
 
 ```bash
-pytest tests/test_ech0020_*.py -v
-pytest tests/test_ech0099_*.py -v
-pytest tests/test_layer2*.py -v
+pytest tests/test_ech0010_*.py -v   # Address models
+pytest tests/test_ech0020_*.py -v   # Population registry
+pytest tests/test_layer2*.py -v     # Layer 2 API
 ```
 
 ## Production Validation
@@ -212,38 +241,6 @@ The library has been validated against 204 production XML files from Swiss gover
 - Zero data loss (perfect element count match)
 - 100% roundtrip success rate
 - All available 19 eCH-0020 event types validated
-
-## Architecture
-
-### Core Principles
-
-1. **Never bypass Pydantic validation** - All XML operations go through models
-2. **Zero tolerance for defaults** - Missing government data must fail, not use fallbacks
-3. **Production-first testing** - All models tested with real government data
-
-### Key Patterns
-
-**skip_wrapper Pattern** (XSD TYPE usage):
-```python
-msg.to_xml(parent=msgs_elem, namespace=namespace, skip_wrapper=True)
-```
-
-**wrapper_namespace Pattern** (Cross-schema composition):
-```python
-self.has_main_residence.to_xml(
-    parent=elem,
-    namespace=ns_011,              # Content namespace
-    element_name='hasMainResidence',
-    wrapper_namespace=ns_020        # Wrapper namespace
-)
-```
-
-## Documentation
-
-- **Quick Start Guide**: `docs/QUICKSTART.md` - Complete walkthrough for Layer 2
-- **API Reference**: `docs/API_REFERENCE.md` - Full API documentation
-- **Architecture**: `docs/TWO_LAYER_ARCHITECTURE_ROADMAP.md` - Implementation details
-- **Validation**: `docs/VALIDATION_LAYER_DESIGN.md` - Optional Swiss data validation
 
 ## License
 
