@@ -113,32 +113,42 @@ class ECH0007SwissMunicipality(ECHModel):
         description="Two-letter canton code (optional per XSD)"
     )
     history_municipality_id: Optional[str] = xml_field(
-        'historyMunicipalityId', default=None, max_length=12,
+        'historyMunicipalityId', default=None,
         description="Historical BFS number for merged municipalities"
     )
 
     @field_validator('municipality_id')
     @classmethod
     def validate_municipality_id(cls, v: Optional[str]) -> Optional[str]:
-        """Validate BFS municipality number format."""
+        """Validate BFS municipality number format.
+
+        XSD: xs:int, minInclusive=1, maxInclusive=9999, totalDigits=4 (eCH-0007 §4.1).
+        """
         if v is None:
             return None
         if not v.isdigit():
             raise ValueError(f"Municipality ID must be numeric, got: {v}")
-        if not (1 <= len(v) <= 4):
-            raise ValueError(f"Municipality ID must be 1-4 digits, got: {v}")
+        int_val = int(v)
+        if int_val < 1 or int_val > 9999:
+            raise ValueError(
+                f"Municipality ID must be 1-9999 (eCH-0007 §4.1), got: {v}"
+            )
         return v
 
     @field_validator('history_municipality_id')
     @classmethod
     def validate_history_id(cls, v: Optional[str]) -> Optional[str]:
-        """Validate history municipality ID format."""
+        """Validate history municipality ID format.
+
+        XSD v5: xs:int (unbounded). XSD v6: pattern added for min/max (RfC 2012-53).
+        We accept any positive integer as string.
+        """
         if v is None:
             return None
         if not v.isdigit():
             raise ValueError(f"History municipality ID must be numeric, got: {v}")
-        if len(v) > 12:
-            raise ValueError(f"History municipality ID max 12 digits, got: {v}")
+        if int(v) < 1:
+            raise ValueError(f"History municipality ID must be >= 1, got: {v}")
         return v
 
 
@@ -175,30 +185,40 @@ class ECH0007SwissAndFLMunicipality(ECHModel):
         description="Two-letter canton code including FL (REQUIRED)"
     )
     history_municipality_id: Optional[str] = xml_field(
-        'historyMunicipalityId', default=None, max_length=12,
+        'historyMunicipalityId', default=None,
         description="Historical BFS number for merged municipalities (optional)"
     )
 
     @field_validator('municipality_id')
     @classmethod
     def validate_municipality_id(cls, v: str) -> str:
-        """Validate BFS municipality number format."""
+        """Validate BFS municipality number format.
+
+        XSD: xs:int, minInclusive=1, maxInclusive=9999, totalDigits=4 (eCH-0007 §4.1).
+        Required in swissAndFlMunicipalityType.
+        """
         if not v.isdigit():
             raise ValueError(f"Municipality ID must be numeric, got: {v}")
-        if not (1 <= len(v) <= 4):
-            raise ValueError(f"Municipality ID must be 1-4 digits, got: {v}")
+        int_val = int(v)
+        if int_val < 1 or int_val > 9999:
+            raise ValueError(
+                f"Municipality ID must be 1-9999 (eCH-0007 §4.1), got: {v}"
+            )
         return v
 
     @field_validator('history_municipality_id')
     @classmethod
     def validate_history_id(cls, v: Optional[str]) -> Optional[str]:
-        """Validate history municipality ID format."""
+        """Validate history municipality ID format.
+
+        XSD v5: xs:int (unbounded). XSD v6: pattern added for min/max (RfC 2012-53).
+        """
         if v is None:
             return None
         if not v.isdigit():
             raise ValueError(f"History municipality ID must be numeric, got: {v}")
-        if len(v) > 12:
-            raise ValueError(f"History municipality ID max 12 digits, got: {v}")
+        if int(v) < 1:
+            raise ValueError(f"History municipality ID must be >= 1, got: {v}")
         return v
 
 

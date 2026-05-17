@@ -149,7 +149,7 @@ class ECH0044PersonIdentification(ECHModel):
     official_name: str = xml_field('officialName', min_length=1, max_length=100)
     first_name: str = xml_field('firstName', min_length=1, max_length=100)
     original_name: Optional[str] = xml_field(
-        'originalName', default=None, max_length=100
+        'originalName', default=None, min_length=1, max_length=100
     )
     sex: Sex = xml_field('sex')
     date_of_birth: ECH0044DatePartiallyKnown = xml_field('dateOfBirth')
@@ -241,7 +241,7 @@ class ECH0044PersonIdentificationLight(ECHModel):
     official_name: str = xml_field('officialName', min_length=1, max_length=100)
     first_name: str = xml_field('firstName', min_length=1, max_length=100)
     original_name: Optional[str] = xml_field(
-        'originalName', default=None, max_length=100
+        'originalName', default=None, min_length=1, max_length=100
     )
     sex: Optional[Sex] = xml_field('sex', default=None)
     date_of_birth: Optional[ECH0044DatePartiallyKnown] = xml_field(

@@ -129,9 +129,13 @@ class ECH0010AddressInformation(ECHModel):
 
     @model_validator(mode='after')
     def validate_zip_code_exclusivity(self) -> Self:
-        """Validate that either swiss_zip_code OR foreign_zip_code is present, not both.
+        """Validate zip code choice constraints.
 
-        Per eCH-0010 XSD: choice between swissZipCode sequence or foreignZipCode.
+        Per eCH-0010 XSD v5.1: xs:choice between swissZipCode sequence and
+        foreignZipCode (minOccurs=0). Both branches are mutually exclusive,
+        but the foreign branch allows absent element (no zip code at all).
+
+        Per PDF §2.6: foreignZipCode is "(optional)" within the choice.
         """
         has_swiss = self.swiss_zip_code is not None
         has_foreign = self.foreign_zip_code is not None
@@ -139,8 +143,19 @@ class ECH0010AddressInformation(ECHModel):
         if has_swiss and has_foreign:
             raise ValueError("Cannot have both swiss_zip_code and foreign_zip_code")
 
-        if not has_swiss and not has_foreign:
-            raise ValueError("Must have either swiss_zip_code or foreign_zip_code")
+        # swissZipCodeAddOn and swissZipCodeId are part of the Swiss sequence
+        # where swissZipCode is required — they cannot exist without it
+        if not has_swiss:
+            if self.swiss_zip_code_add_on is not None:
+                raise ValueError(
+                    "swiss_zip_code_add_on requires swiss_zip_code "
+                    "(part of swissZipCode sequence)"
+                )
+            if self.swiss_zip_code_id is not None:
+                raise ValueError(
+                    "swiss_zip_code_id requires swiss_zip_code "
+                    "(part of swissZipCode sequence)"
+                )
 
         return self
 

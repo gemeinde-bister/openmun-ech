@@ -323,10 +323,40 @@ class TestECH0010AddressInformation:
                 country="CH"
             )
 
-        # Neither present - should fail
-        with pytest.raises(ValidationError, match="Must have either swiss_zip_code or foreign_zip_code"):
+    def test_validate_no_zip_code_allowed(self):
+        """Test that neither zip code is valid (foreign branch, element absent).
+
+        Per XSD v5.1: foreignZipCode has minOccurs=0 in the choice.
+        Per PDF §2.6: foreignZipCode is "(optional)".
+        Valid for foreign addresses without known postal codes.
+        """
+        addr = ECH0010AddressInformation(
+            town="Nairobi",
+            country="KE"
+        )
+        assert addr.swiss_zip_code is None
+        assert addr.foreign_zip_code is None
+        assert addr.country == "KE"
+
+    def test_validate_swiss_zip_addon_requires_zip_code(self):
+        """Test that swissZipCodeAddOn requires swissZipCode.
+
+        Per XSD v5.1: both are in the same xs:sequence where
+        swissZipCode is required.
+        """
+        with pytest.raises(ValidationError, match="swiss_zip_code_add_on requires swiss_zip_code"):
             ECH0010AddressInformation(
                 town="Bister",
+                swiss_zip_code_add_on="01",
+                country="CH"
+            )
+
+    def test_validate_swiss_zip_id_requires_zip_code(self):
+        """Test that swissZipCodeId requires swissZipCode."""
+        with pytest.raises(ValidationError, match="swiss_zip_code_id requires swiss_zip_code"):
+            ECH0010AddressInformation(
+                town="Bister",
+                swiss_zip_code_id=12345,
                 country="CH"
             )
 

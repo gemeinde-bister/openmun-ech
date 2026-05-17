@@ -200,13 +200,22 @@ class TestECH0007Municipality:
                 history_id="ABC"
             )
 
-        # Invalid (too long - Pydantic catches this before custom validator)
-        with pytest.raises(ValidationError, match="String should have at most 12 characters"):
+        # Valid: long history IDs are accepted (XSD v5 is xs:int unbounded)
+        mun = ECH0007Municipality.from_swiss(
+            municipality_id="6172",
+            municipality_name="Goms",
+            canton=CantonAbbreviation.VS,
+            history_id="1234567890123"  # 13 digits — valid per v5 XSD
+        )
+        assert mun.swiss_municipality.history_municipality_id == "1234567890123"
+
+        # Invalid: zero not allowed (must be >= 1)
+        with pytest.raises(ValidationError, match="History municipality ID must be >= 1"):
             ECH0007Municipality.from_swiss(
                 municipality_id="6172",
                 municipality_name="Goms",
                 canton=CantonAbbreviation.VS,
-                history_id="1234567890123"  # 13 digits
+                history_id="0"
             )
 
     def test_to_xml_swiss(self):
