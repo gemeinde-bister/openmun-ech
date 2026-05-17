@@ -40,7 +40,7 @@ Implementation Status:
 - Phase 1.4: Comprehensive Tests - IN PROGRESS
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Dict, List, Optional, Union
 from enum import Enum
 from uuid import uuid4
@@ -5767,7 +5767,7 @@ class BaseDeliveryEvent(BaseModel):
 
         # Step 2: Default message_date to now() if not provided
         if message_date is None:
-            message_date = datetime.now()
+            message_date = datetime.now(timezone.utc)
 
         # Step 3: Determine message_type (auto-detect for eCH-0020 or use override)
         message_type = config.message_type_override or NS.ECH0020_V3

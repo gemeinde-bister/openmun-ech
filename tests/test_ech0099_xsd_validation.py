@@ -6,7 +6,7 @@ to the official eCH-0099 v2.1 XSD schema.
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import pytest
 
 try:
@@ -154,7 +154,7 @@ class TestECH0099XSDValidation:
                 product_version="1.0.0"
             ),
             test_delivery_flag=True,
-            message_date=datetime(2025, 10, 25, 10, 30, 0),
+            message_date=datetime(2025, 10, 25, 10, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW
         )
 

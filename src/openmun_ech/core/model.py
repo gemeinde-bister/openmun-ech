@@ -16,7 +16,7 @@ Usage:
 """
 
 import xml.etree.ElementTree as ET
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, ClassVar, Optional, Self, get_args, get_origin
 
@@ -152,6 +152,12 @@ def _serialize_value(parent_elem: ET.Element, parent_ns: str, meta: XmlMeta, val
         # Nested model: delegate to its to_xml()
         value.to_xml(parent=parent_elem, namespace=field_ns, element_name=meta.xml_name)
 
+    elif isinstance(value, datetime):
+        # datetime before date — datetime is a date subclass but produces
+        # "2025-01-01T14:30:00" (XSD dateTime) vs "2025-01-01" (XSD date)
+        sub = ET.SubElement(parent_elem, f'{{{field_ns}}}{meta.xml_name}')
+        sub.text = value.isoformat()
+
     elif isinstance(value, date):
         sub = ET.SubElement(parent_elem, f'{{{field_ns}}}{meta.xml_name}')
         sub.text = value.isoformat()
@@ -187,6 +193,12 @@ def _deserialize_value(elem: ET.Element, meta: XmlMeta, field_type: type, parent
         # Nested model
         field_ns = meta.ns or parent_ns
         return field_type.from_xml(elem, namespace=field_ns)
+
+    elif field_type is datetime:
+        text = elem.text
+        if not text:
+            raise ValueError(f"Empty text for datetime field: {meta.xml_name}")
+        return datetime.fromisoformat(text.strip())
 
     elif field_type is date:
         text = elem.text

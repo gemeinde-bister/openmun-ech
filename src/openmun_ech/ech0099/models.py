@@ -26,7 +26,7 @@ Implementation Status:
 - Phase 3: Finalization API - COMPLETE
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 from enum import Enum
 from uuid import uuid4
@@ -1717,7 +1717,7 @@ def finalize_statistics_delivery(
         raise ValueError("At least one StatisticsDeliveryEvent is required")
 
     msg_id = message_id or str(uuid4())
-    msg_date = message_date or datetime.now()
+    msg_date = message_date or datetime.now(timezone.utc)
 
     # Build eCH-0058 v4 sending application
     sending_application = ECH0058SendingApplication(

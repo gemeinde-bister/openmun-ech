@@ -6,7 +6,7 @@ to the official eCH-0058 XSD schema.
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import pytest
 
 try:
@@ -97,7 +97,7 @@ class TestECH0058XSDValidation:
                 product="Municipality System",
                 product_version="1.0.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True
         )
@@ -142,8 +142,8 @@ class TestECH0058XSDValidation:
             ),
             subject="Test message",
             comment="This is a test",
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
-            initial_message_date=datetime(2025, 10, 20, 10, 0, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
+            initial_message_date=datetime(2025, 10, 20, 10, 0, 0, tzinfo=timezone.utc),
             event_date=date(2025, 10, 25),
             modification_date=date(2025, 10, 24),
             action=ActionType.NEW,
@@ -193,7 +193,7 @@ class TestECH0058XSDValidation:
                     product="Test",
                     product_version="1.0"
                 ),
-                message_date=datetime(2025, 10, 25, 14, 30, 0),
+                message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
                 action=action,
                 test_delivery_flag=True
             )
@@ -216,8 +216,8 @@ class TestECH0058XSDValidation:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 45),
-            initial_message_date=datetime(2025, 10, 20, 10, 0, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 45, tzinfo=timezone.utc),
+            initial_message_date=datetime(2025, 10, 20, 10, 0, 0, tzinfo=timezone.utc),
             event_date=date(2025, 10, 25),
             action=ActionType.NEW,
             test_delivery_flag=True
@@ -226,9 +226,9 @@ class TestECH0058XSDValidation:
         xml_elem = header.to_xml()
         ns = '{http://www.ech.ch/xmlns/eCH-0058/5}'
 
-        # messageDate should be ISO datetime
+        # messageDate should be ISO datetime with timezone (eCH-0058 §1.5 Grundsatz 5)
         msg_date = xml_elem.find(f'{ns}messageDate').text
-        assert msg_date == "2025-10-25T14:30:45"
+        assert msg_date == "2025-10-25T14:30:45+00:00"
 
         # eventDate should be ISO date
         event_date = xml_elem.find(f'{ns}eventDate').text
@@ -245,7 +245,7 @@ class TestECH0058XSDValidation:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             response_expected=False
@@ -272,7 +272,7 @@ class TestECH0058XSDValidation:
                 product_version="1.0"
             ),
             subject="Test",
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True
         )
@@ -310,7 +310,7 @@ class TestECH0058XSDValidation:
                 product="b" * 30,  # Max 30
                 product_version="c" * 10  # Max 10
             ),
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             subject="d" * 100,  # Max 100
@@ -357,7 +357,7 @@ class TestECH0058XSDValidation:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True
         )
@@ -384,7 +384,7 @@ class TestECH0058XSDValidation:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             named_meta_data=metadata_list

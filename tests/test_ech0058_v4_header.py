@@ -5,7 +5,7 @@ Version: v4.0 (WITHOUT namedMetaData field)
 
 import xml.etree.ElementTree as ET
 import pytest
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pydantic import ValidationError
 
 from openmun_ech.ech0058.v4 import (
@@ -300,7 +300,7 @@ class TestECH0058Header:
                 product="Municipality System",
                 product_version="1.0.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True
         )
@@ -335,8 +335,8 @@ class TestECH0058Header:
             ),
             subject="Test message",
             comment="This is a test",
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
-            initial_message_date=datetime(2025, 10, 20, 10, 0, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
+            initial_message_date=datetime(2025, 10, 20, 10, 0, 0, tzinfo=timezone.utc),
             event_date=date(2025, 10, 25),
             modification_date=date(2025, 10, 24),
             action=ActionType.NEW,
@@ -361,7 +361,7 @@ class TestECH0058Header:
                     product="Test",
                     product_version="1.0"
                 ),
-                message_date=datetime.now(),
+                message_date=datetime.now(timezone.utc),
                 action=ActionType.NEW,
                 test_delivery_flag=True
             )
@@ -377,7 +377,7 @@ class TestECH0058Header:
                 product="Municipality System",
                 product_version="1.0.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True
         )
@@ -404,7 +404,7 @@ class TestECH0058Header:
                 product="Municipality System",
                 product_version="1.0.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True
         )
@@ -426,7 +426,7 @@ class TestECH0058Header:
                 product="Municipality System",
                 product_version="1.0.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True
         )
@@ -452,7 +452,7 @@ class TestECH0058Header:
                 product="Municipality System",
                 product_version="1.0.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             subject="Test",
@@ -486,7 +486,7 @@ class TestECH0058Header:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[attachment]
@@ -513,7 +513,7 @@ class TestECH0058Header:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[
@@ -541,7 +541,7 @@ class TestECH0058Header:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             extension=extension
@@ -567,7 +567,7 @@ class TestECH0058Header:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[AnyXMLContent.from_element(attach_elem)]
@@ -600,7 +600,7 @@ class TestECH0058Header:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime(2025, 10, 25, 14, 30, 0),
+            message_date=datetime(2025, 10, 25, 14, 30, 0, tzinfo=timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             extension=AnyXMLContent.from_element(ext_elem)
@@ -631,7 +631,7 @@ class TestECH0058Header:
                 product="Test",
                 product_version="1.0"
             ),
-            message_date=datetime.now(),
+            message_date=datetime.now(timezone.utc),
             action=ActionType.NEW,
             test_delivery_flag=True,
             attachment=[AnyXMLContent.from_element(attach)],

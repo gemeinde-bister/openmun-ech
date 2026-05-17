@@ -6,7 +6,7 @@ Purpose: Validate Pydantic models for BFS statistics delivery
 
 import pytest
 import xml.etree.ElementTree as ET
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from openmun_ech.ech0099 import (
     ECH0099DataType,
@@ -144,7 +144,7 @@ def sample_header():
         ),
         action=ActionType.NEW,
         test_delivery_flag=True,
-        message_date=datetime(2025, 10, 25, 10, 30, 0)
+        message_date=datetime(2025, 10, 25, 10, 30, 0, tzinfo=timezone.utc)
     )
 
 

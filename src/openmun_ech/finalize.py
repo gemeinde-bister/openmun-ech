@@ -18,7 +18,7 @@ Notes on eCH-0020:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable, List, Optional
 from uuid import uuid4
 
@@ -51,7 +51,7 @@ def finalize_0020_base(
     `ECH0020Delivery` with a list payload (baseDelivery/messages).
     """
     msg_id = message_id or str(uuid4())
-    msg_date = message_date or datetime.now()
+    msg_date = message_date or datetime.now(timezone.utc)
 
     message_type = config.message_type_override or NS.ECH0020_V3
 
@@ -103,7 +103,7 @@ def finalize_0099(
     entries within a single delivery.
     """
     msg_id = message_id or str(uuid4())
-    msg_date = message_date or datetime.now()
+    msg_date = message_date or datetime.now(timezone.utc)
 
     message_type = NS.ECH0099_V2
 
