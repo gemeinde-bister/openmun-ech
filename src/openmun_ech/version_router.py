@@ -1,7 +1,7 @@
-"""Version detection and routing for eCH-0020 standards.
+"""Version detection for eCH-0020 standards.
 
-Automatically detects eCH-0020 version from XML and routes to correct
-importer/exporter implementation.
+Automatically detects eCH-0020 version from XML content using namespace
+URIs, version attributes, or schemaLocation hints.
 """
 
 import xml.etree.ElementTree as ET
@@ -19,7 +19,7 @@ class ECH0020Version(str, Enum):
 
 
 class VersionRouter:
-    """Routes eCH-0020 operations to correct version-specific implementation."""
+    """Detects eCH-0020 version from XML content."""
 
     # Namespace mappings for version detection
     NAMESPACE_MAP = {
@@ -108,48 +108,3 @@ class VersionRouter:
             return tag[1:tag.index('}')]
         return ''
 
-    @staticmethod
-    def get_importer(version: ECH0020Version):
-        """Get importer instance for specific version.
-
-        Args:
-            version: eCH-0020 version
-
-        Returns:
-            Version-specific importer instance
-
-        Note:
-            Currently returns placeholder. Will be implemented with actual
-            importers in migration phases.
-        """
-        if version == ECH0020Version.V3_0:
-            # Will import from openmun.importers.sedex_importer_v3
-            from openmun.importers.sedex_importer import SedexImporter
-            return SedexImporter()  # Current importer handles v3
-        elif version == ECH0020Version.V5_0:
-            raise NotImplementedError("eCH-0020 v5.0 importer not yet implemented")
-        else:
-            raise ValueError(f"Unsupported version: {version}")
-
-    @staticmethod
-    def get_exporter(version: ECH0020Version):
-        """Get exporter instance for specific version.
-
-        Args:
-            version: eCH-0020 version
-
-        Returns:
-            Version-specific exporter instance
-
-        Note:
-            Currently returns placeholder. Will be implemented with actual
-            exporters in migration phases.
-        """
-        if version == ECH0020Version.V3_0:
-            # Will import from openmun.exporters.ech0020_v3_pydantic_exporter
-            from openmun.exporters.ech0020_v3_exporter import ECH0020v3Exporter
-            return ECH0020v3Exporter()  # Current exporter handles v3
-        elif version == ECH0020Version.V5_0:
-            raise NotImplementedError("eCH-0020 v5.0 exporter not yet implemented")
-        else:
-            raise ValueError(f"Unsupported version: {version}")
