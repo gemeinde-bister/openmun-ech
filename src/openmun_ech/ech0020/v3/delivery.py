@@ -391,7 +391,12 @@ class ECH0020Delivery(BaseModel):
     def from_xml(cls, element: ET.Element) -> 'ECH0020Delivery':
         ns = {'eCH-0020': NS.ECH0020_V3}
 
-        version = element.get('version', '3.0')
+        version = element.get('version')
+        if version is None:
+            raise ValueError(
+                "delivery element missing required 'version' attribute "
+                "(eCH-0020 v3.0 XSD: use='required')."
+            )
 
         header_elem = element.find('eCH-0020:deliveryHeader', ns)
         if header_elem is None:

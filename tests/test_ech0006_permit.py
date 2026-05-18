@@ -266,5 +266,5 @@ class TestGetPermitDescription:
         assert desc == 'B Eu Efta'
 
     def test_unknown_permit(self):
-        desc = get_permit_description("9999")
-        assert desc == 'Unknown permit: 9999'
+        with pytest.raises(ValueError, match="Unknown eCH-0006 residence permit code: '9999'"):
+            get_permit_description("9999")

@@ -1145,7 +1145,10 @@ class BaseDeliveryPerson(BaseModel):
                 try:
                     canton_abbr_enum = CantonAbbreviation(self.birth_canton_abbreviation)
                 except ValueError:
-                    canton_abbr_enum = None
+                    raise ValueError(
+                        f"Invalid birth canton abbreviation: '{self.birth_canton_abbreviation}'. "
+                        f"Must be a valid eCH-0007 cantonAbbreviationType."
+                    )
 
             # Convert birth_municipality_history_id to string if provided as int
             birth_hist_muni_id = self.birth_municipality_history_id
@@ -1283,7 +1286,10 @@ class BaseDeliveryPerson(BaseModel):
                         try:
                             marriage_canton_abbr_enum = CantonAbbreviation(self.marriage_canton_abbreviation)
                         except ValueError:
-                            marriage_canton_abbr_enum = None
+                            raise ValueError(
+                                f"Invalid marriage canton abbreviation: '{self.marriage_canton_abbreviation}'. "
+                                f"Must be a valid eCH-0007 cantonAbbreviationType."
+                            )
 
                     # Convert marriage_municipality_history_id to string if provided as int
                     marriage_hist_muni_id = self.marriage_municipality_history_id
@@ -1429,7 +1435,10 @@ class BaseDeliveryPerson(BaseModel):
                         try:
                             death_canton_abbr_enum = CantonAbbreviation(self.death_canton_abbreviation)
                         except ValueError:
-                            death_canton_abbr_enum = None
+                            raise ValueError(
+                                f"Invalid death canton abbreviation: '{self.death_canton_abbreviation}'. "
+                                f"Must be a valid eCH-0007 cantonAbbreviationType."
+                            )
 
                     # Convert history municipality ID to string if needed
                     death_hist_muni_id = self.death_municipality_history_id
@@ -2301,13 +2310,15 @@ class BaseDeliveryPerson(BaseModel):
             for parent in birth_addon_data.name_of_parent:
                 # Mother (type_of_relationship == 3)
                 if parent.type_of_relationship == TypeOfRelationship.MOTHER:
-                    birth_mother_name = parent.official_name or parent.official_name_only
-                    birth_mother_first_name = parent.first_name or parent.first_name_only
+                    # XSD CHOICE: (firstName+officialName) | firstNameOnly | officialNameOnly
+                    # Flatten to Layer 2 fields — _determine_parent_name_variant() reconstructs the branch
+                    birth_mother_name = parent.official_name if parent.official_name is not None else parent.official_name_only
+                    birth_mother_first_name = parent.first_name if parent.first_name is not None else parent.first_name_only
                     birth_mother_official_proof = parent.official_proof_of_name_of_parents_yes_no
                 # Father (type_of_relationship == 4)
                 elif parent.type_of_relationship == TypeOfRelationship.FATHER:
-                    birth_father_name = parent.official_name or parent.official_name_only
-                    birth_father_first_name = parent.first_name or parent.first_name_only
+                    birth_father_name = parent.official_name if parent.official_name is not None else parent.official_name_only
+                    birth_father_first_name = parent.first_name if parent.first_name is not None else parent.first_name_only
                     birth_father_official_proof = parent.official_proof_of_name_of_parents_yes_no
 
         # ====================================================================

@@ -357,16 +357,20 @@ def get_permit_description(permit_code: str) -> str:
     Returns:
         Human-readable description
 
+    Raises:
+        ValueError: If permit_code is not a valid eCH-0006 residence permit code
+
     Examples:
         >>> get_permit_description("02")
         'B'
         >>> get_permit_description("0601")
         'F Eu Efta'
-        >>> get_permit_description("99")
-        'Unknown permit: 99'
     """
     try:
         permit = ResidencePermitType(permit_code)
         return permit.name.replace('_', ' ').title()
     except ValueError:
-        return f"Unknown permit: {permit_code}"
+        raise ValueError(
+            f"Unknown eCH-0006 residence permit code: '{permit_code}'. "
+            f"Not a valid ResidencePermitType value."
+        )
