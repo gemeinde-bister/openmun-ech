@@ -97,7 +97,7 @@ class ECH0011SwissMunicipalityWithoutBFS(ECHModel):
         if nsmap is None:
             nsmap = {
                 None: NS.ECH0011_V8,
-                "eCH-0007": NS.ECH0007_V6
+                "eCH-0007": NS.ECH0007_V5
             }
 
         elem = ET.SubElement(parent, f"{{{nsmap[None]}}}{tag}")
@@ -132,7 +132,7 @@ class ECH0011SwissMunicipalityWithoutBFS(ECHModel):
         if nsmap is None:
             nsmap = {
                 None: NS.ECH0011_V8,
-                "eCH-0007": NS.ECH0007_V6
+                "eCH-0007": NS.ECH0007_V5
             }
 
         ns_0007 = nsmap['eCH-0007']
@@ -184,13 +184,13 @@ class ECH0011NameData(ECHModel):
     __xml_ns__ = NS.ECH0011_V8
     __xml_element__ = 'nameData'
 
-    official_name: str = xml_field(max_length=100)
-    first_name: str = xml_field(max_length=100)
-    original_name: Optional[str] = xml_field(default=None, max_length=100)
-    alliance_name: Optional[str] = xml_field(default=None, max_length=100)
-    alias_name: Optional[str] = xml_field(default=None, max_length=100)
-    other_name: Optional[str] = xml_field(default=None, max_length=100)
-    call_name: Optional[str] = xml_field(default=None, max_length=100)
+    official_name: str = xml_field(min_length=1, max_length=100)
+    first_name: str = xml_field(min_length=1, max_length=100)
+    original_name: Optional[str] = xml_field(default=None, min_length=1, max_length=100)
+    alliance_name: Optional[str] = xml_field(default=None, min_length=1, max_length=100)
+    alias_name: Optional[str] = xml_field(default=None, min_length=1, max_length=100)
+    other_name: Optional[str] = xml_field(default=None, min_length=1, max_length=100)
+    call_name: Optional[str] = xml_field(default=None, min_length=1, max_length=100)
 
     # Choice: name on foreign passport OR declared foreign name (optional)
     name_on_foreign_passport: Optional[ECH0011ForeignerName] = xml_field(default=None)
@@ -670,7 +670,7 @@ class ECH0011PlaceOfOrigin(ECHModel):
     origin_name: str = xml_field(max_length=50)
     canton: str = xml_field(min_length=2, max_length=2)
     place_of_origin_id: Optional[int] = xml_field(default=None)
-    history_municipality_id: Optional[str] = xml_field(default=None, max_length=12)
+    history_municipality_id: Optional[str] = xml_field(default=None)
 
 
 class ECH0011ResidencePermitData(ECHModel):
@@ -1865,8 +1865,8 @@ class ECH0011OtherResidence(ECHModel):
         if nsmap is None:
             nsmap = {
                 None: NS.ECH0011_V8,
-                "eCH-0007": NS.ECH0007_V6,
-                "eCH-0010": NS.ECH0010_V6
+                "eCH-0007": NS.ECH0007_V5,
+                "eCH-0010": NS.ECH0010_V5
             }
 
         ns = nsmap[None]

@@ -31,10 +31,10 @@ class ReligionCode(str, Enum):
     """
     PROTESTANT_REFORMED = "111"                   # evangelisch-reformierte (protestantische) Kirche
     ROMAN_CATHOLIC = "121"                        # römisch-katholische Kirche
-    CHRIST_CATHOLIC = "1221"                      # christkatholische / altkatholische Kirche
-    JEWISH_COMMUNITY = "2112"                     # israelitische Gemeinschaft / jüdische Glaubensgemeinschaft
-    ISRAELITISCHE_CULTUSGEMEINDE = "2112013"     # Israelitische Cultusgemeinde
-    JEWISH_LIBERAL_COMMUNITY = "2113014"         # Jüdisch Liberale Gemeinde
+    CHRIST_CATHOLIC = "122"                       # christkatholische / altkatholische Kirche
+    JEWISH_COMMUNITY = "211"                      # israelitische Gemeinschaft / jüdische Glaubensgemeinschaft
+    ISRAELITISCHE_CULTUSGEMEINDE = "211201"       # Israelitische Cultusgemeinde
+    JEWISH_LIBERAL_COMMUNITY = "211301"           # Jüdisch Liberale Gemeinde
     UNKNOWN = "000"                               # Unbekannt
 
 

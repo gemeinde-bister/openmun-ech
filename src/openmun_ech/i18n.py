@@ -86,10 +86,10 @@ _LABELS: Dict[str, Dict[str, Dict[str, str]]] = {
         'de': {
             '111': 'evangelisch-reformierte (protestantische) Kirche',
             '121': 'römisch-katholische Kirche',
-            '1221': 'christkatholische / altkatholische Kirche',
-            '2112': 'israelitische Gemeinschaft / jüdische Glaubensgemeinschaft',
-            '2112013': 'Israelitische Cultusgemeinde',
-            '2113014': 'Jüdisch Liberale Gemeinde',
+            '122': 'christkatholische / altkatholische Kirche',
+            '211': 'israelitische Gemeinschaft / jüdische Glaubensgemeinschaft',
+            '211201': 'Israelitische Cultusgemeinde',
+            '211301': 'Jüdisch Liberale Gemeinde',
             '000': 'Unbekannt',
         }
     },
