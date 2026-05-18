@@ -98,6 +98,7 @@ _LABELS: Dict[str, Dict[str, Dict[str, str]]] = {
         'de': {
             '1': 'Frau',
             '2': 'Herr',
+            '3': 'Fräulein',
         }
     },
     'CareType': {
@@ -166,7 +167,8 @@ def _normalize_code(code: Any) -> str:
 def get_label(enum_or_name: Any, code: Any, lang: str = 'de') -> str:
     """Return the PDF wording for an enum code in the requested language.
 
-    Falls back to German, then returns the code if no label is found.
+    Returns the code string if no label is found for the requested language.
+    No silent fallback to German — caller must request the language explicitly.
     """
     enum_name = _normalize_enum_name(enum_or_name)
     code_str = _normalize_code(code)
@@ -175,7 +177,7 @@ def get_label(enum_or_name: Any, code: Any, lang: str = 'de') -> str:
     if not per_enum:
         return code_str
 
-    per_lang = per_enum.get(lang) or per_enum.get('de')
+    per_lang = per_enum.get(lang)
     if not per_lang:
         return code_str
 

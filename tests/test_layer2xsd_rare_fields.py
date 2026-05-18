@@ -38,6 +38,7 @@ from openmun_ech.ech0020.models import (
     DwellingAddressInfo,
     PlaceType,
     ResidenceType,
+    DatePrecision,
 )
 from openmun_ech.ech0020.v3 import ECH0020Delivery
 
@@ -336,6 +337,7 @@ class TestLayer2XSDRareFields:
                 first_name="Lisa",
                 sex="2",
                 date_of_birth=date(1990, 3, 12),
+                date_of_birth_precision=DatePrecision.FULL,
                 vn="7561111080789"
             ),
             marital_relationship_type="1",  # married

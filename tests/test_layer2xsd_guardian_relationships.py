@@ -41,6 +41,7 @@ from openmun_ech.ech0020.models import (
     GuardianInfo,
     GuardianType,
     ResidenceType,
+    DatePrecision,
 )
 from openmun_ech.ech0020.v3 import ECH0020Delivery
 
@@ -107,7 +108,8 @@ class TestLayer2XSDGuardianRelationships:
                         first_name="Thomas",
                         original_name=None,
                         sex="1",  # male
-                        date_of_birth=date(1978, 3, 20)
+                        date_of_birth=date(1978, 3, 20),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     organization_uid=None,  # Not organization guardian
                     organization_name=None,
@@ -356,7 +358,8 @@ class TestLayer2XSDGuardianRelationships:
                         first_name="Anna",
                         original_name=None,
                         sex="2",  # female
-                        date_of_birth=date(1982, 9, 12)
+                        date_of_birth=date(1982, 9, 12),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     organization_uid=None,  # Not organization guardian
                     organization_name=None,

@@ -408,7 +408,17 @@ def _header_from_xml(
     declaration_local_reference = decl_ref_elem.text.strip() if decl_ref_elem is not None and decl_ref_elem.text else None
 
     recipient_elems = elem.findall('eCH-0058:recipientId', ns)
-    recipient_id = [r.text.strip() for r in recipient_elems if r.text] if recipient_elems else None
+    if recipient_elems:
+        recipient_id = []
+        for r in recipient_elems:
+            if not r.text or not r.text.strip():
+                raise ValueError(
+                    "Empty recipientId element in eCH-0058 header. "
+                    "eCH-0058 participantIdType requires non-empty content."
+                )
+            recipient_id.append(r.text.strip())
+    else:
+        recipient_id = None
 
     ref_msg_elem = elem.find('eCH-0058:referenceMessageId', ns)
     reference_message_id = ref_msg_elem.text.strip() if ref_msg_elem is not None and ref_msg_elem.text else None

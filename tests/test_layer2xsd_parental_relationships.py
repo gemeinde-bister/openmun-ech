@@ -40,6 +40,7 @@ from openmun_ech.ech0020.models import (
     PersonIdentification,
     ParentInfo,
     ResidenceType,
+    DatePrecision,
 )
 from openmun_ech.ech0020.v3 import ECH0020Delivery
 
@@ -104,7 +105,8 @@ class TestLayer2XSDParentalRelationships:
                         first_name="Maria",
                         original_name="Müller",  # Maiden name
                         sex="2",  # Female
-                        date_of_birth=date(1985, 3, 20)
+                        date_of_birth=date(1985, 3, 20),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     relationship_type="4",  # 4 = biological mother
                     care="0",  # 0 = unknown custody (required field per eCH-0021)
@@ -231,7 +233,8 @@ class TestLayer2XSDParentalRelationships:
                         first_name="Anna",
                         original_name="Meier",  # Maiden name
                         sex="2",  # Female
-                        date_of_birth=date(1988, 5, 15)
+                        date_of_birth=date(1988, 5, 15),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     relationship_type="4",  # 4 = biological mother
                     care="1",  # 1 = joint custody (typical case)
@@ -247,7 +250,8 @@ class TestLayer2XSDParentalRelationships:
                         first_name="Thomas",
                         # No original_name (testing optional field)
                         sex="1",  # Male
-                        date_of_birth=date(1986, 11, 22)
+                        date_of_birth=date(1986, 11, 22),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     relationship_type="3",  # 3 = biological father
                     care="1",  # 1 = joint custody (same as mother)
@@ -378,7 +382,8 @@ class TestLayer2XSDParentalRelationships:
                         official_name="Rossi",
                         first_name="Elena",
                         sex="2",
-                        date_of_birth=date(1992, 7, 10)
+                        date_of_birth=date(1992, 7, 10),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     relationship_type="4",  # 4 = biological mother
                     care="0",  # 0 = unknown (biological parents may not have custody after adoption)
@@ -393,7 +398,8 @@ class TestLayer2XSDParentalRelationships:
                         official_name="Rossi",
                         first_name="Marco",
                         sex="1",
-                        date_of_birth=date(1990, 4, 5)
+                        date_of_birth=date(1990, 4, 5),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     relationship_type="3",  # 3 = biological father
                     care="0",  # 0 = unknown
@@ -408,7 +414,8 @@ class TestLayer2XSDParentalRelationships:
                         official_name="Bernasconi",
                         first_name="Laura",
                         sex="2",
-                        date_of_birth=date(1985, 11, 15)
+                        date_of_birth=date(1985, 11, 15),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     relationship_type="6",  # 6 = adoptive mother
                     care="1",  # 1 = joint custody (with adoptive father)
@@ -423,7 +430,8 @@ class TestLayer2XSDParentalRelationships:
                         official_name="Bernasconi",
                         first_name="Roberto",
                         sex="1",
-                        date_of_birth=date(1983, 9, 20)
+                        date_of_birth=date(1983, 9, 20),
+                        date_of_birth_precision=DatePrecision.FULL
                     ),
                     relationship_type="5",  # 5 = adoptive father
                     care="1",  # 1 = joint custody (with adoptive mother)

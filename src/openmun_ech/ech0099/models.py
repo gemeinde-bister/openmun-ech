@@ -27,7 +27,7 @@ Implementation Status:
 """
 
 from datetime import date, datetime, timezone
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 from enum import Enum
 from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
@@ -225,11 +225,10 @@ class DwellingAddressInfo(BaseModel):
         None,
         description="Postal code ID"
     )
-    country: Optional[str] = Field(
-        None,
-        min_length=2,
-        max_length=2,
-        description="Country code (ISO 3166-1 alpha-2), defaults to 'CH'"
+    # Country — always "CH" for Swiss dwelling addresses (swissAddressInformationType)
+    country: Literal["CH"] = Field(
+        default="CH",
+        description="Country code (always 'CH' — Swiss dwelling addresses per eCH-0010 swissAddressInformationType)"
     )
 
     # Household type (required)
@@ -628,7 +627,7 @@ class StatisticsPerson(BaseModel):
     )
     nationality_country_name: Optional[str] = Field(
         None,
-        description="Nationality country name (REQUIRED for foreign nationals)"
+        description="Nationality country name per eCH-0008 countryNameShort (REQUIRED for all nationals)"
     )
     nationality_valid_from: Optional[date] = Field(
         None,
@@ -1127,14 +1126,20 @@ class StatisticsPerson(BaseModel):
             )
 
         if self.nationality_type == NationalityType.SWISS:
-            # Swiss citizen - use provided nationality_status
+            # Swiss citizen — eCH-0008 countryType requires countryNameShort
+            if not self.nationality_country_name:
+                raise ValueError(
+                    f"nationality_country_name is required for Swiss national "
+                    f"{self.local_person_id}. eCH-0008 countryType requires "
+                    f"countryNameShort — cannot hardcode country names."
+                )
             return ECH0011NationalityData(
                 nationality_status=self.nationality_status,
                 country_info=[ECH0011CountryInfo(
                     country=ECH0008Country(
                         country_id="8100",
                         country_id_iso2="CH",
-                        country_name_short="Schweiz"
+                        country_name_short=self.nationality_country_name
                     ),
                     nationality_valid_from=self.nationality_valid_from
                 )]
@@ -1192,15 +1197,29 @@ class StatisticsPerson(BaseModel):
                 f"for person {self.local_person_id}"
             )
 
+        swiss_zip = int(self.contact_address_zip_code) if self.contact_address_zip_code and self.contact_address_zip_code.isdigit() else None
+
+        # Determine country: Swiss zip code implies CH, otherwise must be explicit
+        if self.contact_address_country:
+            contact_country = self.contact_address_country
+        elif swiss_zip:
+            contact_country = "CH"  # Swiss postal code implies CH
+        else:
+            raise ValueError(
+                f"contact_address_country is required when no Swiss zip code is present "
+                f"for person {self.local_person_id}. "
+                f"eCH-0010 addressInformationType requires country."
+            )
+
         address_info = ECH0010AddressInformation(
             address_line1=self.contact_address_line1,
             address_line2=self.contact_address_line2,
             street=self.contact_address_street,
             house_number=self.contact_address_house_number,
             town=self.contact_address_town,
-            swiss_zip_code=int(self.contact_address_zip_code) if self.contact_address_zip_code and self.contact_address_zip_code.isdigit() else None,
+            swiss_zip_code=swiss_zip,
             swiss_zip_code_add_on=self.contact_address_swiss_zip_code_addon,
-            country=self.contact_address_country or "CH",
+            country=contact_country,
         )
 
         # Build person or organization recipient for mail address
@@ -1242,11 +1261,17 @@ class StatisticsPerson(BaseModel):
             # PersonIdentification requires sex and date_of_birth
             # If not provided, we cannot create a valid PersonIdentification
             if local_id and self.contact_person_sex and self.contact_person_date_of_birth:
+                if not self.contact_person_first_name:
+                    raise ValueError(
+                        f"contact_person_first_name is required for PersonIdentification "
+                        f"(person {self.local_person_id}). "
+                        f"eCH-0044 baseNameType requires minLength=1."
+                    )
                 contact_person = ECH0044PersonIdentification(
                     vn=self.contact_person_vn,
                     local_person_id=local_id,
                     official_name=self.contact_person_official_name,
-                    first_name=self.contact_person_first_name or "",
+                    first_name=self.contact_person_first_name,
                     sex=self.contact_person_sex,
                     date_of_birth=ECH0044DatePartiallyKnown(
                         year_month_day=self.contact_person_date_of_birth
@@ -1256,9 +1281,15 @@ class StatisticsPerson(BaseModel):
         elif self.contact_type == 'partner' and self.contact_person_official_name:
             # Build light person identification (PersonIdentificationLight)
             # sex and date_of_birth are OPTIONAL in this type
+            if not self.contact_person_first_name:
+                raise ValueError(
+                    f"contact_person_first_name is required for PersonIdentificationLight "
+                    f"(person {self.local_person_id}). "
+                    f"eCH-0044 baseNameType requires minLength=1."
+                )
             partner_kwargs: Dict[str, Any] = {
                 'official_name': self.contact_person_official_name,
-                'first_name': self.contact_person_first_name or "",
+                'first_name': self.contact_person_first_name,
             }
             # Add optional fields only if provided (no data invention)
             if self.contact_person_vn:
@@ -1541,7 +1572,7 @@ class StatisticsDeliveryEvent(BaseModel):
             swiss_zip_code=da.swiss_zip_code,
             swiss_zip_code_add_on=da.swiss_zip_code_add_on,
             swiss_zip_code_id=da.swiss_zip_code_id,
-            country=da.country or "CH"
+            country=da.country
         )
         return ECH0011DwellingAddress(
             egid=da.egid,
@@ -1559,6 +1590,16 @@ class StatisticsDeliveryEvent(BaseModel):
         mail_address = None
         has_zip = dest.mail_address_swiss_zip_code or dest.mail_address_foreign_zip_code
         if (dest.mail_address_town or dest.mail_address_street) and has_zip:
+            # Determine country: Swiss zip code implies CH, otherwise must be explicit
+            if dest.mail_address_country:
+                mail_country = dest.mail_address_country
+            elif dest.mail_address_swiss_zip_code:
+                mail_country = "CH"  # Swiss postal code implies CH
+            else:
+                raise ValueError(
+                    "mail_address_country is required when no Swiss zip code is present "
+                    "in destination. eCH-0010 addressInformationType requires country."
+                )
             mail_address = ECH0010AddressInformation(
                 street=dest.mail_address_street,
                 house_number=dest.mail_address_house_number,
@@ -1566,7 +1607,7 @@ class StatisticsDeliveryEvent(BaseModel):
                 swiss_zip_code=dest.mail_address_swiss_zip_code,
                 swiss_zip_code_add_on=dest.mail_address_swiss_zip_code_addon,
                 foreign_zip_code=dest.mail_address_foreign_zip_code,
-                country=dest.mail_address_country or "CH",
+                country=mail_country,
             )
 
         if dest.place_type == PlaceType.UNKNOWN:
@@ -1745,5 +1786,5 @@ def finalize_statistics_delivery(
     return ECH0099Delivery(
         delivery_header=header,
         reported_person=reported_persons,
-        general_data=general_data or []
+        general_data=general_data if general_data is not None else []
     )

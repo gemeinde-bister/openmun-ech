@@ -15,7 +15,7 @@ Layer 2 exposes:
 """
 
 from datetime import date, datetime, timezone
-from typing import List, Optional
+from typing import List, Literal, Optional
 from uuid import uuid4
 from enum import Enum
 from pydantic import BaseModel, Field, model_validator, ConfigDict
@@ -200,12 +200,10 @@ class DwellingAddressInfo(BaseModel):
         description="Official Swiss postal code ID (optional)"
     )
 
-    # Country (default "CH") - ISO 3166-1 alpha-2 code
-    country: str = Field(
+    # Country — always "CH" for Swiss dwelling addresses (swissAddressInformationType)
+    country: Literal["CH"] = Field(
         default="CH",
-        min_length=1,
-        max_length=2,
-        description="Country code, ISO 3166-1 alpha-2 (default 'CH')"
+        description="Country code (always 'CH' — Swiss dwelling addresses per eCH-0010 swissAddressInformationType)"
     )
 
     # Household type (REQUIRED) - Type of household living at this address

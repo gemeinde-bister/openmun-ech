@@ -225,7 +225,7 @@ def _deserialize_value(elem: ET.Element, meta: XmlMeta, field_type: type, parent
         return int(text.strip())
 
     elif field_type is str:
-        return elem.text.strip() if elem.text else ''
+        return elem.text.strip() if elem.text else None
 
     else:
         raise TypeError(

@@ -56,6 +56,7 @@ def swiss_person():
         marital_status="1",
         nationality_type=NationalityType.SWISS,
         nationality_status="2",  # 2 = has known nationality
+        nationality_country_name="Schweiz",
         places_of_origin=[
             PlaceOfOriginInfo(origin_name="Zürich", canton="ZH")
         ],

@@ -20,7 +20,7 @@ from datetime import date
 
 import pytest
 
-from openmun_ech.ech0020.models import BaseDeliveryPerson, PlaceType, PersonIdentification
+from openmun_ech.ech0020.models import BaseDeliveryPerson, PlaceType, PersonIdentification, DatePrecision
 
 
 class TestSpouseRelationship:
@@ -79,7 +79,8 @@ class TestSpouseRelationship:
                 first_name="Thomas",
                 original_name="Müller",  # Maiden name (partner's previous name)
                 sex="1",
-                date_of_birth=date(1980, 7, 22)
+                date_of_birth=date(1980, 7, 22),
+                date_of_birth_precision=DatePrecision.FULL
             ),
 
             # Spouse address (different from main person)

@@ -14,13 +14,14 @@ from enum import Enum
 class MrMrs(str, Enum):
     """Salutation codes per eCH-0010 mrMrsType (used in eCH-0021).
 
-    XSD: mrMrsType (restriction of xs:string)
+    XSD: mrMrsType (restriction of xs:string), values 1, 2, 3.
 
     Note: This type is defined in eCH-0010 but commonly used in eCH-0021
     personAdditionalData for salutation.
     """
     MRS = "1"          # Frau (Mrs)
     MR = "2"           # Herr (Mr)
+    MISS = "3"         # Fräulein (Miss) — deprecated per RFC 2019-43
 
 
 class TypeOfRelationship(str, Enum):

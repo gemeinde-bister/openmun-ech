@@ -108,7 +108,7 @@ def extract_person_identification(
         original_name=person_id.original_name,
         sex=sex,
         date_of_birth=dob,
-        date_of_birth_precision=dob_precision if dob_precision != DatePrecision.FULL else None,
+        date_of_birth_precision=dob_precision if dob else None,
     )
 
 

@@ -39,6 +39,7 @@ from openmun_ech.ech0020.models import (
     PlaceType,
     PersonIdentification,
     ResidenceType,
+    DatePrecision,
 )
 from openmun_ech.ech0020.v3 import ECH0020Delivery
 
@@ -102,7 +103,8 @@ class TestLayer2XSDSpouseRelationship:
                 first_name="Thomas",
                 original_name="Müller",  # Maiden name (partner's previous name)
                 sex="1",
-                date_of_birth=date(1980, 7, 22)
+                date_of_birth=date(1980, 7, 22),
+                date_of_birth_precision=DatePrecision.FULL
             ),
 
             # Spouse address (different from main person)

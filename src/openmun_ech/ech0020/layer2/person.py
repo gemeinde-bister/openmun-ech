@@ -1019,6 +1019,22 @@ class BaseDeliveryPerson(BaseModel):
             (self.contact_person_sex and self.contact_person_date_of_birth)
         )
 
+    @staticmethod
+    def _require_date_precision(precision: 'DatePrecision | None', field_name: str) -> 'DatePrecision':
+        """Require explicit date precision — never default to FULL.
+
+        eCH-0044 datePartiallyKnownType is a choice of yearMonthDay/yearMonth/year.
+        Defaulting to FULL when precision is unknown would claim day-level accuracy
+        for dates that may only be known to year or month level.
+        """
+        if precision is None:
+            raise ValueError(
+                f"date_of_birth_precision is required when date_of_birth is present "
+                f"for {field_name}. eCH-0044 datePartiallyKnownType requires explicit "
+                f"precision (FULL, MONTH, YEAR) — cannot default to FULL."
+            )
+        return precision
+
     def to_ech0020(self) -> ECH0020BaseDeliveryPerson:
         """Convert Layer 2 model to Layer 1 ECH0020BaseDeliveryPerson.
 
@@ -1495,7 +1511,7 @@ class BaseDeliveryPerson(BaseModel):
                         if self.contact_person_date_of_birth:
                             partner_kwargs['date_of_birth'] = date_to_partially_known(
                                 self.contact_person_date_of_birth,
-                                self.contact_person_date_of_birth_precision or DatePrecision.FULL
+                                self._require_date_precision(self.contact_person_date_of_birth_precision, 'contact_person_date_of_birth')
                             )
                         contact_person_partner = ECH0044PersonIdentificationLight(**partner_kwargs)
                     else:
@@ -1514,7 +1530,7 @@ class BaseDeliveryPerson(BaseModel):
                         if self.contact_person_date_of_birth:
                             partner_kwargs['date_of_birth'] = date_to_partially_known(
                                 self.contact_person_date_of_birth,
-                                self.contact_person_date_of_birth_precision or DatePrecision.FULL
+                                self._require_date_precision(self.contact_person_date_of_birth_precision, 'contact_person_date_of_birth')
                             )
                         contact_person_partner = ECH0044PersonIdentificationLight(**partner_kwargs)
                 # Always create mail_address_person for ECH0010MailAddress
@@ -1728,7 +1744,7 @@ class BaseDeliveryPerson(BaseModel):
                 sex=Sex(self.spouse.sex),
                 date_of_birth=date_to_partially_known(
                     self.spouse.date_of_birth,
-                    self.spouse.date_of_birth_precision or DatePrecision.FULL
+                    self._require_date_precision(self.spouse.date_of_birth_precision, 'spouse.date_of_birth')
                 )
             )
 
@@ -1803,7 +1819,7 @@ class BaseDeliveryPerson(BaseModel):
                     sex=Sex(parent_info.person.sex),
                     date_of_birth=date_to_partially_known(
                         parent_info.person.date_of_birth,
-                        parent_info.person.date_of_birth_precision or DatePrecision.FULL
+                        self._require_date_precision(parent_info.person.date_of_birth_precision, f'parent[{parent_info.person.official_name}].date_of_birth')
                     )
                 )
 
@@ -1887,7 +1903,7 @@ class BaseDeliveryPerson(BaseModel):
                             sex=Sex(guardian_info.person.sex),
                             date_of_birth=date_to_partially_known(
                                 guardian_info.person.date_of_birth,
-                                guardian_info.person.date_of_birth_precision or DatePrecision.FULL
+                                self._require_date_precision(guardian_info.person.date_of_birth_precision, f'guardian[{guardian_info.person.official_name}].date_of_birth')
                             )
                         )
                         person_id_field = guardian_person_id
@@ -1904,7 +1920,7 @@ class BaseDeliveryPerson(BaseModel):
                             sex=Sex(guardian_info.person.sex) if guardian_info.person.sex else None,
                             date_of_birth=date_to_partially_known(
                                 guardian_info.person.date_of_birth,
-                                guardian_info.person.date_of_birth_precision or DatePrecision.FULL
+                                self._require_date_precision(guardian_info.person.date_of_birth_precision, f'guardian[{guardian_info.person.official_name}].date_of_birth')
                             ) if guardian_info.person.date_of_birth else None
                         )
                         person_id_field = None
@@ -2184,7 +2200,7 @@ class BaseDeliveryPerson(BaseModel):
 
         # Extract local person ID
         local_person_id = person_id.local_person_id.person_id if person_id.local_person_id else None
-        local_person_id_category = person_id.local_person_id.person_id_category if person_id.local_person_id else "veka.id"
+        local_person_id_category = person_id.local_person_id.person_id_category if person_id.local_person_id else None
 
         # Extract other person IDs (optional, multiple)
         other_person_ids = None
@@ -2354,7 +2370,7 @@ class BaseDeliveryPerson(BaseModel):
                 nat_dict = {
                     'country_id': country_info.country.country_id,  # BFS 4-digit code
                     'country_iso': country_info.country.country_id_iso2,  # ISO 2-letter code
-                    'country_name_short': getattr(country_info.country, 'country_name_short', None),
+                    'country_name_short': country_info.country.country_name_short,
                     'valid_from': country_info.nationality_valid_from
                 }
                 nationalities.append(nat_dict)
@@ -2385,8 +2401,7 @@ class BaseDeliveryPerson(BaseModel):
                 # Convert BFS code from int to string for Layer 2
                 bfs_code = str(origin.place_of_origin_id) if origin.place_of_origin_id is not None else None
 
-                # Extract history_municipality_id if present
-                history_municipality_id = getattr(origin, 'history_municipality_id', None)
+                history_municipality_id = origin.history_municipality_id
 
                 origin_dict = {
                     'name': origin.origin_name,
