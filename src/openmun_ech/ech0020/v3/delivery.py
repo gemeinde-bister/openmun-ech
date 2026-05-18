@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from openmun_ech.core import ECHModel, NS, xml_field
 from openmun_ech.ech0021 import DataLockType
+from openmun_ech.ech0044 import ECH0044PersonIdentification
 from openmun_ech.ech0058 import ECH0058Header
 
 from .base_delivery import (
@@ -160,15 +161,37 @@ class ECH0020Header(BaseModel):
 # ============================================================================
 
 class ECH0020Info(ECHModel):
-    """Information/error message.
+    """Status/error information block.
 
-    XSD: infoType (eCH-0020-3-0.xsd lines 996-1016)
+    XSD: infoType (eCH-0020-3-0.xsd lines 996-1011)
+    All fields optional per XSD. Used in positive/negative reports.
     """
 
     __xml_ns__ = NS.ECH0020_V3
     __xml_element__ = 'info'
 
-    info_text: str = xml_field('infoText', min_length=1)
+    code: Optional[str] = xml_field('code', default=None, min_length=1, max_length=250)
+    text_english: Optional[str] = xml_field('textEnglish', default=None, min_length=1)
+    text_german: Optional[str] = xml_field('textGerman', default=None, min_length=1)
+    text_french: Optional[str] = xml_field('textFrench', default=None, min_length=1)
+    text_italian: Optional[str] = xml_field('textItalian', default=None, min_length=1)
+
+
+class ECH0020PersonError(ECHModel):
+    """Person-specific error in a negative report.
+
+    XSD: inline complexType in negativeReportType (eCH-0020-3-0.xsd lines 1020-1027)
+    """
+
+    __xml_ns__ = NS.ECH0020_V3
+    __xml_element__ = 'personError'
+
+    person_identification: ECH0044PersonIdentification = xml_field(
+        'personIdentification', wrapper=True, child_ns=NS.ECH0044_V4,
+    )
+    error_info: List[ECH0020Info] = xml_field(
+        'errorInfo', is_list=True, min_length=1,
+    )
 
 
 class ECH0020NegativeReport(ECHModel):
@@ -180,8 +203,28 @@ class ECH0020NegativeReport(ECHModel):
     __xml_ns__ = NS.ECH0020_V3
     __xml_element__ = 'negativeReport'
 
-    negative_report_info: List[ECH0020Info] = xml_field(
-        'negativeReportInfo', is_list=True, min_length=1,
+    general_error: Optional[List[ECH0020Info]] = xml_field(
+        'generalError', default=None, is_list=True,
+    )
+    person_error: Optional[List[ECH0020PersonError]] = xml_field(
+        'personError', default=None, is_list=True,
+    )
+
+
+class ECH0020PersonResponse(ECHModel):
+    """Person-specific response in a positive report.
+
+    XSD: inline complexType in positiveReportType (eCH-0020-3-0.xsd lines 1033-1040)
+    """
+
+    __xml_ns__ = NS.ECH0020_V3
+    __xml_element__ = 'personResponse'
+
+    person_identification: ECH0044PersonIdentification = xml_field(
+        'personIdentification', wrapper=True, child_ns=NS.ECH0044_V4,
+    )
+    response: List[ECH0020Info] = xml_field(
+        'response', is_list=True, min_length=1,
     )
 
 
@@ -194,8 +237,11 @@ class ECH0020PositiveReport(ECHModel):
     __xml_ns__ = NS.ECH0020_V3
     __xml_element__ = 'positiveReport'
 
-    positive_report_info: List[ECH0020Info] = xml_field(
-        'positiveReportInfo', is_list=True, min_length=1,
+    general_response: Optional[List[ECH0020Info]] = xml_field(
+        'generalResponse', default=None, is_list=True,
+    )
+    person_response: Optional[List[ECH0020PersonResponse]] = xml_field(
+        'personResponse', default=None, is_list=True,
     )
 
 

@@ -120,7 +120,9 @@ from .admin_events import (
 from .delivery import (
     ECH0020Header,
     ECH0020Info,
+    ECH0020PersonError,
     ECH0020NegativeReport,
+    ECH0020PersonResponse,
     ECH0020PositiveReport,
     ECH0020EventType,
     ECH0020Delivery,
@@ -228,7 +230,9 @@ __all__ = [
     # Delivery container
     "ECH0020Header",
     "ECH0020Info",
+    "ECH0020PersonError",
     "ECH0020NegativeReport",
+    "ECH0020PersonResponse",
     "ECH0020PositiveReport",
     "ECH0020EventType",
     "ECH0020Delivery",

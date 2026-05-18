@@ -46,10 +46,10 @@ class ECH0020EventMaritalStatusPartner(ECHModel):
     __xml_element__ = 'eventMaritalStatusPartner'
 
     marital_status_partner_person: ECH0044PersonIdentification = xml_field(
-        'maritalStatusPartnerPerson', ns=NS.ECH0044_V4,
+        'maritalStatusPartnerPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     marital_data: ECH0011MaritalDataRestrictedMaritalStatusPartner = xml_field(
-        'maritalData', ns=NS.ECH0011_V8,
+        'maritalData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -78,9 +78,9 @@ class ECH0020ChangeSexPerson(ECHModel):
     __xml_element__ = 'changeSexPerson'
 
     person_identification: ECH0044PersonIdentification = xml_field(
-        'personIdentification', ns=NS.ECH0044_V4,
+        'personIdentification', wrapper=True, child_ns=NS.ECH0044_V4,
     )
-    sex: Sex = xml_field('sex', ns=NS.ECH0044_V4)
+    sex: Sex = xml_field('sex')
 
 
 class ECH0020EventChangeSex(ECHModel):
@@ -161,12 +161,12 @@ class ECH0020IdentificationConversionPerson(ECHModel):
     __xml_ns__ = NS.ECH0020_V3
     __xml_element__ = 'identificationConversionPerson'
 
-    vn: Optional[str] = xml_field('vn', ns=NS.ECH0044_V4, default=None)
+    vn: Optional[str] = xml_field('vn', default=None)
     local_person_id_before: ECH0044NamedPersonId = xml_field(
-        'localPersonIdBefore', ns=NS.ECH0044_V4,
+        'localPersonIdBefore', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     local_person_id_after: ECH0044NamedPersonId = xml_field(
-        'localPersonIdAfter', ns=NS.ECH0044_V4,
+        'localPersonIdAfter', wrapper=True, child_ns=NS.ECH0044_V4,
     )
 
 
@@ -212,10 +212,10 @@ class ECH0020EventCorrectNationality(ECHModel):
     __xml_element__ = 'eventCorrectNationality'
 
     correct_nationality_person: ECH0044PersonIdentification = xml_field(
-        'correctNationalityPerson', ns=NS.ECH0044_V4,
+        'correctNationalityPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     nationality_data: ECH0011NationalityData = xml_field(
-        'nationalityData', ns=NS.ECH0011_V8,
+        'nationalityData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -247,10 +247,10 @@ class ECH0020EventCorrectReligion(ECHModel):
     __xml_element__ = 'eventCorrectReligion'
 
     correct_religion_person: ECH0044PersonIdentification = xml_field(
-        'correctReligionPerson', ns=NS.ECH0044_V4,
+        'correctReligionPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     religion_data: ECH0011ReligionData = xml_field(
-        'religionData', ns=NS.ECH0011_V8,
+        'religionData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -333,10 +333,11 @@ class ECH0020EventCorrectGuardianRelationship(ECHModel):
     __xml_element__ = 'eventCorrectGuardianRelationship'
 
     correct_guardian_relationship_person: ECH0044PersonIdentification = xml_field(
-        'correctGuardianRelationshipPerson', ns=NS.ECH0044_V4,
+        'correctGuardianRelationshipPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     guardian_relationship: Optional[List[ECH0021GuardianRelationship]] = xml_field(
-        'guardianRelationship', ns=NS.ECH0021_V7, default=None, is_list=True,
+        'guardianRelationship', default=None,
+        wrapper=True, child_ns=NS.ECH0021_V7, is_list=True,
     )
 
 
@@ -418,10 +419,11 @@ class ECH0020EventCorrectOccupation(ECHModel):
     __xml_element__ = 'eventCorrectOccupation'
 
     correct_occupation_person: ECH0044PersonIdentification = xml_field(
-        'correctOccupationPerson', ns=NS.ECH0044_V4,
+        'correctOccupationPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     job_data: Optional[ECH0021JobData] = xml_field(
-        'jobData', ns=NS.ECH0021_V7, default=None,
+        'jobData', default=None,
+        wrapper=True, child_ns=NS.ECH0021_V7,
     )
 
 
@@ -435,8 +437,9 @@ class ECH0020EventCorrectDeathData(ECHModel):
     __xml_element__ = 'eventCorrectDeathData'
 
     correct_death_data_person: ECH0044PersonIdentification = xml_field(
-        'correctDeathDataPerson', ns=NS.ECH0044_V4,
+        'correctDeathDataPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     death_data: Optional[ECH0011DeathData] = xml_field(
-        'deathData', ns=NS.ECH0011_V8, default=None,
+        'deathData', default=None,
+        wrapper=True, child_ns=NS.ECH0011_V8,
     )

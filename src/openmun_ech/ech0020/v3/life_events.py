@@ -312,7 +312,7 @@ class ECH0020EventNaturalizeForeigner(ECHModel):
     __xml_element__ = 'eventNaturalizeForeigner'
 
     naturalize_foreigner_person: ECH0044PersonIdentification = xml_field(
-        'naturalizeForeignerPerson', ns=NS.ECH0044_V4,
+        'naturalizeForeignerPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     place_of_origin_info: List[ECH0020PlaceOfOriginInfo] = xml_field(
         'placeOfOriginInfo', is_list=True,
@@ -327,7 +327,7 @@ class ECH0020EventNaturalizeSwiss(ECHModel):
     __xml_element__ = 'eventNaturalizeSwiss'
 
     naturalize_swiss_person: ECH0044PersonIdentification = xml_field(
-        'naturalizeSwissPerson', ns=NS.ECH0044_V4,
+        'naturalizeSwissPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     place_of_origin_info: List[ECH0020PlaceOfOriginInfo] = xml_field(
         'placeOfOriginInfo', is_list=True,
@@ -346,13 +346,13 @@ class ECH0020EventUndoCitizen(ECHModel):
     __xml_element__ = 'eventUndoCitizen'
 
     undo_citizen_person: ECH0044PersonIdentification = xml_field(
-        'undoCitizenPerson', ns=NS.ECH0044_V4,
+        'undoCitizenPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     place_of_origin: ECH0011PlaceOfOrigin = xml_field(
-        'placeOfOrigin', ns=NS.ECH0011_V8,
+        'placeOfOrigin', wrapper=True, child_ns=NS.ECH0011_V8,
     )
     place_of_origin_addon: Optional[ECH0021PlaceOfOriginAddonData] = xml_field(
-        'placeOfOriginAddon', ns=NS.ECH0021_V7, default=None,
+        'placeOfOriginAddon', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -363,13 +363,13 @@ class ECH0020EventUndoSwiss(ECHModel):
     __xml_element__ = 'eventUndoSwiss'
 
     undo_swiss_person: ECH0044PersonIdentification = xml_field(
-        'undoSwissPerson', ns=NS.ECH0044_V4,
+        'undoSwissPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     nationality_data: ECH0011NationalityData = xml_field(
-        'nationalityData', ns=NS.ECH0011_V8,
+        'nationalityData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
     residence_permit_data: Optional[ECH0011ResidencePermitData] = xml_field(
-        'residencePermitData', ns=NS.ECH0011_V8, default=None,
+        'residencePermitData', wrapper=True, child_ns=NS.ECH0011_V8, default=None,
     )
     undo_swiss_valid_from: Optional[date] = xml_field(
         'undoSwissValidFrom', default=None,
@@ -388,7 +388,7 @@ class ECH0020EventChangeOrigin(ECHModel):
     __xml_element__ = 'eventChangeOrigin'
 
     change_origin_person: ECH0044PersonIdentification = xml_field(
-        'changeOriginPerson', ns=NS.ECH0044_V4,
+        'changeOriginPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     origin_info: List[ECH0020PlaceOfOriginInfo] = xml_field(
         'originInfo', is_list=True,
@@ -538,18 +538,18 @@ class ECH0020EventMarriage(ECHModel):
 class ECH0020EventPartnership(ECHModel):
     """Registered partnership event.
 
-    NO wrapper pattern — uses direct ns= for cross-namespace fields.
+    Uses wrapper pattern for cross-namespace fields (eCH-0044, eCH-0021).
     """
 
     __xml_ns__ = NS.ECH0020_V3
     __xml_element__ = 'eventPartnership'
 
     partnership_person: ECH0044PersonIdentification = xml_field(
-        'partnershipPerson', ns=NS.ECH0044_V4,
+        'partnershipPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     marital_info: ECH0020MaritalInfoRestrictedMarriage = xml_field('maritalInfo')
     partnership_relationship: Optional[ECH0021MaritalRelationship] = xml_field(
-        'partnershipRelationship', ns=NS.ECH0021_V7, default=None,
+        'partnershipRelationship', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -565,10 +565,10 @@ class ECH0020EventSeparation(ECHModel):
     __xml_element__ = 'eventSeparation'
 
     separation_person: ECH0044PersonIdentification = xml_field(
-        'separationPerson', ns=NS.ECH0044_V4,
+        'separationPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     separation_data: ECH0011SeparationData = xml_field(
-        'separationData', ns=NS.ECH0011_V8,
+        'separationData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -579,7 +579,7 @@ class ECH0020EventUndoSeparation(ECHModel):
     __xml_element__ = 'eventUndoSeparation'
 
     undo_separation_person: ECH0044PersonIdentification = xml_field(
-        'undoSeparationPerson', ns=NS.ECH0044_V4,
+        'undoSeparationPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     separation_valid_till: Optional[date] = xml_field(
         'separationValidTill', default=None,
@@ -598,10 +598,10 @@ class ECH0020EventDivorce(ECHModel):
     __xml_element__ = 'eventDivorce'
 
     divorce_person: ECH0044PersonIdentification = xml_field(
-        'divorcePerson', ns=NS.ECH0044_V4,
+        'divorcePerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     marital_data: ECH0011MaritalDataRestrictedDivorce = xml_field(
-        'maritalData', ns=NS.ECH0011_V8,
+        'maritalData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -617,10 +617,10 @@ class ECH0020EventUndoMarriage(ECHModel):
     __xml_element__ = 'eventUndoMarriage'
 
     undo_marriage_person: ECH0044PersonIdentification = xml_field(
-        'undoMarriagePerson', ns=NS.ECH0044_V4,
+        'undoMarriagePerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     marital_data: ECH0011MaritalDataRestrictedUndoMarried = xml_field(
-        'maritalData', ns=NS.ECH0011_V8,
+        'maritalData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -631,10 +631,10 @@ class ECH0020EventUndoPartnership(ECHModel):
     __xml_element__ = 'eventUndoPartnership'
 
     undo_partnership_person: ECH0044PersonIdentification = xml_field(
-        'undoPartnershipPerson', ns=NS.ECH0044_V4,
+        'undoPartnershipPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     marital_data: ECH0011MaritalDataRestrictedUndoPartnership = xml_field(
-        'maritalData', ns=NS.ECH0011_V8,
+        'maritalData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -663,17 +663,17 @@ class ECH0020EventDeath(ECHModel):
 class ECH0020EventMissing(ECHModel):
     """Missing person event — register person as missing (presumed dead).
 
-    NO wrapper pattern.
+    Uses wrapper pattern for cross-namespace fields (eCH-0044, eCH-0011).
     """
 
     __xml_ns__ = NS.ECH0020_V3
     __xml_element__ = 'eventMissing'
 
     missing_person: ECH0044PersonIdentification = xml_field(
-        'missingPerson', ns=NS.ECH0044_V4,
+        'missingPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     death_data: ECH0011DeathData = xml_field(
-        'deathData', ns=NS.ECH0011_V8,
+        'deathData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -684,7 +684,7 @@ class ECH0020EventUndoMissing(ECHModel):
     __xml_element__ = 'eventUndoMissing'
 
     undo_missing_person: ECH0044PersonIdentification = xml_field(
-        'undoMissingPerson', ns=NS.ECH0044_V4,
+        'undoMissingPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     undo_missing_valid_from: Optional[date] = xml_field(
         'undoMissingValidFrom', default=None,

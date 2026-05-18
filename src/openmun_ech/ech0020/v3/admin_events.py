@@ -13,7 +13,6 @@ from openmun_ech.ech0011 import (
 from openmun_ech.ech0021 import DataLockType
 from openmun_ech.ech0021.v7 import (
     ECH0021PersonAdditionalData,
-    ECH0021LockData,
     ECH0021JobData,
     ECH0021HealthInsuranceData,
     ECH0021ArmedForcesData,
@@ -37,10 +36,10 @@ class ECH0020EventChangeReligion(ECHModel):
     __xml_element__ = 'eventChangeReligion'
 
     change_religion_person: ECH0044PersonIdentification = xml_field(
-        'changeReligionPerson', ns=NS.ECH0044_V4,
+        'changeReligionPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     religion_data: ECH0011ReligionData = xml_field(
-        'religionData', ns=NS.ECH0011_V8,
+        'religionData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -54,10 +53,10 @@ class ECH0020EventChangeOccupation(ECHModel):
     __xml_element__ = 'eventChangeOccupation'
 
     change_occupation_person: ECH0044PersonIdentification = xml_field(
-        'changeOccupationPerson', ns=NS.ECH0044_V4,
+        'changeOccupationPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     job_data: Optional[ECH0021JobData] = xml_field(
-        'jobData', ns=NS.ECH0021_V7, default=None,
+        'jobData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -71,10 +70,10 @@ class ECH0020EventGuardianMeasure(ECHModel):
     __xml_element__ = 'eventGuardianMeasure'
 
     guardian_measure_person: ECH0044PersonIdentification = xml_field(
-        'guardianMeasurePerson', ns=NS.ECH0044_V4,
+        'guardianMeasurePerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     relationship: ECH0021GuardianRelationship = xml_field(
-        'relationship', ns=NS.ECH0021_V7,
+        'relationship', wrapper=True, child_ns=NS.ECH0021_V7,
     )
 
 
@@ -88,10 +87,10 @@ class ECH0020EventUndoGuardian(ECHModel):
     __xml_element__ = 'eventUndoGuardian'
 
     undo_guardian_person: ECH0044PersonIdentification = xml_field(
-        'undoGuardianPerson', ns=NS.ECH0044_V4,
+        'undoGuardianPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     guardian_relationship_id: str = xml_field(
-        'guardianRelationshipId', ns=NS.ECH0021_V7,
+        'guardianRelationshipId',
         min_length=1, max_length=36,
     )
     undo_guardian_valid_from: Optional[date] = xml_field(
@@ -109,10 +108,10 @@ class ECH0020EventChangeGuardian(ECHModel):
     __xml_element__ = 'eventChangeGuardian'
 
     change_guardian_person: ECH0044PersonIdentification = xml_field(
-        'changeGuardianPerson', ns=NS.ECH0044_V4,
+        'changeGuardianPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     relationship: ECH0021GuardianRelationship = xml_field(
-        'relationship', ns=NS.ECH0021_V7,
+        'relationship', wrapper=True, child_ns=NS.ECH0021_V7,
     )
     change_guardian_valid_from: Optional[date] = xml_field(
         'changeGuardianValidFrom', default=None,
@@ -129,10 +128,10 @@ class ECH0020EventChangeNationality(ECHModel):
     __xml_element__ = 'eventChangeNationality'
 
     change_nationality_person: ECH0044PersonIdentification = xml_field(
-        'changeNationalityPerson', ns=NS.ECH0044_V4,
+        'changeNationalityPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     nationality_data: ECH0011NationalityData = xml_field(
-        'nationalityData', ns=NS.ECH0011_V8,
+        'nationalityData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -146,13 +145,13 @@ class ECH0020EventEntryResidencePermit(ECHModel):
     __xml_element__ = 'eventEntryResidencePermit'
 
     entry_residence_permit_person: ECH0044PersonIdentification = xml_field(
-        'entryResidencePermitPerson', ns=NS.ECH0044_V4,
+        'entryResidencePermitPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     job_data: Optional[ECH0021JobData] = xml_field(
-        'jobData', ns=NS.ECH0021_V7, default=None,
+        'jobData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
     residence_permit_data: ECH0011ResidencePermitData = xml_field(
-        'residencePermitData', ns=NS.ECH0011_V8,
+        'residencePermitData', wrapper=True, child_ns=NS.ECH0011_V8,
     )
 
 
@@ -166,11 +165,9 @@ class ECH0020EventDataLock(ECHModel):
     __xml_element__ = 'eventDataLock'
 
     data_lock_person: ECH0044PersonIdentification = xml_field(
-        'dataLockPerson', ns=NS.ECH0044_V4,
+        'dataLockPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
-    data_lock: ECH0021LockData = xml_field(
-        'dataLock', ns=NS.ECH0021_V7,
-    )
+    data_lock: DataLockType = xml_field('dataLock')
     data_lock_valid_from: Optional[date] = xml_field(
         'dataLockValidFrom', default=None,
     )
@@ -189,11 +186,9 @@ class ECH0020EventPaperLock(ECHModel):
     __xml_element__ = 'eventPaperLock'
 
     paper_lock_person: ECH0044PersonIdentification = xml_field(
-        'paperLockPerson', ns=NS.ECH0044_V4,
+        'paperLockPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
-    paper_lock: YesNo = xml_field(
-        'paperLock', ns=NS.ECH0021_V7,
-    )
+    paper_lock: YesNo = xml_field('paperLock')
     paper_lock_valid_from: Optional[date] = xml_field(
         'paperLockValidFrom', default=None,
     )
@@ -212,10 +207,10 @@ class ECH0020EventCare(ECHModel):
     __xml_element__ = 'eventCare'
 
     care_person: ECH0044PersonIdentification = xml_field(
-        'carePerson', ns=NS.ECH0044_V4,
+        'carePerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     parental_relationship: List[ECH0021ParentalRelationship] = xml_field(
-        'parentalRelationship', ns=NS.ECH0021_V7, is_list=True, default_factory=list,
+        'parentalRelationship', wrapper=True, child_ns=NS.ECH0021_V7, is_list=True, default_factory=list,
     )
 
 
@@ -248,10 +243,10 @@ class ECH0020EventCorrectPoliticalRightData(ECHModel):
     __xml_element__ = 'eventCorrectPoliticalRightData'
 
     correct_political_right_data_person: ECH0044PersonIdentification = xml_field(
-        'correctPoliticalRightDataPerson', ns=NS.ECH0044_V4,
+        'correctPoliticalRightDataPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     political_right_data: Optional[ECH0021PoliticalRightData] = xml_field(
-        'politicalRightData', ns=NS.ECH0021_V7, default=None,
+        'politicalRightData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -265,7 +260,7 @@ class ECH0020EventCorrectDataLock(ECHModel):
     __xml_element__ = 'eventCorrectDataLock'
 
     correct_data_lock_person: ECH0044PersonIdentification = xml_field(
-        'correctDataLockPerson', ns=NS.ECH0044_V4,
+        'correctDataLockPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     data_lock: DataLockType = xml_field('dataLock')
     data_lock_valid_from: Optional[date] = xml_field(
@@ -286,7 +281,7 @@ class ECH0020EventCorrectPaperLock(ECHModel):
     __xml_element__ = 'eventCorrectPaperLock'
 
     correct_paper_lock_person: ECH0044PersonIdentification = xml_field(
-        'correctPaperLockPerson', ns=NS.ECH0044_V4,
+        'correctPaperLockPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     paper_lock: YesNo = xml_field('paperLock')
     paper_lock_valid_from: Optional[date] = xml_field(
@@ -307,10 +302,10 @@ class ECH0020EventAnnounceDuplicate(ECHModel):
     __xml_element__ = 'eventAnnounceDuplicate'
 
     correct_entry: ECH0044PersonIdentification = xml_field(
-        'correctEntry', ns=NS.ECH0044_V4,
+        'correctEntry', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     duplicate_entry: List[ECH0044PersonIdentification] = xml_field(
-        'duplicateEntry', ns=NS.ECH0044_V4, is_list=True,
+        'duplicateEntry', wrapper=True, child_ns=NS.ECH0044_V4, is_list=True,
     )
 
 
@@ -325,7 +320,7 @@ class ECH0020EventDeletedInRegister(ECHModel):
     __xml_element__ = 'eventDeletedInRegister'
 
     deledet_in_register_person: ECH0044PersonIdentification = xml_field(
-        'deledetInRegisterPerson', ns=NS.ECH0044_V4,
+        'deledetInRegisterPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
 
 
@@ -339,10 +334,10 @@ class ECH0020EventChangeArmedForces(ECHModel):
     __xml_element__ = 'eventChangeArmedForces'
 
     change_armed_forces_person: ECH0044PersonIdentification = xml_field(
-        'changeArmedForcesPerson', ns=NS.ECH0044_V4,
+        'changeArmedForcesPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     armed_forces_data: Optional[ECH0021ArmedForcesData] = xml_field(
-        'armedForcesData', ns=NS.ECH0021_V7, default=None,
+        'armedForcesData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -356,10 +351,10 @@ class ECH0020EventChangeCivilDefense(ECHModel):
     __xml_element__ = 'eventChangeCivilDefense'
 
     change_civil_defense_person: ECH0044PersonIdentification = xml_field(
-        'changeCivilDefensePerson', ns=NS.ECH0044_V4,
+        'changeCivilDefensePerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     civil_defense_data: Optional[ECH0021CivilDefenseData] = xml_field(
-        'civilDefenseData', ns=NS.ECH0021_V7, default=None,
+        'civilDefenseData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -373,10 +368,10 @@ class ECH0020EventChangeFireService(ECHModel):
     __xml_element__ = 'eventChangeFireService'
 
     change_fire_service_person: ECH0044PersonIdentification = xml_field(
-        'changeFireServicePerson', ns=NS.ECH0044_V4,
+        'changeFireServicePerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     fire_service_data: Optional[ECH0021FireServiceData] = xml_field(
-        'fireServiceData', ns=NS.ECH0021_V7, default=None,
+        'fireServiceData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -390,10 +385,10 @@ class ECH0020EventChangeHealthInsurance(ECHModel):
     __xml_element__ = 'eventChangeHealthInsurance'
 
     change_health_insurance_person: ECH0044PersonIdentification = xml_field(
-        'changeHealthInsurancePerson', ns=NS.ECH0044_V4,
+        'changeHealthInsurancePerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     health_insurance_data: Optional[ECH0021HealthInsuranceData] = xml_field(
-        'healthInsuranceData', ns=NS.ECH0021_V7, default=None,
+        'healthInsuranceData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
 
@@ -407,8 +402,8 @@ class ECH0020EventChangeMatrimonialInheritanceArrangement(ECHModel):
     __xml_element__ = 'eventChangeMatrimonialInheritanceArrangement'
 
     change_matrimonial_inheritance_arrangement_person: ECH0044PersonIdentification = xml_field(
-        'changeMatrimonialInheritanceArrangementPerson', ns=NS.ECH0044_V4,
+        'changeMatrimonialInheritanceArrangementPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     matrimonial_inheritance_arrangement_data: Optional[ECH0021MatrimonialInheritanceArrangementData] = xml_field(
-        'matrimonialInheritanceArrangementData', ns=NS.ECH0021_V7, default=None,
+        'matrimonialInheritanceArrangementData', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
