@@ -25,7 +25,7 @@ from openmun_ech.ech0011 import (
 from openmun_ech.ech0021.v7 import (
     ECH0021PersonAdditionalData,
     ECH0021LockData,
-    ECH0021PlaceOfOriginAddonData,
+    ECH0021PlaceOfOriginAddonRestrictedUnDo,
     ECH0021HealthInsuranceData,
     ECH0021ParentalRelationship,
     ECH0021MaritalRelationship,
@@ -79,12 +79,16 @@ class ECH0020AddParent(ECHModel):
         else:
             elem = ET.Element(f'{{{ns}}}{name}')
 
-        self.parental_relationship.to_xml(
-            parent=elem, namespace=ns_021, element_name='parentalRelationship',
-        )
+        # XSD extension pattern: base type children are flattened into the
+        # extended element (no <parentalRelationship> wrapper).
+        rel_tmp = self.parental_relationship.to_xml(namespace=ns_021)
+        for child in list(rel_tmp):
+            elem.append(child)
+
+        # Extension field — eCH-0020 namespace (defined in eCH-0020 schema)
         if self.name_of_parent_at_event:
             self.name_of_parent_at_event.to_xml(
-                parent=elem, namespace=ns_021, element_name='nameOfParentAtEvent',
+                parent=elem, namespace=ns, element_name='nameOfParentAtEvent',
             )
 
         return elem
@@ -94,17 +98,12 @@ class ECH0020AddParent(ECHModel):
         ns_020 = NS.ECH0020_V3
         ns_021 = NS.ECH0021_V7
 
-        # Production XML may use either eCH-0020 or eCH-0021 namespace for child elements
-        rel_elem = elem.find(f'{{{ns_020}}}parentalRelationship')
-        if rel_elem is None:
-            rel_elem = elem.find(f'{{{ns_021}}}parentalRelationship')
-        if rel_elem is None:
-            raise ValueError("addParent requires parentalRelationship")
-        parental_relationship = ECH0021ParentalRelationship.from_xml(rel_elem)
+        # XSD extension: base type children (partner, typeOfRelationship, care)
+        # appear directly under <addParent>, not wrapped in <parentalRelationship>.
+        parental_relationship = ECH0021ParentalRelationship.from_xml(elem, namespace=ns_021)
 
+        # Extension field — eCH-0020 namespace (defined in eCH-0020 schema)
         name_elem = elem.find(f'{{{ns_020}}}nameOfParentAtEvent')
-        if name_elem is None:
-            name_elem = elem.find(f'{{{ns_021}}}nameOfParentAtEvent')
         name_of_parent_at_event = (
             ECH0021NameOfParent.from_xml(name_elem) if name_elem is not None else None
         )
@@ -146,12 +145,16 @@ class ECH0020RemoveParent(ECHModel):
         else:
             elem = ET.Element(f'{{{ns}}}{name}')
 
-        self.parental_relationship.to_xml(
-            parent=elem, namespace=ns_021, element_name='parentalRelationship',
-        )
+        # XSD extension pattern: base type children are flattened into the
+        # extended element (no <parentalRelationship> wrapper).
+        rel_tmp = self.parental_relationship.to_xml(namespace=ns_021)
+        for child in list(rel_tmp):
+            elem.append(child)
+
+        # Extension field — eCH-0020 namespace (defined in eCH-0020 schema)
         if self.name_of_parent_at_event:
             self.name_of_parent_at_event.to_xml(
-                parent=elem, namespace=ns_021, element_name='nameOfParentAtEvent',
+                parent=elem, namespace=ns, element_name='nameOfParentAtEvent',
             )
 
         return elem
@@ -161,16 +164,12 @@ class ECH0020RemoveParent(ECHModel):
         ns_020 = NS.ECH0020_V3
         ns_021 = NS.ECH0021_V7
 
-        rel_elem = elem.find(f'{{{ns_020}}}parentalRelationship')
-        if rel_elem is None:
-            rel_elem = elem.find(f'{{{ns_021}}}parentalRelationship')
-        if rel_elem is None:
-            raise ValueError("removeParent requires parentalRelationship")
-        parental_relationship = ECH0021ParentalRelationship.from_xml(rel_elem)
+        # XSD extension: base type children (partner, typeOfRelationship, care)
+        # appear directly under <removeParent>, not wrapped in <parentalRelationship>.
+        parental_relationship = ECH0021ParentalRelationship.from_xml(elem, namespace=ns_021)
 
+        # Extension field — eCH-0020 namespace (defined in eCH-0020 schema)
         name_elem = elem.find(f'{{{ns_020}}}nameOfParentAtEvent')
-        if name_elem is None:
-            name_elem = elem.find(f'{{{ns_021}}}nameOfParentAtEvent')
         name_of_parent_at_event = (
             ECH0021NameOfParent.from_xml(name_elem) if name_elem is not None else None
         )
@@ -290,10 +289,10 @@ class ECH0020EventChildRelationship(ECHModel):
 
     child_relationship_person: ECH0020InfostarPerson = xml_field('childRelationshipPerson')
     add_parent: Optional[List[ECH0020AddParent]] = xml_field(
-        'addParent', default=None, is_list=True,
+        'addParent', default=None, is_list=True, max_length=2,
     )
     remove_parent: Optional[List[ECH0020RemoveParent]] = xml_field(
-        'removeParent', default=None, is_list=True,
+        'removeParent', default=None, is_list=True, max_length=2,
     )
     child_relationship_valid_from: Optional[date] = xml_field(
         'childRelationshipValidFrom', default=None,
@@ -315,7 +314,7 @@ class ECH0020EventNaturalizeForeigner(ECHModel):
         'naturalizeForeignerPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     place_of_origin_info: List[ECH0020PlaceOfOriginInfo] = xml_field(
-        'placeOfOriginInfo', is_list=True,
+        'placeOfOriginInfo', is_list=True, min_length=1,
     )
     nationality: ECH0020SwissNationality = xml_field('nationality')
 
@@ -330,7 +329,7 @@ class ECH0020EventNaturalizeSwiss(ECHModel):
         'naturalizeSwissPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     place_of_origin_info: List[ECH0020PlaceOfOriginInfo] = xml_field(
-        'placeOfOriginInfo', is_list=True,
+        'placeOfOriginInfo', is_list=True, min_length=1,
     )
 
 
@@ -340,7 +339,14 @@ class ECH0020EventNaturalizeSwiss(ECHModel):
 
 
 class ECH0020EventUndoCitizen(ECHModel):
-    """Undo citizenship — remove a place of origin."""
+    """Undo citizenship — remove a place of origin.
+
+    XSD: eventUndoCitizen (eCH-0020-3-0.xsd lines 322-328)
+    PDF: §3.4.5 Bürgerrechtsentlassung aus Gemeinde
+
+    placeOfOriginAddon uses the restricted type (only expatriationDate, required)
+    per XSD placeOfOriginAddonRestrictedUnDoDataType.
+    """
 
     __xml_ns__ = NS.ECH0020_V3
     __xml_element__ = 'eventUndoCitizen'
@@ -351,7 +357,7 @@ class ECH0020EventUndoCitizen(ECHModel):
     place_of_origin: ECH0011PlaceOfOrigin = xml_field(
         'placeOfOrigin', wrapper=True, child_ns=NS.ECH0011_V8,
     )
-    place_of_origin_addon: Optional[ECH0021PlaceOfOriginAddonData] = xml_field(
+    place_of_origin_addon: Optional[ECH0021PlaceOfOriginAddonRestrictedUnDo] = xml_field(
         'placeOfOriginAddon', wrapper=True, child_ns=NS.ECH0021_V7, default=None,
     )
 
@@ -391,7 +397,7 @@ class ECH0020EventChangeOrigin(ECHModel):
         'changeOriginPerson', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     origin_info: List[ECH0020PlaceOfOriginInfo] = xml_field(
-        'originInfo', is_list=True,
+        'originInfo', is_list=True, min_length=1,
     )
 
 

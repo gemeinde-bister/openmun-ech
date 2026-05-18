@@ -36,6 +36,7 @@ from ._shared import (
     _make_partner_and_marital,
     _make_person_additional_data,
     _make_place_of_origin_addon_data,
+    _make_place_of_origin_addon_restricted_undo,
 )
 
 
@@ -45,6 +46,7 @@ from ._shared import (
 
 ECH0021PersonAdditionalData = _make_person_additional_data(V7_CONFIG)
 ECH0021PlaceOfOriginAddonData = _make_place_of_origin_addon_data(V7_CONFIG)
+ECH0021PlaceOfOriginAddonRestrictedUnDo = _make_place_of_origin_addon_restricted_undo(V7_CONFIG)
 ECH0021MaritalDataAddon = _make_marital_data_addon(V7_CONFIG)
 ECH0021ArmedForcesData = _make_armed_forces_data(V7_CONFIG)
 ECH0021CivilDefenseData = _make_civil_defense_data(V7_CONFIG)

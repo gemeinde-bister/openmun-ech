@@ -305,7 +305,7 @@ class ECH0020EventAnnounceDuplicate(ECHModel):
         'correctEntry', wrapper=True, child_ns=NS.ECH0044_V4,
     )
     duplicate_entry: List[ECH0044PersonIdentification] = xml_field(
-        'duplicateEntry', wrapper=True, child_ns=NS.ECH0044_V4, is_list=True,
+        'duplicateEntry', wrapper=True, child_ns=NS.ECH0044_V4, is_list=True, min_length=1,
     )
 
 

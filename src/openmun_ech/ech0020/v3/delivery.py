@@ -246,8 +246,16 @@ class ECH0020PositiveReport(ECHModel):
 
 
 # ============================================================================
-# DELIVERY TYPE (custom override — 71-event Union dispatch)
+# DELIVERY TYPE (custom override — 65-element CHOICE dispatch)
 # ============================================================================
+
+# XSD v3.0 has one case where the delivery CHOICE element name differs from the
+# event type name: element "changeResidencePermit" uses type "eventEntryResidencePermit"
+# (fixed in v4.0 by renaming the type to match). Our class name follows the type,
+# so the auto-derived element name would be wrong.
+_EVENT_ELEMENT_NAME_OVERRIDES = {
+    'ECH0020EventEntryResidencePermit': 'changeResidencePermit',
+}
 
 ECH0020EventType = Union[
     List[ECH0020EventBaseDelivery],
@@ -319,14 +327,16 @@ ECH0020EventType = Union[
 
 
 class ECH0020Delivery(BaseModel):
-    """Main delivery container — root element with 71 event types.
+    """Main delivery container — root element with 65-element CHOICE.
 
     XSD: deliveryType (eCH-0020-3-0.xsd lines 905-995)
     Custom override: event dispatch logic, version attribute.
+    Note: element name "changeResidencePermit" differs from type name
+    "eventEntryResidencePermit" in v3.0 XSD (fixed in v4.0, see Anhang D RFC 2018-52).
     """
 
     delivery_header: ECH0020Header = Field(..., alias='deliveryHeader')
-    event: ECH0020EventType = Field(..., description='Event data (XSD CHOICE of 71 event types)')
+    event: ECH0020EventType = Field(..., description='Event data (XSD CHOICE of 65 event types)')
     version: Literal["3.0"] = Field("3.0")
 
     model_config = ConfigDict(populate_by_name=True)
@@ -360,14 +370,19 @@ class ECH0020Delivery(BaseModel):
                             msgs_elem.append(child)
                 elif isinstance(self.event[0], ECH0020EventKeyExchange):
                     key_elem = ET.SubElement(elem, f'{{{namespace}}}keyExchange')
-                    msgs_elem = ET.SubElement(key_elem, f'{{{namespace}}}messages')
                     for msg in self.event:
-                        msg.to_xml(parent=msgs_elem, namespace=namespace)
+                        msgs_elem = ET.SubElement(key_elem, f'{{{namespace}}}messages')
+                        msg_root = msg.to_xml(namespace=namespace)
+                        for child in msg_root:
+                            msgs_elem.append(child)
         else:
             event_type = type(self.event).__name__
             if event_type.startswith('ECH0020Event'):
-                event_name = event_type[12:]
-                event_name = event_name[0].lower() + event_name[1:]
+                # Check for XSD naming exceptions (element name != type name)
+                event_name = _EVENT_ELEMENT_NAME_OVERRIDES.get(event_type)
+                if event_name is None:
+                    event_name = event_type[12:]
+                    event_name = event_name[0].lower() + event_name[1:]
                 self.event.to_xml(parent=elem, namespace=namespace, element_name=event_name)
 
         return elem

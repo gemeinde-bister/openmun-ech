@@ -180,7 +180,7 @@ class ECH0020EventIdentificationConversion(ECHModel):
     __xml_element__ = 'eventIdentificationConversion'
 
     identification_conversion_person: List[ECH0020IdentificationConversionPerson] = xml_field(
-        'identificationConversionPerson', is_list=True,
+        'identificationConversionPerson', is_list=True, min_length=1,
     )
     identification_valid_from: Optional[date] = xml_field(
         'identificationValidFrom', default=None,

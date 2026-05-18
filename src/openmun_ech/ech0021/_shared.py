@@ -118,6 +118,28 @@ def _make_place_of_origin_addon_data(cfg: ECH0021VersionConfig) -> type:
     return ECH0021PlaceOfOriginAddonData
 
 
+def _make_place_of_origin_addon_restricted_undo(cfg: ECH0021VersionConfig) -> type:
+    """Create ECH0021PlaceOfOriginAddonRestrictedUnDo class.
+
+    XSD restriction of placeOfOriginAddonDataType: only expatriationDate (required).
+    Used in eventUndoCitizen (eCH-0020 §3.4.5 Bürgerrechtsentlassung).
+    """
+
+    class ECH0021PlaceOfOriginAddonRestrictedUnDo(ECHModel):
+        """eCH-0021 Place of origin addon — restricted for undo citizen events.
+
+        XML Schema: eCH-0021 placeOfOriginAddonRestrictedUnDoDataType
+        Only expatriationDate (required). naturalizationDate is NOT allowed.
+        """
+
+        __xml_ns__ = cfg.ns
+        __xml_element__ = 'placeOfOriginAddonData'
+
+        expatriation_date: date = xml_field('expatriationDate')
+
+    return ECH0021PlaceOfOriginAddonRestrictedUnDo
+
+
 def _make_armed_forces_data(cfg: ECH0021VersionConfig) -> type:
     """Create ECH0021ArmedForcesData class parameterized by namespace config."""
 
