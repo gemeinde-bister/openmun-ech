@@ -277,7 +277,7 @@ class TestLayer2XSDPersonalAffairs:
             birth_municipality_name="Zürich",
             religion="111",
             marital_status="1",
-            nationality_status="1",  # Swiss (primary)
+            nationality_status="2",  # Known
             # Multiple nationalities: Swiss and Italian
             nationalities=[
                 {

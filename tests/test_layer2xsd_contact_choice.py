@@ -89,7 +89,7 @@ class TestLayer2XSDContactChoice:
             marital_status="2",  # married
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland (BFS 4-digit code)
@@ -251,7 +251,7 @@ class TestLayer2XSDContactChoice:
             marital_status="1",  # unmarried
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland (BFS 4-digit code)
@@ -271,6 +271,8 @@ class TestLayer2XSDContactChoice:
 
             # Contact organization (CHOICE: organization XOR person)
             contact_organization_name="Einwohnerdienste Bern",
+            contact_organization_local_person_id="ORG-001",
+            contact_organization_local_person_id_category="MU.351",
 
             # Contact address (required when contact provided)
             contact_address_street="Predigergasse",
@@ -310,7 +312,7 @@ class TestLayer2XSDContactChoice:
         assert layer1_person.contact_data is not None, "contact_data should exist"
         assert layer1_person.contact_data.contact_organization is not None, \
             "contact_organization should exist"
-        assert layer1_person.contact_data.contact_organization.local_person_id.person_id == "33333"
+        assert layer1_person.contact_data.contact_organization.local_person_id.person_id == "ORG-001"
         assert layer1_person.contact_data.contact_person is None
         assert layer1_person.contact_data.contact_person_partner is None
 

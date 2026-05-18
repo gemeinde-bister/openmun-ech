@@ -93,6 +93,11 @@ class PersonIdentification(BaseModel):
         None,
         description="Date of birth (optional for relationships, may be partially known in Layer 1)"
     )
+    date_of_birth_precision: Optional[DatePrecision] = Field(
+        None,
+        description="Precision of date_of_birth for lossless roundtrips. "
+                    "None means FULL precision (YYYY-MM-DD)."
+    )
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -161,6 +166,11 @@ class ParentInfo(BaseModel):
     address_town: Optional[str] = Field(
         None,
         description="Parent's town/city"
+    )
+    address_country: Optional[str] = Field(
+        None,
+        description="Parent's address country (ISO 3166-1 alpha-2, e.g., 'CH', 'DE')",
+        pattern=r"^[A-Z]{2}$"
     )
 
     model_config = ConfigDict(populate_by_name=True)
@@ -233,6 +243,11 @@ class GuardianInfo(BaseModel):
     address_town: Optional[str] = Field(
         None,
         description="Guardian's town/city"
+    )
+    address_country: Optional[str] = Field(
+        None,
+        description="Guardian's address country (ISO 3166-1 alpha-2, e.g., 'CH', 'DE')",
+        pattern=r"^[A-Z]{2}$"
     )
 
     # Common fields

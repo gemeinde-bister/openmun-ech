@@ -76,7 +76,7 @@ class TestLayer2XSDGuardianRelationships:
             birth_municipality_name="Zürich",
             religion="121",  # Protestant
             marital_status="1",  # unmarried (child)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland
@@ -203,7 +203,7 @@ class TestLayer2XSDGuardianRelationships:
             birth_municipality_name="Zürich",
             religion="111",  # Roman Catholic
             marital_status="1",  # unmarried (child)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland
@@ -325,7 +325,7 @@ class TestLayer2XSDGuardianRelationships:
             birth_municipality_name="Zürich",
             religion="111",  # Roman Catholic
             marital_status="1",  # unmarried (child)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland

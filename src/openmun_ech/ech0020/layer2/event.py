@@ -325,17 +325,41 @@ class DestinationInfo(BaseModel):
     @model_validator(mode='after')
     def validate_place_choice(self) -> 'DestinationInfo':
         """Validate XSD CHOICE #11: place type determines required fields."""
+        _swiss_fields = (
+            self.municipality_bfs, self.municipality_name,
+            self.canton_abbreviation, self.municipality_history_id,
+        )
+        _foreign_fields = (
+            self.country_id, self.country_iso, self.country_name_short,
+        )
+
         if self.place_type == PlaceType.SWISS:
             if not self.municipality_bfs or not self.municipality_name:
                 raise ValueError(
                     "SWISS destination requires municipality_bfs and municipality_name"
+                )
+            if any(f is not None for f in _foreign_fields):
+                raise ValueError(
+                    "SWISS destination cannot have foreign fields "
+                    "(country_id, country_iso, country_name_short)"
                 )
         elif self.place_type == PlaceType.FOREIGN:
             if not self.country_iso or not self.country_name_short:
                 raise ValueError(
                     "FOREIGN destination requires country_iso and country_name_short"
                 )
-        # UNKNOWN requires no additional fields
+            if any(f is not None for f in _swiss_fields):
+                raise ValueError(
+                    "FOREIGN destination cannot have Swiss fields "
+                    "(municipality_bfs, municipality_name, canton_abbreviation, "
+                    "municipality_history_id)"
+                )
+        else:
+            # UNKNOWN — no branch-specific fields allowed
+            if any(f is not None for f in _swiss_fields + _foreign_fields):
+                raise ValueError(
+                    "UNKNOWN destination cannot have Swiss or foreign fields"
+                )
 
         return self
 

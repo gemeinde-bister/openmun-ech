@@ -10,7 +10,15 @@ from .types import (
     ReportingType, PlaceType, GuardianType, DatePrecision,
     PersonIdentification, ParentInfo, GuardianInfo,
 )
-from .helpers import _extract_date_of_birth, _extract_person_identification
+from .helpers import (
+    extract_date_of_birth,
+    extract_date_of_birth_with_precision,
+    extract_person_identification,
+    date_to_partially_known,
+    # Deprecated aliases (underscore-prefixed)
+    _extract_date_of_birth,
+    _extract_person_identification,
+)
 from .person import BaseDeliveryPerson
 from .event import (
     ResidenceType, SecondaryResidenceInfo, DwellingAddressInfo,
@@ -24,5 +32,9 @@ __all__ = [
     'BaseDeliveryPerson',
     'ResidenceType', 'SecondaryResidenceInfo', 'DwellingAddressInfo',
     'DestinationInfo', 'BaseDeliveryEvent',
+    # Public helper API
+    'extract_date_of_birth', 'extract_date_of_birth_with_precision',
+    'extract_person_identification', 'date_to_partially_known',
+    # Deprecated aliases (kept for backward compatibility)
     '_extract_date_of_birth', '_extract_person_identification',
 ]

@@ -61,7 +61,7 @@ class TestCivicObligations:
             marital_status="1",  # unmarried
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # BFS 4-digit code
@@ -141,7 +141,7 @@ class TestCivicObligations:
             marital_status="1",  # unmarried
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # BFS 4-digit code

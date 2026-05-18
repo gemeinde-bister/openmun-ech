@@ -149,7 +149,7 @@ class TestLayer2FinalizeBasic:
             # Required status fields (fictive)
             religion="111",  # Roman Catholic (real BFS code)
             marital_status="1",  # Single (real BFS code)
-            nationality_status="1",  # Swiss citizen
+            nationality_status="2",  # Known
             data_lock="0",  # No data lock
 
             # Swiss citizenship (real BFS fixture: Zürich)

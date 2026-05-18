@@ -90,7 +90,7 @@ class TestLayer2XSDDeathPlaceChoice:
             marital_status="6",  # widowed
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland (BFS 4-digit code)
@@ -233,7 +233,7 @@ class TestLayer2XSDDeathPlaceChoice:
             marital_status="6",  # widowed
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland (BFS 4-digit code)
@@ -377,7 +377,7 @@ class TestLayer2XSDDeathPlaceChoice:
             marital_status="6",  # widowed
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland (BFS 4-digit code)

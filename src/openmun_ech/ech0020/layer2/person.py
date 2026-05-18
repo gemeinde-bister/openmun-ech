@@ -99,8 +99,16 @@ from openmun_ech.ech0010 import (
     ECH0010OrganisationMailAddress,
 )
 
-from .helpers import _extract_date_of_birth, _extract_person_identification
+from .helpers import (
+    extract_date_of_birth,
+    extract_date_of_birth_with_precision,
+    extract_person_identification,
+    date_to_partially_known,
+    _extract_date_of_birth,
+    _extract_person_identification,
+)
 from .types import (
+    DatePrecision,
     PersonIdentification,
     ParentInfo,
     GuardianInfo,
@@ -184,6 +192,11 @@ class BaseDeliveryPerson(BaseModel):
     date_of_birth: date = Field(
         ...,
         description="Date of birth (full date, required, Type 1 duplication)"
+    )
+    date_of_birth_precision: DatePrecision = Field(
+        default=DatePrecision.FULL,
+        description="Precision of date_of_birth for lossless roundtrips: "
+                    "FULL (YYYY-MM-DD), YEAR_MONTH, or YEAR_ONLY"
     )
 
     # ========================================================================
@@ -509,6 +522,10 @@ class BaseDeliveryPerson(BaseModel):
         None,
         description="Contact person's date of birth (optional, required for Full identification)"
     )
+    contact_person_date_of_birth_precision: Optional[DatePrecision] = Field(
+        None,
+        description="Precision of contact_person_date_of_birth. None means FULL."
+    )
     contact_person_mr_mrs: Optional[str] = Field(
         None,
         description="Contact person's title/salutation: '1'=Herr/Mr, '2'=Frau/Mrs, '3'=neutral"
@@ -528,6 +545,14 @@ class BaseDeliveryPerson(BaseModel):
     contact_organization_name: Optional[str] = Field(
         None,
         description="Contact organization name (CHOICE: person XOR organization)"
+    )
+    contact_organization_local_person_id: Optional[str] = Field(
+        None,
+        description="Contact organization's local person ID (required by XSD partnerIdOrganisationType)"
+    )
+    contact_organization_local_person_id_category: Optional[str] = Field(
+        None,
+        description="Category of contact organization's local person ID"
     )
 
     # Contact address (REQUIRED in Layer 1 if contact_data is present)
@@ -667,6 +692,11 @@ class BaseDeliveryPerson(BaseModel):
     spouse_address_town: Optional[str] = Field(
         None,
         description="Spouse's town/city"
+    )
+    spouse_address_country: Optional[str] = Field(
+        None,
+        description="Spouse's address country (ISO 3166-1 alpha-2, e.g., 'CH', 'DE')",
+        pattern=r"^[A-Z]{2}$"
     )
     spouse_other_person_ids: Optional[List[Dict[str, str]]] = Field(
         None,
@@ -838,14 +868,39 @@ class BaseDeliveryPerson(BaseModel):
 
     @model_validator(mode='after')
     def validate_birth_place_data(self) -> 'BaseDeliveryPerson':
-        """Validate birth place data based on birth_place_type."""
+        """Validate birth place data based on birth_place_type (XSD CHOICE)."""
+        _swiss_fields = (
+            self.birth_municipality_bfs, self.birth_municipality_name,
+            self.birth_canton_abbreviation, self.birth_municipality_history_id,
+        )
+        _foreign_fields = (
+            self.birth_country_id, self.birth_country_iso,
+            self.birth_country_name_short,
+        )
+
         if self.birth_place_type == PlaceType.SWISS:
             if not self.birth_municipality_bfs:
                 raise ValueError("Swiss birth requires birth_municipality_bfs")
+            if any(f is not None for f in _foreign_fields):
+                raise ValueError(
+                    "Swiss birth cannot have foreign birth fields "
+                    "(birth_country_id, birth_country_iso, birth_country_name_short)"
+                )
         elif self.birth_place_type == PlaceType.FOREIGN:
             if not self.birth_country_iso:
                 raise ValueError("Foreign birth requires birth_country_iso")
-        # UNKNOWN type requires no additional fields
+            if any(f is not None for f in _swiss_fields):
+                raise ValueError(
+                    "Foreign birth cannot have Swiss birth fields "
+                    "(birth_municipality_bfs, birth_municipality_name, "
+                    "birth_canton_abbreviation, birth_municipality_history_id)"
+                )
+        else:
+            # UNKNOWN — no branch-specific fields allowed
+            if any(f is not None for f in _swiss_fields + _foreign_fields):
+                raise ValueError(
+                    "Unknown birth place cannot have Swiss or foreign birth fields"
+                )
 
         return self
 
@@ -1001,8 +1056,8 @@ class BaseDeliveryPerson(BaseModel):
                 other_person_ids.append(other_pid)
 
         # Construct date_of_birth wrapper
-        date_of_birth_wrapper = ECH0044DatePartiallyKnown(
-            year_month_day=self.date_of_birth
+        date_of_birth_wrapper = date_to_partially_known(
+            self.date_of_birth, self.date_of_birth_precision
         )
 
         # Construct person_identification (REQUIRED)
@@ -1438,31 +1493,30 @@ class BaseDeliveryPerson(BaseModel):
                         if self.contact_person_sex:
                             partner_kwargs['sex'] = Sex(self.contact_person_sex)
                         if self.contact_person_date_of_birth:
-                            partner_kwargs['date_of_birth'] = ECH0044DatePartiallyKnown(
-                                year_month_day=self.contact_person_date_of_birth
+                            partner_kwargs['date_of_birth'] = date_to_partially_known(
+                                self.contact_person_date_of_birth,
+                                self.contact_person_date_of_birth_precision or DatePrecision.FULL
                             )
                         contact_person_partner = ECH0044PersonIdentificationLight(**partner_kwargs)
-                    elif self.contact_person_sex and self.contact_person_date_of_birth:
-                        # Use Full identification (personIdentification) when we have sex+dateOfBirth but NO local_person_id
-                        # This is rare, but supported by eCH-0044
-                        contact_person = ECH0044PersonIdentification(
-                            local_person_id=ECH0044NamedPersonId(
-                                person_id=self.local_person_id,  # Use main person's ID as fallback
-                                person_id_category=self.local_person_id_category
-                            ),
-                            official_name=self.contact_person_official_name,
-                            first_name=self.contact_person_first_name,
-                            sex=Sex(self.contact_person_sex),
-                            date_of_birth=ECH0044DatePartiallyKnown(
-                                year_month_day=self.contact_person_date_of_birth
-                            )
-                        )
                     else:
-                        # Use Light identification without optional fields (minimal)
-                        contact_person_partner = ECH0044PersonIdentificationLight(
-                            official_name=self.contact_person_official_name,
-                            first_name=self.contact_person_first_name
-                        )
+                        # Use Light identification (personIdentificationPartner) without local_person_id
+                        # ECH0044PersonIdentification requires local_person_id — we must NOT
+                        # borrow the main person's ID (data invention). Light supports optional
+                        # sex and dateOfBirth, so use it for all non-local-ID cases.
+                        partner_kwargs = {
+                            'official_name': self.contact_person_official_name,
+                            'first_name': self.contact_person_first_name
+                        }
+                        if self.contact_person_vn:
+                            partner_kwargs['vn'] = self.contact_person_vn
+                        if self.contact_person_sex:
+                            partner_kwargs['sex'] = Sex(self.contact_person_sex)
+                        if self.contact_person_date_of_birth:
+                            partner_kwargs['date_of_birth'] = date_to_partially_known(
+                                self.contact_person_date_of_birth,
+                                self.contact_person_date_of_birth_precision or DatePrecision.FULL
+                            )
+                        contact_person_partner = ECH0044PersonIdentificationLight(**partner_kwargs)
                 # Always create mail_address_person for ECH0010MailAddress
                 from openmun_ech.ech0010 import ECH0010PersonMailAddressInfo
                 mail_address_person = ECH0010PersonMailAddressInfo(
@@ -1471,11 +1525,19 @@ class BaseDeliveryPerson(BaseModel):
                     last_name=self.contact_person_official_name
                 )
             elif self.contact_organization_name:
-                # Build ECH0011PartnerIdOrganisation with main person's local ID
+                # Build ECH0011PartnerIdOrganisation — XSD requires local_person_id
+                if not self.contact_organization_local_person_id or not self.contact_organization_local_person_id_category:
+                    raise ValueError(
+                        f"Contact organization '{self.contact_organization_name}' requires "
+                        f"contact_organization_local_person_id and "
+                        f"contact_organization_local_person_id_category. "
+                        f"eCH-0011 partnerIdOrganisationType requires localPersonId — "
+                        f"cannot borrow the main person's ID."
+                    )
                 contact_organization = ECH0011PartnerIdOrganisation(
                     local_person_id=ECH0044NamedPersonId(
-                        person_id=self.local_person_id,
-                        person_id_category=self.local_person_id_category
+                        person_id=self.contact_organization_local_person_id,
+                        person_id_category=self.contact_organization_local_person_id_category
                     )
                 )
                 # For mail address, use organization name (already imported at module level)
@@ -1488,6 +1550,17 @@ class BaseDeliveryPerson(BaseModel):
             if self.contact_address_postal_code and self.contact_address_town:
                 # Only create MailAddress if we have person OR organisation (CHOICE constraint)
                 if mail_address_person or mail_address_org:
+                    # Determine country: Swiss postal code implies CH
+                    if self.contact_address_postal_code:
+                        contact_country = "CH"  # Swiss postal code implies CH
+                    elif self.contact_address_country_iso:
+                        contact_country = self.contact_address_country_iso
+                    else:
+                        raise ValueError(
+                            "Contact address has no postal code and no country. "
+                            "Provide contact_address_postal_code (Swiss) or "
+                            "contact_address_country_iso (foreign)."
+                        )
                     # Build address information
                     address_info = ECH0010AddressInformation(
                         address_line1=self.contact_address_address_line1,
@@ -1498,7 +1571,7 @@ class BaseDeliveryPerson(BaseModel):
                         town=self.contact_address_town,
                         swiss_zip_code=int(self.contact_address_postal_code),
                         swiss_zip_code_add_on=self.contact_address_postal_code_addon,
-                        country="CH"  # Default to Switzerland for now
+                        country=contact_country
                     )
 
                     contact_address = ECH0010MailAddress(
@@ -1653,21 +1726,33 @@ class BaseDeliveryPerson(BaseModel):
                 first_name=self.spouse.first_name,
                 original_name=self.spouse.original_name,
                 sex=Sex(self.spouse.sex),
-                date_of_birth=ECH0044DatePartiallyKnown(
-                    year_month_day=self.spouse.date_of_birth
+                date_of_birth=date_to_partially_known(
+                    self.spouse.date_of_birth,
+                    self.spouse.date_of_birth_precision or DatePrecision.FULL
                 )
             )
 
             # Build spouse address if provided
             partner_address = None
-            if self.spouse_address_postal_code:
+            if self.spouse_address_postal_code or self.spouse_address_country:
+                # Determine country: Swiss postal code implies CH
+                if self.spouse_address_postal_code:
+                    spouse_country = "CH"  # Swiss postal code implies CH
+                elif self.spouse_address_country:
+                    spouse_country = self.spouse_address_country
+                else:
+                    raise ValueError(
+                        "Spouse address has no postal code and no country. "
+                        "Provide spouse_address_postal_code (Swiss) or "
+                        "spouse_address_country (foreign)."
+                    )
                 address_info = ECH0010AddressInformation(
                     street=self.spouse_address_street,
                     house_number=self.spouse_address_house_number,
                     town=self.spouse_address_town,
                     swiss_zip_code=self.spouse_address_postal_code,
                     swiss_zip_code_add_on=self.spouse_address_postal_code_addon,
-                    country="CH"  # Default to Switzerland for Swiss postal codes
+                    country=spouse_country
                 )
 
                 from openmun_ech.ech0010 import ECH0010PersonMailAddressInfo
@@ -1716,21 +1801,33 @@ class BaseDeliveryPerson(BaseModel):
                     first_name=parent_info.person.first_name,
                     original_name=parent_info.person.original_name,
                     sex=Sex(parent_info.person.sex),
-                    date_of_birth=ECH0044DatePartiallyKnown(
-                        year_month_day=parent_info.person.date_of_birth
+                    date_of_birth=date_to_partially_known(
+                        parent_info.person.date_of_birth,
+                        parent_info.person.date_of_birth_precision or DatePrecision.FULL
                     )
                 )
 
                 # Build parent address if provided
                 parent_address = None
-                if parent_info.address_postal_code:
+                if parent_info.address_postal_code or parent_info.address_country:
+                    # Determine country: Swiss postal code implies CH
+                    if parent_info.address_postal_code:
+                        parent_country = "CH"  # Swiss postal code implies CH
+                    elif parent_info.address_country:
+                        parent_country = parent_info.address_country
+                    else:
+                        raise ValueError(
+                            f"Parent address has no postal code and no country. "
+                            f"Provide address_postal_code (Swiss) or "
+                            f"address_country (foreign)."
+                        )
                     address_info = ECH0010AddressInformation(
                         street=parent_info.address_street,
                         house_number=parent_info.address_house_number,
                         town=parent_info.address_town,
                         swiss_zip_code=parent_info.address_postal_code,
                         swiss_zip_code_add_on=parent_info.address_postal_code_addon,
-                        country="CH"
+                        country=parent_country
                     )
 
                     from openmun_ech.ech0010 import ECH0010PersonMailAddressInfo
@@ -1788,8 +1885,9 @@ class BaseDeliveryPerson(BaseModel):
                             first_name=guardian_info.person.first_name,
                             original_name=guardian_info.person.original_name,
                             sex=Sex(guardian_info.person.sex),
-                            date_of_birth=ECH0044DatePartiallyKnown(
-                                year_month_day=guardian_info.person.date_of_birth
+                            date_of_birth=date_to_partially_known(
+                                guardian_info.person.date_of_birth,
+                                guardian_info.person.date_of_birth_precision or DatePrecision.FULL
                             )
                         )
                         person_id_field = guardian_person_id
@@ -1804,8 +1902,9 @@ class BaseDeliveryPerson(BaseModel):
                             first_name=guardian_info.person.first_name,
                             original_name=guardian_info.person.original_name,
                             sex=Sex(guardian_info.person.sex) if guardian_info.person.sex else None,
-                            date_of_birth=ECH0044DatePartiallyKnown(
-                                year_month_day=guardian_info.person.date_of_birth
+                            date_of_birth=date_to_partially_known(
+                                guardian_info.person.date_of_birth,
+                                guardian_info.person.date_of_birth_precision or DatePrecision.FULL
                             ) if guardian_info.person.date_of_birth else None
                         )
                         person_id_field = None
@@ -1835,15 +1934,23 @@ class BaseDeliveryPerson(BaseModel):
                 # Do NOT invent fake addresses to store names
                 if guardian_info.guardian_type == GuardianType.ORGANISATION:
                     # Organization guardian
-                    if guardian_info.address_postal_code and guardian_info.address_town and guardian_info.organization_name:
-                        # We have REAL address data - create address with organization name
+                    if (guardian_info.address_postal_code or guardian_info.address_country) and guardian_info.address_town and guardian_info.organization_name:
+                        # Determine country: Swiss postal code implies CH
+                        if guardian_info.address_postal_code:
+                            guardian_country = "CH"  # Swiss postal code implies CH
+                        elif guardian_info.address_country:
+                            guardian_country = guardian_info.address_country
+                        else:
+                            raise ValueError(
+                                "Guardian organization address has no postal code and no country."
+                            )
                         address_info = ECH0010AddressInformation(
                             street=guardian_info.address_street,
                             house_number=guardian_info.address_house_number,
                             town=guardian_info.address_town,
                             swiss_zip_code=guardian_info.address_postal_code,
                             swiss_zip_code_add_on=guardian_info.address_postal_code_addon,
-                            country="CH"
+                            country=guardian_country
                         )
 
                         # ECH0010OrganisationMailAddressInfo already imported at module level
@@ -1859,14 +1966,23 @@ class BaseDeliveryPerson(BaseModel):
 
                 elif guardian_info.guardian_type in [GuardianType.PERSON, GuardianType.PERSON_PARTNER]:
                     # Person guardian with address
-                    if guardian_info.address_postal_code:
+                    if guardian_info.address_postal_code or guardian_info.address_country:
+                        # Determine country: Swiss postal code implies CH
+                        if guardian_info.address_postal_code:
+                            guardian_person_country = "CH"  # Swiss postal code implies CH
+                        elif guardian_info.address_country:
+                            guardian_person_country = guardian_info.address_country
+                        else:
+                            raise ValueError(
+                                "Guardian person address has no postal code and no country."
+                            )
                         address_info = ECH0010AddressInformation(
                             street=guardian_info.address_street,
                             house_number=guardian_info.address_house_number,
                             town=guardian_info.address_town,
                             swiss_zip_code=guardian_info.address_postal_code,
                             swiss_zip_code_add_on=guardian_info.address_postal_code_addon,
-                            country="CH"
+                            country=guardian_person_country
                         )
 
                         from openmun_ech.ech0010 import ECH0010PersonMailAddressInfo
@@ -1981,6 +2097,13 @@ class BaseDeliveryPerson(BaseModel):
                 # Name only (no address)
                 insurance_name = self.health_insurance_name
 
+            if self.health_insured is None:
+                raise ValueError(
+                    f"health_insured is None but health insurance data is being emitted "
+                    f"(health_insurance_name='{self.health_insurance_name}'). "
+                    f"eCH-0021 healthInsured requires explicit true/false — "
+                    f"cannot default unknown to 'not insured'."
+                )
             health_insurance_data = ECH0021HealthInsuranceData(
                 health_insured="1" if self.health_insured else "0",
                 insurance_name=insurance_name,
@@ -2080,8 +2203,8 @@ class BaseDeliveryPerson(BaseModel):
         original_name = person_id.original_name
         sex = person_id.sex.value
 
-        # Extract date_of_birth from DatePartiallyKnown CHOICE type
-        date_of_birth = _extract_date_of_birth(person_id.date_of_birth)
+        # Extract date_of_birth with precision from DatePartiallyKnown CHOICE type
+        date_of_birth, date_of_birth_precision = extract_date_of_birth_with_precision(person_id.date_of_birth)
 
         # ====================================================================
         # 2. NAME INFO (REQUIRED)
@@ -2346,11 +2469,14 @@ class BaseDeliveryPerson(BaseModel):
         contact_person_first_name = None
         contact_person_sex = None
         contact_person_date_of_birth = None
+        contact_person_date_of_birth_precision = None
         contact_person_mr_mrs = None
         contact_person_local_person_id = None
         contact_person_local_person_id_category = None
         contact_person_vn = None
         contact_organization_name = None
+        contact_organization_local_person_id = None
+        contact_organization_local_person_id_category = None
         contact_address_address_line1 = None
         contact_address_street = None
         contact_address_house_number = None
@@ -2371,7 +2497,7 @@ class BaseDeliveryPerson(BaseModel):
                 contact_person_first_name = raw.contact_data.contact_person.first_name
                 contact_person_sex = raw.contact_data.contact_person.sex.value
                 # Extract date_of_birth
-                contact_person_date_of_birth = _extract_date_of_birth(raw.contact_data.contact_person.date_of_birth)
+                contact_person_date_of_birth, contact_person_date_of_birth_precision = extract_date_of_birth_with_precision(raw.contact_data.contact_person.date_of_birth)
             elif raw.contact_data.contact_person_partner:
                 # Light identification (personIdentificationPartner element)
                 # Note: PersonIdentificationLight CAN have sex and date_of_birth as OPTIONAL fields
@@ -2388,7 +2514,7 @@ class BaseDeliveryPerson(BaseModel):
                 if raw.contact_data.contact_person_partner.sex:
                     contact_person_sex = raw.contact_data.contact_person_partner.sex.value
                 # Extract date_of_birth if present (optional in Light identification)
-                contact_person_date_of_birth = _extract_date_of_birth(raw.contact_data.contact_person_partner.date_of_birth)
+                contact_person_date_of_birth, contact_person_date_of_birth_precision = extract_date_of_birth_with_precision(raw.contact_data.contact_person_partner.date_of_birth)
             elif raw.contact_data.contact_address and raw.contact_data.contact_address.person:
                 # Contact person ONLY in mail address (no separate personIdentification element)
                 contact_person_official_name = raw.contact_data.contact_address.person.last_name
@@ -2396,6 +2522,10 @@ class BaseDeliveryPerson(BaseModel):
                 # Extract mrMrs from mail address person
                 contact_person_mr_mrs = raw.contact_data.contact_address.person.mr_mrs
             elif raw.contact_data.contact_organization:
+                # Extract organization's local_person_id from PartnerIdOrganisation
+                if raw.contact_data.contact_organization.local_person_id:
+                    contact_organization_local_person_id = raw.contact_data.contact_organization.local_person_id.person_id
+                    contact_organization_local_person_id_category = raw.contact_data.contact_organization.local_person_id.person_id_category
                 # Organization name is in the mail address, not in PartnerIdOrganisation
                 if raw.contact_data.contact_address and raw.contact_data.contact_address.organisation:
                     contact_organization_name = raw.contact_data.contact_address.organisation.organisation_name
@@ -2422,9 +2552,7 @@ class BaseDeliveryPerson(BaseModel):
                 contact_address_postal_code_addon = addr_info.swiss_zip_code_add_on
                 contact_address_town = addr_info.town
                 contact_address_locality = addr_info.locality
-                # addr_info.country is a 2-letter ISO code string, not an object
-                # For now we don't store it since we default to "CH" in to_ech0020()
-                # TODO: Add contact_address_country_iso2 field to properly support foreign addresses
+                contact_address_country_iso = addr_info.country
 
             contact_valid_from = raw.contact_data.contact_valid_from
             contact_valid_till = raw.contact_data.contact_valid_till
@@ -2521,6 +2649,7 @@ class BaseDeliveryPerson(BaseModel):
         spouse_address_postal_code = None
         spouse_address_postal_code_addon = None
         spouse_address_town = None
+        spouse_address_country = None
         spouse_other_person_ids = None
         marital_relationship_type = None
 
@@ -2554,6 +2683,7 @@ class BaseDeliveryPerson(BaseModel):
                     spouse_address_postal_code = str(addr_info.swiss_zip_code) if addr_info.swiss_zip_code else None
                     spouse_address_postal_code_addon = addr_info.swiss_zip_code_add_on
                     spouse_address_town = addr_info.town
+                    spouse_address_country = addr_info.country
 
             marital_relationship_type = raw.marital_relationship.type_of_relationship
 
@@ -2578,6 +2708,7 @@ class BaseDeliveryPerson(BaseModel):
                     parent_address_postal_code = None
                     parent_address_postal_code_addon = None
                     parent_address_town = None
+                    parent_address_country = None
 
                     if parent_rel.partner and parent_rel.partner.address:
                         if parent_rel.partner.address.person:
@@ -2589,6 +2720,7 @@ class BaseDeliveryPerson(BaseModel):
                             parent_address_postal_code = str(addr_info.swiss_zip_code) if addr_info.swiss_zip_code else None
                             parent_address_postal_code_addon = addr_info.swiss_zip_code_add_on
                             parent_address_town = addr_info.town
+                            parent_address_country = addr_info.country
 
                     parent_info = ParentInfo(
                         person=parent_person,
@@ -2600,7 +2732,8 @@ class BaseDeliveryPerson(BaseModel):
                         address_house_number=parent_address_house_number,
                         address_postal_code=parent_address_postal_code,
                         address_postal_code_addon=parent_address_postal_code_addon,
-                        address_town=parent_address_town
+                        address_town=parent_address_town,
+                        address_country=parent_address_country
                     )
                     parents.append(parent_info)
 
@@ -2652,6 +2785,7 @@ class BaseDeliveryPerson(BaseModel):
                 guardian_address_postal_code = None
                 guardian_address_postal_code_addon = None
                 guardian_address_town = None
+                guardian_address_country = None
 
                 if guardian_rel.partner_address:
                     if guardian_rel.partner_address.person:
@@ -2663,6 +2797,7 @@ class BaseDeliveryPerson(BaseModel):
                         guardian_address_postal_code = str(addr_info.swiss_zip_code) if addr_info.swiss_zip_code else None
                         guardian_address_postal_code_addon = addr_info.swiss_zip_code_add_on
                         guardian_address_town = addr_info.town
+                        guardian_address_country = addr_info.country
 
                 if guardian_type:
                     guardian_info = GuardianInfo(
@@ -2677,6 +2812,7 @@ class BaseDeliveryPerson(BaseModel):
                         address_postal_code=guardian_address_postal_code,
                         address_postal_code_addon=guardian_address_postal_code_addon,
                         address_town=guardian_address_town,
+                        address_country=guardian_address_country,
                         relationship_type=guardian_rel.type_of_relationship,
                         guardian_measure_based_on_law=guardian_rel.guardian_measure_info.based_on_law if guardian_rel.guardian_measure_info else [],
                         guardian_measure_valid_from=guardian_rel.guardian_measure_info.guardian_measure_valid_from if guardian_rel.guardian_measure_info else None,
@@ -2785,6 +2921,7 @@ class BaseDeliveryPerson(BaseModel):
             original_name=original_name,
             sex=sex,
             date_of_birth=date_of_birth,
+            date_of_birth_precision=date_of_birth_precision,
             # Name info
             call_name=call_name,
             alliance_name=alliance_name,
@@ -2858,11 +2995,14 @@ class BaseDeliveryPerson(BaseModel):
             contact_person_first_name=contact_person_first_name,
             contact_person_sex=contact_person_sex,
             contact_person_date_of_birth=contact_person_date_of_birth,
+            contact_person_date_of_birth_precision=contact_person_date_of_birth_precision,
             contact_person_mr_mrs=contact_person_mr_mrs,
             contact_person_local_person_id=contact_person_local_person_id,
             contact_person_local_person_id_category=contact_person_local_person_id_category,
             contact_person_vn=contact_person_vn,
             contact_organization_name=contact_organization_name,
+            contact_organization_local_person_id=contact_organization_local_person_id,
+            contact_organization_local_person_id_category=contact_organization_local_person_id_category,
             contact_address_address_line1=contact_address_address_line1,
             contact_address_street=contact_address_street,
             contact_address_house_number=contact_address_house_number,
@@ -2892,6 +3032,7 @@ class BaseDeliveryPerson(BaseModel):
             spouse_address_postal_code=spouse_address_postal_code,
             spouse_address_postal_code_addon=spouse_address_postal_code_addon,
             spouse_address_town=spouse_address_town,
+            spouse_address_country=spouse_address_country,
             spouse_other_person_ids=spouse_other_person_ids,
             marital_relationship_type=marital_relationship_type,
             # Parental relationship

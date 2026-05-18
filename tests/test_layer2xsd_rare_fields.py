@@ -74,7 +74,7 @@ class TestLayer2XSDRareFields:
             birth_country_name_short="Deutschland",
             religion="121",  # Protestant
             marital_status="1",  # unmarried
-            nationality_status="1",  # Swiss (naturalized)
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland
@@ -183,7 +183,7 @@ class TestLayer2XSDRareFields:
             birth_municipality_name="Bern",
             religion="111",  # Roman Catholic
             marital_status="1",  # unmarried
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland
@@ -310,7 +310,7 @@ class TestLayer2XSDRareFields:
             birth_municipality_name="Winterthur",
             religion="121",  # Protestant
             marital_status="2",  # married
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland

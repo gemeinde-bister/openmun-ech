@@ -7,6 +7,11 @@ openmun_ech.ech0020.layer2 directly.
 
 from openmun_ech.ech0020.layer2 import *  # noqa: F401,F403
 from openmun_ech.ech0020.layer2 import (  # noqa: F401 — explicit for type checkers
+    extract_date_of_birth,
+    extract_date_of_birth_with_precision,
+    extract_person_identification,
+    date_to_partially_known,
+    # Deprecated aliases
     _extract_date_of_birth,
     _extract_person_identification,
     DeliveryConfig,

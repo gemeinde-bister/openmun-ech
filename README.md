@@ -80,7 +80,7 @@ person = BaseDeliveryPerson(
     birth_municipality_name="Zürich",
     religion="111",                      # Roman Catholic
     marital_status="1",                  # Unmarried
-    nationality_status="1",              # Swiss
+    nationality_status="2",              # Known (Swiss citizenship indicated by places_of_origin)
     data_lock="0",                       # No lock
     places_of_origin=[{"bfs_code": "6172", "name": "Bister", "canton": "VS"}],
 )

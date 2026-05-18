@@ -74,7 +74,7 @@ class TestLayer2XSDEdgeCases:
             birth_municipality_name="Zürich",
             religion="111",  # Roman Catholic
             marital_status="1",  # unmarried
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',
@@ -191,7 +191,7 @@ class TestLayer2XSDEdgeCases:
             birth_place_type=PlaceType.UNKNOWN,
             religion="999",  # unknown
             marital_status="1",  # unmarried
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',

@@ -95,7 +95,7 @@ class TestLayer2XSDMarriagePlaceChoice:
             marriage_municipality_name="Bern",
 
             # Nationality (required)
-            nationality_status="1",  # Swiss
+            nationality_status="2",  # Known
             nationalities=[
                 {
                     'country_id': '8100',  # Switzerland (BFS 4-digit code)
