@@ -104,9 +104,9 @@ class ECH0021NameOfParent(ECHModel):
     __xml_element__ = 'nameOfParent'
 
     first_name: Optional[str] = Field(None, max_length=100)
-    official_name: Optional[str] = Field(None, max_length=100)
+    official_name: Optional[str] = Field(None, min_length=1, max_length=100)
     first_name_only: Optional[str] = Field(None, max_length=100)
-    official_name_only: Optional[str] = Field(None, max_length=100)
+    official_name_only: Optional[str] = Field(None, min_length=1, max_length=100)
 
     type_of_relationship: Optional[TypeOfRelationship] = Field(
         None, description="Type of relationship (3=mother, 4=father)"
@@ -292,6 +292,19 @@ class ECH0021ParentalRelationship(ECHModel):
             raise ValueError(
                 f"Parental relationship must be MOTHER (3), FATHER (4), "
                 f"FOSTER_FATHER (5), or FOSTER_MOTHER (6), got: {v}"
+            )
+        return v
+
+    @field_validator('care')
+    @classmethod
+    def validate_care_type_v7(cls, v: CareType) -> CareType:
+        """v7 careType only allows values 0-3. Value 4 was added in v8 (RFC 2020-48)."""
+        if v == CareType.NO_PARENTAL_AUTHORITY:
+            raise ValueError(
+                f"v7 careType does not allow NO_PARENTAL_AUTHORITY (4). "
+                f"This value was added in v8 (RFC 2020-48). "
+                f"Valid v7 values: UNKNOWN (0), LEGACY_PARENTAL_AUTHORITY (1), "
+                f"JOINT_PARENTAL_AUTHORITY (2), SOLE_PARENTAL_AUTHORITY (3)."
             )
         return v
 

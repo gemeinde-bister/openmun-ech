@@ -21,6 +21,7 @@ from openmun_ech.ech0010 import (
     ECH0010MailAddress,
     ECH0010OrganisationMailAddress,
     ECH0010OrganisationMailAddressInfo,
+    ECH0010PersonMailAddress,
 )
 from openmun_ech.ech0011.enums import LanguageCode
 from openmun_ech.ech0011.v8 import ECH0011GeneralPlace, ECH0011PartnerIdOrganisation
@@ -372,8 +373,8 @@ def _make_partner_and_marital(cfg: ECH0021VersionConfig) -> tuple:
             description="Person identification of partner (full or light version)",
         )
 
-        address: Optional[ECH0010MailAddress] = Field(
-            None, description="Partner's mail address"
+        address: Optional[ECH0010PersonMailAddress] = Field(
+            None, description="Partner's mail address (personMailAddressType per XSD)"
         )
 
         def to_xml(
@@ -437,7 +438,7 @@ def _make_partner_and_marital(cfg: ECH0021VersionConfig) -> tuple:
 
             return cls(
                 person_identification=person_id,
-                address=ECH0010MailAddress.from_xml(addr_elem, namespace=cfg.ns_ech0010)
+                address=ECH0010PersonMailAddress.from_xml(addr_elem, namespace=cfg.ns_ech0010)
                 if addr_elem is not None
                 else None,
             )

@@ -106,9 +106,9 @@ class ECH0021NameOfParent(ECHModel):
     __xml_element__ = 'nameOfParent'
 
     first_name: Optional[str] = Field(None, max_length=100)
-    official_name: Optional[str] = Field(None, max_length=100)
+    official_name: Optional[str] = Field(None, min_length=1, max_length=100)
     first_name_only: Optional[str] = Field(None, max_length=100)
-    official_name_only: Optional[str] = Field(None, max_length=100)
+    official_name_only: Optional[str] = Field(None, min_length=1, max_length=100)
 
     type_of_relationship: Optional[TypeOfRelationship] = Field(
         None, description="Type of relationship (3=mother, 4=father)"

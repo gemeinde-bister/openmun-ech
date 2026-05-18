@@ -92,6 +92,7 @@ from openmun_ech.ech0007 import ECH0007Municipality, ECH0007SwissMunicipality
 from openmun_ech.ech0008 import ECH0008Country
 from openmun_ech.ech0010 import (
     ECH0010MailAddress,
+    ECH0010PersonMailAddress,
     ECH0010AddressInformation,
     ECH0010SwissAddressInformation,
     ECH0010OrganisationMailAddressInfo,
@@ -1671,7 +1672,7 @@ class BaseDeliveryPerson(BaseModel):
 
                 from openmun_ech.ech0010 import ECH0010PersonMailAddressInfo
 
-                partner_address = ECH0010MailAddress(
+                partner_address = ECH0010PersonMailAddress(
                     person=ECH0010PersonMailAddressInfo(
                         mr_mrs=self.spouse_mr_mrs,
                         last_name=self.spouse.official_name,
@@ -1734,7 +1735,7 @@ class BaseDeliveryPerson(BaseModel):
 
                     from openmun_ech.ech0010 import ECH0010PersonMailAddressInfo
 
-                    parent_address = ECH0010MailAddress(
+                    parent_address = ECH0010PersonMailAddress(
                         person=ECH0010PersonMailAddressInfo(
                             mr_mrs=parent_info.mr_mrs,
                             last_name=parent_info.person.official_name,

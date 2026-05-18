@@ -515,7 +515,7 @@ def test_xsd_matrimonial_inheritance_arrangement_data():
 # ============================================================================
 
 from openmun_ech.core import NS
-from openmun_ech.ech0010 import ECH0010AddressInformation, ECH0010MailAddress, ECH0010PersonMailAddressInfo
+from openmun_ech.ech0010 import ECH0010AddressInformation, ECH0010PersonMailAddress, ECH0010PersonMailAddressInfo
 
 
 def test_roundtrip_marital_data_addon_with_swiss_place():
@@ -618,7 +618,7 @@ def test_roundtrip_partner_with_address():
         sex="1",
         date_of_birth=dob
     )
-    address = ECH0010MailAddress(
+    address = ECH0010PersonMailAddress(
         person=ECH0010PersonMailAddressInfo(
             first_name="Thomas",
             last_name="Meier"
@@ -657,7 +657,7 @@ def test_roundtrip_partner_namespace_correct():
         sex="1",
         date_of_birth=dob
     )
-    address = ECH0010MailAddress(
+    address = ECH0010PersonMailAddress(
         person=ECH0010PersonMailAddressInfo(last_name="Test"),
         address_information=ECH0010AddressInformation(
             town="Bern", swiss_zip_code=3000, country="CH"
