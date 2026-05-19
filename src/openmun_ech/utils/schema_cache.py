@@ -46,6 +46,8 @@ ECH_SCHEMAS = {
     'eCH-0010-8-0.xsd': 'https://www.ech.ch/xmlns/eCH-0010/8/eCH-0010-8-0.xsd',
     'eCH-0011-9-0.xsd': 'https://www.ech.ch/xmlns/eCH-0011/9/eCH-0011-9-0.xsd',
     'eCH-0058-4-0.xsd': 'https://www.ech.ch/xmlns/eCH-0058/4/eCH-0058-4-0.xsd',
+    'eCH-0129-6-0.xsd': 'https://www.ech.ch/xmlns/eCH-0129/6/eCH-0129-6-0.xsd',
+    'eCH-0133-3-0.xsd': 'https://www.ech.ch/xmlns/eCH-0133/3/eCH-0133-3-0.xsd',
     'eCH-0135-1-0.xsd': 'https://www.ech.ch/xmlns/eCH-0135/1/eCH-0135-1-0.xsd',
 }
 

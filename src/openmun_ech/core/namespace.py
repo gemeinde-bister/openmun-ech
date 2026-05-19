@@ -65,6 +65,12 @@ class NS:
     # eCH-0099: Statistics
     ECH0099_V2 = 'http://www.ech.ch/xmlns/eCH-0099/2'
 
+    # eCH-0129: Objektwesen (buildings, dwellings, parcels, etc.)
+    ECH0129_V6 = 'http://www.ech.ch/xmlns/eCH-0129/6'
+
+    # eCH-0133: Objektwesen — Domäne Steuern (tax register domain)
+    ECH0133_V3 = 'http://www.ech.ch/xmlns/eCH-0133/3'
+
     # W3C
     XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 
@@ -82,6 +88,8 @@ class NS:
         'eCH-0058': ECH0058_V5,  # Default to latest used version
         'eCH-0097': ECH0097_V2,
         'eCH-0099': ECH0099_V2,
+        'eCH-0129': ECH0129_V6,
+        'eCH-0133': ECH0133_V3,
         'xsi': XSI,
     }
 
