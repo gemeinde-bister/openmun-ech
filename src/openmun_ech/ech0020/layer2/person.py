@@ -87,7 +87,19 @@ from openmun_ech.ech0021.v7 import (
     ECH0021OccupationData,
     ECH0021UIDStructure,
 )
-from openmun_ech.ech0021.enums import UIDOrganisationIdCategory
+from openmun_ech.ech0021.enums import (
+    UIDOrganisationIdCategory,
+    MrMrs,
+    TypeOfRelationship,
+    CareType,
+    KindOfEmployment,
+    DataLockType,
+)
+from openmun_ech.ech0011.enums import (
+    NationalityStatus,
+    SeparationType,
+    PartnershipAbolition,
+)
 from openmun_ech.ech0007 import ECH0007Municipality, ECH0007SwissMunicipality
 from openmun_ech.ech0008 import ECH0008Country
 from openmun_ech.ech0010 import (
@@ -386,10 +398,9 @@ class BaseDeliveryPerson(BaseModel):
     # 6. NATIONALITY DATA (REQUIRED)
     # ========================================================================
 
-    nationality_status: str = Field(
+    nationality_status: NationalityStatus = Field(
         ...,
-        description="Nationality status per eCH-0011 v9.0.0: 0=unknown, 1=stateless, 2=known (NOTE: Does NOT indicate Swiss/foreign - use places_of_origin vs residence_permit)",
-        pattern=r"^[0-2]$"
+        description="Nationality status: UNKNOWN('0'), STATELESS('1'), KNOWN('2'). Does NOT indicate Swiss/foreign — use places_of_origin vs residence_permit."
     )
     nationalities: Optional[List[dict]] = Field(
         None,
@@ -429,9 +440,9 @@ class BaseDeliveryPerson(BaseModel):
     # 9. LOCK DATA (REQUIRED)
     # ========================================================================
 
-    data_lock: str = Field(
+    data_lock: DataLockType = Field(
         ...,
-        description="Data lock type (eCH-0021 enum value)"
+        description="Data lock: NO_LOCK('0'), ADDRESS_LOCK('1'), INFORMATION_LOCK('2')"
     )
     data_lock_valid_from: Optional[date] = Field(
         None,
@@ -513,10 +524,9 @@ class BaseDeliveryPerson(BaseModel):
         None,
         description="Contact person's first name"
     )
-    contact_person_sex: Optional[str] = Field(
+    contact_person_sex: Optional[Sex] = Field(
         None,
-        description="Contact person's sex (optional, required for Full identification): '1'=male, '2'=female, '3'=unknown",
-        pattern=r"^[123]$"
+        description="Contact person's sex (optional, required for Full identification): MALE('1'), FEMALE('2'), UNKNOWN('3')"
     )
     contact_person_date_of_birth: Optional[date] = Field(
         None,
@@ -526,9 +536,9 @@ class BaseDeliveryPerson(BaseModel):
         None,
         description="Precision of contact_person_date_of_birth. None means FULL."
     )
-    contact_person_mr_mrs: Optional[str] = Field(
+    contact_person_mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Contact person's title/salutation: '1'=Herr/Mr, '2'=Frau/Mrs, '3'=neutral"
+        description="Contact person's salutation: MRS('1'), MR('2'), MISS('3')"
     )
     contact_person_local_person_id: Optional[str] = Field(
         None,
@@ -610,10 +620,9 @@ class BaseDeliveryPerson(BaseModel):
     # ========================================================================
     # All fields are optional, no nesting
 
-    mr_mrs: Optional[str] = Field(
+    mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Salutation/title: '1'=Mr/Herr, '2'=Mrs/Frau",
-        pattern=r"^[12]$"
+        description="Salutation: MRS('1'), MR('2'), MISS('3')"
     )
     title: Optional[str] = Field(
         None,
@@ -642,9 +651,9 @@ class BaseDeliveryPerson(BaseModel):
     # MUST support full structure for zero data loss roundtrip
     # occupation_data is a LIST (0-n employers) in Layer 1
 
-    kind_of_employment: Optional[str] = Field(
+    kind_of_employment: Optional[KindOfEmployment] = Field(
         None,
-        description="Kind of employment: employed, self-employed, unemployed, etc."
+        description="Employment: UNEMPLOYED('0'), SELF_EMPLOYED('1'), EMPLOYED('2'), PENSION('3'), NOT_IN_LABOR_FORCE('4')"
     )
     job_title: Optional[str] = Field(
         None,
@@ -669,9 +678,9 @@ class BaseDeliveryPerson(BaseModel):
         None,
         description="Spouse or registered partner identification (if married/partnered)"
     )
-    spouse_mr_mrs: Optional[str] = Field(
+    spouse_mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Spouse salutation in mail address: '1'=Frau, '2'=Herr, '3'=deprecated"
+        description="Spouse salutation in mail address: MRS('1'), MR('2'), MISS('3')"
     )
     spouse_address_street: Optional[str] = Field(
         None,
@@ -702,10 +711,9 @@ class BaseDeliveryPerson(BaseModel):
         None,
         description="Spouse's additional person IDs from other systems: [{'person_id': '123', 'person_id_category': 'CH.ZEMIS'}]"
     )
-    marital_relationship_type: Optional[str] = Field(
+    marital_relationship_type: Optional[TypeOfRelationship] = Field(
         None,
-        description="Type of relationship: '1'=married, '2'=registered partnership",
-        pattern=r"^[12]$"
+        description="Relationship type: SPOUSE('1'), REGISTERED_PARTNER('2')"
     )
 
     # ========================================================================

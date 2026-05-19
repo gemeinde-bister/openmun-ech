@@ -65,6 +65,8 @@ from openmun_ech.ech0011 import (
     SeparationType,
     TypeOfHousehold,
 )
+from openmun_ech.ech0011.enums import NationalityStatus, PartnershipAbolition
+from openmun_ech.ech0021.enums import MrMrs
 from openmun_ech.ech0044 import (
     ECH0044PersonIdentification,
     ECH0044PersonIdentificationLight,
@@ -435,9 +437,9 @@ class StatisticsPerson(BaseModel):
         max_length=100,
         description="Original name (maiden name)"
     )
-    sex: str = Field(
+    sex: Sex = Field(
         ...,
-        description="Sex: '1'=male, '2'=female, '3'=other"
+        description="Sex: MALE('1'), FEMALE('2'), UNKNOWN('3')"
     )
     date_of_birth: date = Field(
         ...,
@@ -561,17 +563,17 @@ class StatisticsPerson(BaseModel):
     # Marital Data (eCH-0011)
     # ========================================================================
 
-    marital_status: str = Field(
+    marital_status: MaritalStatus = Field(
         ...,
-        description="Marital status: '1'=single, '2'=married, '3'=widowed, etc. (required)"
+        description="Marital status: SINGLE('1'), MARRIED('2'), WIDOWED('3'), DIVORCED('4'), etc."
     )
     date_of_marital_status: Optional[date] = Field(
         None,
         description="Date of current marital status"
     )
-    marital_cancelation_reason: Optional[str] = Field(
+    marital_cancelation_reason: Optional[PartnershipAbolition] = Field(
         None,
-        description="Reason for marriage/partnership cancelation (per eCH-0011 partnershipAbolition)"
+        description="Cancelation reason: JUDICIAL_DISSOLUTION('1'), ANNULMENT('2'), DECLARED_MISSING('3'), DEATH('4'), UNKNOWN('9')"
     )
     marital_status_verified: Optional[bool] = Field(
         None,
@@ -579,9 +581,9 @@ class StatisticsPerson(BaseModel):
     )
 
     # Separation data (optional within marital data)
-    separation_type: Optional[str] = Field(
+    separation_type: Optional[SeparationType] = Field(
         None,
-        description="Separation type: '1'=judicial, '2'=de facto"
+        description="Separation: FACTUAL_SEPARATION('1'), JUDICIAL_SEPARATION('2')"
     )
     separation_since: Optional[date] = Field(
         None,
@@ -603,9 +605,9 @@ class StatisticsPerson(BaseModel):
 
     # REQUIRED: nationality_status from source data - NEVER invent this!
     # Per eCH-0011: 0=unknown, 1=stateless, 2=has known nationality
-    nationality_status: str = Field(
+    nationality_status: NationalityStatus = Field(
         ...,
-        description="Nationality status per eCH-0011: 0=unknown, 1=stateless, 2=known. REQUIRED from source data."
+        description="Nationality status: UNKNOWN('0'), STATELESS('1'), KNOWN('2'). REQUIRED from source data."
     )
 
     # Swiss nationality - places of origin (when nationality_type == SWISS)
@@ -738,9 +740,9 @@ class StatisticsPerson(BaseModel):
         max_length=100,
         description="Contact person first name"
     )
-    contact_person_sex: Optional[str] = Field(
+    contact_person_sex: Optional[Sex] = Field(
         None,
-        description="Contact person sex: '1'=male, '2'=female, '3'=unknown"
+        description="Contact person sex: MALE('1'), FEMALE('2'), UNKNOWN('3')"
     )
     contact_person_date_of_birth: Optional[date] = Field(
         None,
@@ -822,23 +824,14 @@ class StatisticsPerson(BaseModel):
     )
 
     # Contact salutation (mrMrs)
-    contact_mr_mrs: Optional[str] = Field(
+    contact_mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Contact salutation: '1'=Mr, '2'=Mrs, '3'=Company/Neutral"
+        description="Contact salutation: MRS('1'), MR('2'), MISS('3')"
     )
 
     # ========================================================================
     # VALIDATORS
     # ========================================================================
-
-    @field_validator('sex')
-    @classmethod
-    def validate_sex(cls, v: str) -> str:
-        """Validate sex is valid enum value."""
-        valid = {'1', '2', '3'}
-        if v not in valid:
-            raise ValueError(f"sex must be one of {valid}, got: {v}")
-        return v
 
     @model_validator(mode='after')
     def validate_nationality_choice(self) -> 'StatisticsPerson':

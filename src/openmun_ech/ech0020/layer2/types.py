@@ -6,6 +6,7 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 from openmun_ech.ech0044 import Sex
+from openmun_ech.ech0021.enums import MrMrs, TypeOfRelationship, CareType
 
 
 # ============================================================================
@@ -127,15 +128,13 @@ class ParentInfo(BaseModel):
         ...,
         description="Parent's identification data (required)"
     )
-    relationship_type: str = Field(
+    relationship_type: TypeOfRelationship = Field(
         ...,
-        description="Type: '3'=mother, '4'=father, '5'=foster_father, '6'=foster_mother",
-        pattern=r"^[3-6]$"
+        description="Type: MOTHER('3'), FATHER('4'), FOSTER_FATHER('5'), FOSTER_MOTHER('6')"
     )
-    care: str = Field(
+    care: CareType = Field(
         ...,
-        description="Parental authority: '0'=unknown, '1'=legacy (old law), '2'=joint, '3'=sole, '4'=none (required)",
-        pattern=r"^[0-4]$"
+        description="Parental authority: UNKNOWN('0'), LEGACY('1'), JOINT('2'), SOLE('3'), NONE('4')"
     )
     relationship_valid_from: Optional[date] = Field(
         None,
@@ -143,9 +142,9 @@ class ParentInfo(BaseModel):
     )
 
     # Address fields (from ECH0010MailAddress)
-    mr_mrs: Optional[str] = Field(
+    mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Parent salutation in mail address: '1'=Frau, '2'=Herr, '3'=deprecated"
+        description="Parent salutation in mail address: MRS('1'), MR('2'), MISS('3')"
     )
     address_street: Optional[str] = Field(
         None,
@@ -220,9 +219,9 @@ class GuardianInfo(BaseModel):
     )
 
     # Address fields (from ECH0010MailAddress in partner_address)
-    mr_mrs: Optional[str] = Field(
+    mr_mrs: Optional[MrMrs] = Field(
         None,
-        description="Guardian salutation in mail address: '1'=Frau, '2'=Herr, '3'=deprecated"
+        description="Guardian salutation in mail address: MRS('1'), MR('2'), MISS('3')"
     )
     address_street: Optional[str] = Field(
         None,
@@ -251,10 +250,9 @@ class GuardianInfo(BaseModel):
     )
 
     # Common fields
-    relationship_type: str = Field(
+    relationship_type: TypeOfRelationship = Field(
         ...,
-        description="Type: '7'=guardian_person, '8'=guardian_org, '9'=representative, '10'=curator",
-        pattern=r"^(7|8|9|10)$"
+        description="Type: LEGAL_ASSISTANT('7'), ADVISOR('8'), GUARDIAN('9'), HEALTHCARE_PROXY('10')"
     )
     guardian_measure_based_on_law: List[str] = Field(
         default_factory=list,
@@ -264,9 +262,9 @@ class GuardianInfo(BaseModel):
         ...,
         description="Date from which guardian measure is valid (required)"
     )
-    care: Optional[str] = Field(
+    care: Optional[CareType] = Field(
         None,
-        description="Care arrangement type (CareType enum value)"
+        description="Care arrangement: UNKNOWN('0'), LEGACY('1'), JOINT('2'), SOLE('3'), NONE('4')"
     )
 
     model_config = ConfigDict(populate_by_name=True)

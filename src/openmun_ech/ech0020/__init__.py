@@ -38,6 +38,11 @@ Quick Start:
             DwellingAddressInfo,
             PlaceType,
             ResidenceType,
+            Sex,
+            MaritalStatus,
+            NationalityStatus,
+            DataLockType,
+            TypeOfHousehold,
         )
 
         # Load YOUR configuration
@@ -53,11 +58,11 @@ Quick Start:
             vn="7561234567890",
             official_name="Müller",
             first_name="Hans",
-            sex="1",
+            sex=Sex.MALE,
             date_of_birth=date(1980, 5, 15),
-            religion="111",
-            marital_status="1",
-            nationality_status="1",
+            religion="111",                       # BFS religion code (open code set)
+            marital_status=MaritalStatus.SINGLE,
+            nationality_status=NationalityStatus.STATELESS,
             places_of_origin=[{
                 'bfs_code': '261',
                 'name': 'Zürich',
@@ -66,8 +71,8 @@ Quick Start:
             birth_place_type=PlaceType.SWISS,
             birth_municipality_bfs="261",
             birth_municipality_name="Zürich",
-            data_lock="0",
-            paper_lock="0"
+            data_lock=DataLockType.NO_LOCK,
+            paper_lock=False
         )
 
         # Create event
@@ -76,7 +81,7 @@ Quick Start:
             house_number="1",
             town="Zürich",
             swiss_zip_code=8001,
-            type_of_household="1"
+            type_of_household=TypeOfHousehold.PRIVATE_HOUSEHOLD
         )
 
         event = BaseDeliveryEvent(
@@ -127,12 +132,34 @@ from .models import (
     DwellingAddressInfo,
     DestinationInfo,
 
-    # Enums
+    # Layer 2 enums (CHOICE constraints)
     ResidenceType,
     ReportingType,
     PlaceType,
     GuardianType,
     DatePrecision,
+)
+
+# Re-export eCH-0011 enums used in Layer 2 fields
+from openmun_ech.ech0011.enums import (
+    Sex,
+    MaritalStatus,
+    SeparationType,
+    NationalityStatus,
+    PartnershipAbolition,
+    ReligionCode,      # convenience — not exhaustive, BFS allows additional codes
+    LanguageCode,       # convenience — not exhaustive, XSD allows any ISO 639-1
+    TypeOfHousehold,
+    FederalRegister,
+)
+
+# Re-export eCH-0021 enums used in Layer 2 fields
+from openmun_ech.ech0021.enums import (
+    MrMrs,
+    TypeOfRelationship,
+    CareType,
+    KindOfEmployment,
+    DataLockType,
 )
 
 # Import Layer 1 for advanced users (production XML parsing)
@@ -152,12 +179,30 @@ __all__ = [
     "DwellingAddressInfo",
     "DestinationInfo",
 
-    # Enums - Type-safe constants
+    # Enums — closed code sets (exhaustive per XSD)
+    "Sex",
+    "MaritalStatus",
+    "SeparationType",
+    "NationalityStatus",
+    "PartnershipAbolition",
+    "MrMrs",
+    "TypeOfRelationship",
+    "CareType",
+    "KindOfEmployment",
+    "DataLockType",
+    "TypeOfHousehold",
+    "FederalRegister",
+
+    # Enums — Layer 2 CHOICE constraints
     "ResidenceType",
     "ReportingType",
     "PlaceType",
     "GuardianType",
     "DatePrecision",
+
+    # Enums — open code sets (convenience, not exhaustive)
+    "ReligionCode",
+    "LanguageCode",
 
     # Layer 1 - For parsing production XML (advanced)
     "ECH0020Delivery",

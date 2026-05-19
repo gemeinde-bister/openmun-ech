@@ -201,15 +201,17 @@ class TestAllExportsComplete:
     def test_all_list_count(self):
         """Verify __all__ contains expected number of exports.
 
-        Expected exports (15 total):
+        Expected exports (29 total):
         - 3 main API classes
         - 6 supporting models
-        - 5 enums
+        - 12 closed code set enums (eCH-0011 + eCH-0021)
+        - 5 Layer 2 CHOICE constraint enums
+        - 2 open code set enums (convenience)
         - 1 Layer 1 class
         """
         import openmun_ech.ech0020 as ech0020
 
-        expected_count = 15
+        expected_count = 29
         actual_count = len(ech0020.__all__)
 
         assert actual_count == expected_count, (
@@ -236,12 +238,30 @@ class TestAllExportsComplete:
             'DwellingAddressInfo',
             'DestinationInfo',
 
-            # Enums (5)
+            # Closed code set enums (12)
+            'Sex',
+            'MaritalStatus',
+            'SeparationType',
+            'NationalityStatus',
+            'PartnershipAbolition',
+            'MrMrs',
+            'TypeOfRelationship',
+            'CareType',
+            'KindOfEmployment',
+            'DataLockType',
+            'TypeOfHousehold',
+            'FederalRegister',
+
+            # Layer 2 CHOICE constraint enums (5)
             'ResidenceType',
             'ReportingType',
             'PlaceType',
             'GuardianType',
             'DatePrecision',
+
+            # Open code set enums (2)
+            'ReligionCode',
+            'LanguageCode',
 
             # Layer 1 (1)
             'ECH0020Delivery',
@@ -273,12 +293,28 @@ class TestBulkImport:
             SecondaryResidenceInfo,
             DwellingAddressInfo,
             DestinationInfo,
-            # Enums
+            # Closed code set enums
+            Sex,
+            MaritalStatus,
+            SeparationType,
+            NationalityStatus,
+            PartnershipAbolition,
+            MrMrs,
+            TypeOfRelationship,
+            CareType,
+            KindOfEmployment,
+            DataLockType,
+            TypeOfHousehold,
+            FederalRegister,
+            # Layer 2 CHOICE constraint enums
             ResidenceType,
             ReportingType,
             PlaceType,
             GuardianType,
             DatePrecision,
+            # Open code set enums
+            ReligionCode,
+            LanguageCode,
             # Layer 1
             ECH0020Delivery,
         )
@@ -293,11 +329,25 @@ class TestBulkImport:
         assert SecondaryResidenceInfo is not None
         assert DwellingAddressInfo is not None
         assert DestinationInfo is not None
+        assert Sex is not None
+        assert MaritalStatus is not None
+        assert SeparationType is not None
+        assert NationalityStatus is not None
+        assert PartnershipAbolition is not None
+        assert MrMrs is not None
+        assert TypeOfRelationship is not None
+        assert CareType is not None
+        assert KindOfEmployment is not None
+        assert DataLockType is not None
+        assert TypeOfHousehold is not None
+        assert FederalRegister is not None
         assert ResidenceType is not None
         assert ReportingType is not None
         assert PlaceType is not None
         assert GuardianType is not None
         assert DatePrecision is not None
+        assert ReligionCode is not None
+        assert LanguageCode is not None
         assert ECH0020Delivery is not None
 
 

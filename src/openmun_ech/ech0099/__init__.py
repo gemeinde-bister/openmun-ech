@@ -63,7 +63,7 @@ from .models import (
     DestinationInfo,
     PlaceOfOriginInfo,
 
-    # Enums
+    # Layer 2 enums (CHOICE constraints)
     ResidenceType,
     PlaceType,
     NationalityType,
@@ -71,6 +71,18 @@ from .models import (
     # Finalization helper
     finalize_statistics_delivery,
 )
+
+# Re-export eCH-0011 enums used in StatisticsPerson fields
+from openmun_ech.ech0011.enums import (
+    Sex,
+    MaritalStatus,
+    SeparationType,
+    NationalityStatus,
+    PartnershipAbolition,
+)
+
+# Re-export eCH-0021 enums used in StatisticsPerson fields
+from openmun_ech.ech0021.enums import MrMrs
 
 # Rebuild models to resolve forward references
 ECH0099ReportedPerson.model_rebuild()
@@ -102,10 +114,18 @@ __all__ = [
     'DestinationInfo',
     'PlaceOfOriginInfo',
 
-    # Layer 2 - Enums
+    # Layer 2 - Enums (CHOICE constraints)
     'ResidenceType',
     'PlaceType',
     'NationalityType',
+
+    # Enums — closed code sets (exhaustive per XSD)
+    'Sex',
+    'MaritalStatus',
+    'SeparationType',
+    'NationalityStatus',
+    'PartnershipAbolition',
+    'MrMrs',
 
     # Layer 2 - Finalization
     'finalize_statistics_delivery',

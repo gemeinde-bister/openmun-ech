@@ -13,6 +13,7 @@ import pytest
 from datetime import date, datetime
 from pathlib import Path
 import tempfile
+from pydantic import ValidationError
 
 from openmun_ech.ech0099 import (
     # Layer 2
@@ -206,7 +207,7 @@ class TestStatisticsPersonValidation:
 
     def test_invalid_sex_value_rejected(self):
         """Invalid sex value should be rejected."""
-        with pytest.raises(ValueError, match="sex must be one of"):
+        with pytest.raises(ValidationError, match="Input should be '1', '2' or '3'"):
             StatisticsPerson(
                 local_person_id="12345",
                 local_person_id_category="MU.6172",
@@ -218,6 +219,7 @@ class TestStatisticsPersonValidation:
                 religion="111",
                 marital_status="1",
                 nationality_type=NationalityType.SWISS,
+                nationality_status="2",
                 places_of_origin=[PlaceOfOriginInfo(origin_name="Zürich", canton="ZH")],
             )
 

@@ -38,7 +38,7 @@ class TestTopLevelPackageImports:
         """Verify top-level package exports Layer 1 components."""
         import openmun_ech
 
-        # Expected exports (11 total)
+        # Expected exports (12 total)
         expected = {
             'VersionRouter',
             'ECH0020Version',
@@ -49,6 +49,7 @@ class TestTopLevelPackageImports:
             'ECH0021PersonAdditionalData',
             'ECH0044PersonIdentification',
             'ECH0058Header',
+            'ECH0097OrganisationIdentification',
             'get_label',  # i18n label lookup
             'get_desc',   # spec documentation lookup
         }
