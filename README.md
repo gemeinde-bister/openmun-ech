@@ -23,9 +23,10 @@ All Layer 1 models use a declarative `ECHModel` base class that derives XML seri
 - **eCH-0021 v7+v8** - Person Additional Data (deduplicated via shared base)
 - **eCH-0044 v4** - Person Identification
 - **eCH-0058 v4+v5** - Message Headers (deduplicated via shared base)
+- **eCH-0097 v2** - Enterprise Identification (UID, organisation IDs, legal form)
 - **eCH-0099 v2** - Statistics Delivery
 
-824 tests, including production data roundtrip validation.
+881 tests, including production data roundtrip validation.
 
 ## Features
 

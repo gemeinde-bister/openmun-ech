@@ -36,6 +36,7 @@ Package Structure:
 - ech0021/: eCH-0021 Person additional data models (v7, v8)
 - ech0044/: eCH-0044 Person identification models (v4)
 - ech0058/: eCH-0058 Message header models (v4, v5)
+- ech0097/: eCH-0097 Enterprise identification models (v2)
 - ech0099/: eCH-0099 Statistics delivery models (v2)
 - validation/: Optional Swiss open data validation
 - utils/: XSD schema caching and validation utilities
@@ -57,6 +58,7 @@ from openmun_ech.ech0011.v8 import ECH0011Person
 from openmun_ech.ech0021.v8 import ECH0021PersonAdditionalData
 from openmun_ech.ech0044.v4 import ECH0044PersonIdentification
 from openmun_ech.ech0058.v5 import ECH0058Header
+from openmun_ech.ech0097.v2 import ECH0097OrganisationIdentification
 from openmun_ech.i18n import get_label
 from openmun_ech.specdoc import get_desc
 
@@ -70,6 +72,7 @@ __all__ = [
     'ECH0021PersonAdditionalData',
     'ECH0044PersonIdentification',
     'ECH0058Header',
+    'ECH0097OrganisationIdentification',
     'get_label',
     'get_desc',
 ]

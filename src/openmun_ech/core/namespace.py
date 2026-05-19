@@ -59,6 +59,9 @@ class NS:
     ECH0058_V4 = 'http://www.ech.ch/xmlns/eCH-0058/4'
     ECH0058_V5 = 'http://www.ech.ch/xmlns/eCH-0058/5'
 
+    # eCH-0097: Enterprise identification
+    ECH0097_V2 = 'http://www.ech.ch/xmlns/eCH-0097/2'
+
     # eCH-0099: Statistics
     ECH0099_V2 = 'http://www.ech.ch/xmlns/eCH-0099/2'
 
@@ -77,6 +80,7 @@ class NS:
         'eCH-0021': ECH0021_V8,  # Default to latest used version
         'eCH-0044': ECH0044_V4,
         'eCH-0058': ECH0058_V5,  # Default to latest used version
+        'eCH-0097': ECH0097_V2,
         'eCH-0099': ECH0099_V2,
         'xsi': XSI,
     }

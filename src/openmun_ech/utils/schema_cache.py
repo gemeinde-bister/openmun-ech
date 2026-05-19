@@ -36,6 +36,7 @@ ECH_SCHEMAS = {
     'eCH-0007-6-0.xsd': 'https://www.ech.ch/xmlns/eCH-0007/6/eCH-0007-6-0.xsd',
     'eCH-0008-3-0.xsd': 'https://www.ech.ch/xmlns/eCH-0008/3/eCH-0008-3-0.xsd',
     'eCH-0058-5-0.xsd': 'https://www.ech.ch/xmlns/eCH-0058/5/eCH-0058-5-0.xsd',
+    'eCH-0097-2-0.xsd': 'https://www.ech.ch/xmlns/eCH-0097/2/eCH-0097-2-0.xsd',
     'eCH-0099-2-1.xsd': 'https://www.ech.ch/xmlns/eCH-0099/2/eCH-0099-2-1.xsd',
     # XSD import dependencies (referenced by other schemas)
     'eCH-0006-2-0.xsd': 'https://www.ech.ch/xmlns/eCH-0006/2/eCH-0006-2-0.xsd',
