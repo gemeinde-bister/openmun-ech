@@ -14,19 +14,29 @@ All Layer 1 models use a declarative `ECHModel` base class that derives XML seri
 
 ## Implemented Standards
 
+### Person & Population
+
 - **eCH-0006 v2** - Residence Permits
-- **eCH-0007 v5** - Municipality
-- **eCH-0008 v3** - Country
-- **eCH-0010 v5** - Postal Address
 - **eCH-0011 v8** - Person Data
 - **eCH-0020 v3** - Population Registry Events (96 classes)
 - **eCH-0021 v7+v8** - Person Additional Data (deduplicated via shared base)
 - **eCH-0044 v4** - Person Identification
-- **eCH-0058 v4+v5** - Message Headers (deduplicated via shared base)
-- **eCH-0097 v2** - Enterprise Identification (UID, organisation IDs, legal form)
 - **eCH-0099 v2** - Statistics Delivery
 
-881 tests, including production data roundtrip validation.
+### Building & Property (Objektwesen)
+
+- **eCH-0129 v6** - Building, Dwelling, Realestate, Cadastral (60 classes, 38 enums)
+- **eCH-0133 v3** - Tax Register Domain (13 classes — estimation, ownership, delivery)
+
+### Common
+
+- **eCH-0007 v5+v6** - Municipality
+- **eCH-0008 v3** - Country
+- **eCH-0010 v5+v6** - Postal Address
+- **eCH-0058 v4+v5** - Message Headers (deduplicated via shared base)
+- **eCH-0097 v2** - Enterprise Identification (UID, organisation IDs, legal form)
+
+1878 tests, including production data roundtrip validation and XSD schema validation.
 
 ## Features
 
